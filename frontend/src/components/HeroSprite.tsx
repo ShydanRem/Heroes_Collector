@@ -73,33 +73,37 @@ function getCustomSprite(name: string | undefined, color: string, dark: string, 
         <rect x="40" y="28" width="8" height="5" rx="2.5" fill="#ffd5b4" />
         <circle cx="49" cy="30.5" r="2.5" fill="#ffd5b4" />
 
-        {/* === SPADA SX — punta in basso, in mano === */}
-        {/* Impugnatura */}
-        <rect x="13.5" y="28" width="3" height="5" rx="1" fill="#2c1810" />
-        {/* Guardia */}
-        <rect x="11" y="33" width="8" height="2" rx="0.8" fill={dark} />
-        {/* Lama verso il basso */}
-        <rect x="13.8" y="35" width="2.5" height="18" rx="0.5" fill={light} />
-        <rect x="14.2" y="35" width="1.7" height="16" rx="0.3" fill={color} opacity="0.4" />
-        {/* Punta */}
-        <polygon points="15,53 13,53 15,57" fill={light} />
+        {/* === SPADA SX — punta in alto, inclinata verso esterno === */}
+        <g transform="rotate(15 15 30.5)">
+          <rect x="13.5" y="30" width="3" height="5" rx="1" fill="#2c1810" />
+          <rect x="11" y="28" width="8" height="2" rx="0.8" fill={dark} />
+          <rect x="13.8" y="10" width="2.5" height="18" rx="0.5" fill={light} />
+          <rect x="14.2" y="11" width="1.7" height="16" rx="0.3" fill={color} opacity="0.4" />
+          <polygon points="15,10 13.3,10 15,6" fill={light} />
+        </g>
 
-        {/* === SPADA DX — punta in basso, in mano === */}
-        <rect x="47.5" y="28" width="3" height="5" rx="1" fill="#2c1810" />
-        <rect x="45" y="33" width="8" height="2" rx="0.8" fill={dark} />
-        <rect x="47.8" y="35" width="2.5" height="18" rx="0.5" fill={light} />
-        <rect x="48.2" y="35" width="1.7" height="16" rx="0.3" fill={color} opacity="0.4" />
-        <polygon points="49,53 51,53 49,57" fill={light} />
+        {/* === SPADA DX — punta in alto, inclinata verso esterno === */}
+        <g transform="rotate(-15 49 30.5)">
+          <rect x="47.5" y="30" width="3" height="5" rx="1" fill="#2c1810" />
+          <rect x="45" y="28" width="8" height="2" rx="0.8" fill={dark} />
+          <rect x="47.8" y="10" width="2.5" height="18" rx="0.5" fill={light} />
+          <rect x="48.2" y="11" width="1.7" height="16" rx="0.3" fill={color} opacity="0.4" />
+          <polygon points="49,10 50.7,10 49,6" fill={light} />
+        </g>
 
         {/* Glow spade per epico+ */}
         {(['epico', 'leggendario', 'mitico', 'master'] as const).includes(rarity as any) && (
           <>
-            <rect x="13" y="35" width="4" height="18" rx="1" fill={color} opacity="0.15">
-              <animate attributeName="opacity" values="0.05;0.25;0.05" dur="2s" repeatCount="indefinite" />
-            </rect>
-            <rect x="47" y="35" width="4" height="18" rx="1" fill={color} opacity="0.15">
-              <animate attributeName="opacity" values="0.05;0.25;0.05" dur="2s" repeatCount="indefinite" />
-            </rect>
+            <g transform="rotate(15 15 30.5)">
+              <rect x="13" y="10" width="4" height="18" rx="1" fill={color} opacity="0.15">
+                <animate attributeName="opacity" values="0.05;0.25;0.05" dur="2s" repeatCount="indefinite" />
+              </rect>
+            </g>
+            <g transform="rotate(-15 49 30.5)">
+              <rect x="47" y="10" width="4" height="18" rx="1" fill={color} opacity="0.15">
+                <animate attributeName="opacity" values="0.05;0.25;0.05" dur="2s" repeatCount="indefinite" />
+              </rect>
+            </g>
           </>
         )}
 
