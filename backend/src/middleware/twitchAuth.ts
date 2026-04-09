@@ -36,8 +36,17 @@ export function twitchAuth(req: Request, res: Response, next: NextFunction) {
 
     // In produzione, decodifica il JWT Twitch
     const secret = Buffer.from(env.twitch.extensionSecret, 'base64');
-    const decoded = jwt.verify(token, secret) as TwitchToken;
-    req.twitchUser = decoded;
+    const decoded = jwt.verify(token, secret) as any;
+
+    // Il JWT Twitch usa 'user_id' se l'utente ha condiviso l'identita,
+    // altrimenti solo 'opaque_user_id'. Usiamo opaque come fallback.
+    req.twitchUser = {
+      channel_id: decoded.channel_id,
+      user_id: decoded.user_id || decoded.opaque_user_id,
+      opaque_user_id: decoded.opaque_user_id,
+      role: decoded.role || 'viewer',
+      pubsub_perms: decoded.pubsub_perms,
+    };
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Token non valido' });

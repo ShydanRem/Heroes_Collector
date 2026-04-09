@@ -32,6 +32,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   useEffect(() => { initAuth(); }, []);
 
@@ -42,6 +43,7 @@ export default function App() {
         loadProfile();
       });
     } else {
+      // Modalita sviluppo senza Twitch
       api.setAuthToken('dev:test-user:viewer');
       loadProfile();
     }
@@ -54,6 +56,7 @@ export default function App() {
       setHero(data.hero);
       setJoined(data.profile.optedIn);
     } catch (err: any) {
+      // 404 = utente non registrato, mostra schermata join
       if (!err.message?.includes('404')) {
         console.error('Errore caricamento profilo:', err);
       }
@@ -64,13 +67,17 @@ export default function App() {
 
   async function handleJoin() {
     setJoining(true);
+    setJoinError(null);
     try {
-      const data = await api.joinGame('test-user', 'Test User');
+      // Il backend usa il JWT per identificare l'utente
+      // username e displayName sono fallback se non disponibili dal token
+      const data = await api.joinGame('viewer', 'Viewer');
       setProfile(data.profile);
       setHero(data.hero);
       setJoined(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Errore join:', err);
+      setJoinError(err.message || 'Errore di connessione al server');
     } finally {
       setJoining(false);
     }
@@ -98,6 +105,11 @@ export default function App() {
           <button className="btn btn-primary" onClick={handleJoin} disabled={joining}>
             {joining ? 'Creazione eroe...' : 'Unisciti al gioco!'}
           </button>
+          {joinError && (
+            <div style={{ color: '#f44336', fontSize: 11, marginTop: 10, maxWidth: 260 }}>
+              {joinError}
+            </div>
+          )}
         </div>
       </div>
     );
