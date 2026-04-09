@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Hero, Ability, ClassInfo, RARITY_COLORS, RARITY_LABELS, CLASS_EMOJIS, CLASS_LABELS } from '../types';
+import { Hero, Ability, ClassInfo, Rarity, RARITY_COLORS, RARITY_LABELS, CLASS_EMOJIS, CLASS_LABELS, RARITY_ORDER, CAPTURE_ENERGY_COST } from '../types';
 import * as api from '../services/api';
 
 interface HeroDetailProps {
@@ -34,11 +34,11 @@ export function HeroDetail({ heroId, onBack, onCapture, showCaptureButton }: Her
     }
   }
 
-  async function handleCapture() {
+  async function handleCapture(rarity: Rarity) {
     if (!hero) return;
     setCapturing(true);
     try {
-      const result = await api.captureHero(hero.id);
+      const result = await api.captureHero(hero.id, rarity);
       setMessage({ text: result.message, type: 'success' });
       setTimeout(() => onCapture?.(), 800);
     } catch (err: any) {
@@ -46,6 +46,13 @@ export function HeroDetail({ heroId, onBack, onCapture, showCaptureButton }: Her
     } finally {
       setCapturing(false);
     }
+  }
+
+  // Rarità disponibili per la cattura (da Comune fino alla rarità dell'eroe)
+  function getAvailableRarities(): Rarity[] {
+    if (!hero) return [];
+    const heroIdx = RARITY_ORDER.indexOf(hero.rarity);
+    return RARITY_ORDER.slice(0, heroIdx + 1);
   }
 
   if (loading) {
@@ -115,14 +122,32 @@ export function HeroDetail({ heroId, onBack, onCapture, showCaptureButton }: Her
       </div>
 
       {showCaptureButton && (
-        <button
-          className="btn btn-capture"
-          onClick={handleCapture}
-          disabled={capturing}
-          style={{ marginTop: 12 }}
-        >
-          {capturing ? 'Cattura in corso...' : `Cattura ${hero.displayName}!`}
-        </button>
+        <div className="capture-rarity-selector" style={{ marginTop: 12 }}>
+          <h3 style={{ marginBottom: 8, fontSize: 13 }}>Scegli a che rarita catturare:</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {getAvailableRarities().map((r) => (
+              <button
+                key={r}
+                className="btn btn-capture"
+                onClick={() => handleCapture(r)}
+                disabled={capturing}
+                style={{
+                  borderLeft: `4px solid ${RARITY_COLORS[r]}`,
+                  color: RARITY_COLORS[r],
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '6px 10px',
+                  fontSize: 12,
+                }}
+              >
+                <span>{RARITY_LABELS[r]}</span>
+                <span style={{ opacity: 0.8 }}>{CAPTURE_ENERGY_COST[r]}E</span>
+              </button>
+            ))}
+          </div>
+          {capturing && <div style={{ marginTop: 6, fontSize: 11 }}>Cattura in corso...</div>}
+        </div>
       )}
 
       {message && (

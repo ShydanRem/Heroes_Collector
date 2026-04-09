@@ -115,6 +115,17 @@ body {
   font-size: 11px;
 }
 
+.header-stats .essences {
+  color: #a855f7;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(168, 85, 247, 0.08);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+}
+
 /* ============ TABS ============ */
 .tabs {
   display: flex;

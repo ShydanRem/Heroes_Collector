@@ -92,8 +92,18 @@ export async function getHeroDetail(heroId: string): Promise<{
   return request(`/heroes/${heroId}`);
 }
 
-export async function captureHero(heroId: string): Promise<{ message: string }> {
-  return request(`/heroes/${heroId}/capture`, { method: 'POST' });
+export async function captureHero(heroId: string, captureRarity?: string): Promise<{ message: string }> {
+  return request(`/heroes/${heroId}/capture`, {
+    method: 'POST',
+    body: JSON.stringify(captureRarity ? { captureRarity } : {}),
+  });
+}
+
+export async function upgradeHero(heroId: string): Promise<{ message: string; hero: Hero }> {
+  return request('/heroes/upgrade', {
+    method: 'POST',
+    body: JSON.stringify({ heroId }),
+  });
 }
 
 export async function rerollHeroClass(newClass: string): Promise<{ message: string; hero: Hero; cost: number }> {

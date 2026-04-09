@@ -1,5 +1,5 @@
 import { query } from '../config/database';
-import { Hero, HeroClass, Rarity, CAPTURE_ENERGY_COST } from '../types';
+import { Hero, HeroClass, Rarity, CAPTURE_ENERGY_COST, RARITY_ORDER, UPGRADE_ESSENCE_COST } from '../types';
 import { generateHero, calculateStats, selectAbilities, tryLevelUp, scoreToRarity, calculateActivityScore } from './heroGenerator';
 import { consumeEnergy, refreshActivityScore } from './userService';
 
@@ -123,10 +123,12 @@ export async function listAvailableHeroes(
 
 /**
  * Cattura un eroe: lo aggiunge al roster del giocatore.
+ * Il giocatore sceglie a che rarità catturare (fino alla rarità dell'eroe).
  */
 export async function captureHero(
   captorUserId: string,
-  heroId: string
+  heroId: string,
+  captureRarity?: Rarity
 ): Promise<{ success: boolean; message: string }> {
   // Prendi l'eroe
   const hero = await getHeroById(heroId);
@@ -146,17 +148,30 @@ export async function captureHero(
     return { success: false, message: 'Hai già catturato questo eroe!' };
   }
 
-  // Consuma energia
-  const energyCost = CAPTURE_ENERGY_COST[hero.rarity];
+  // Se non specificata, usa la rarità dell'eroe (backward compat)
+  const chosenRarity = captureRarity || hero.rarity;
+
+  // Valida che la rarità scelta non superi quella dell'eroe
+  const heroRarityIdx = RARITY_ORDER.indexOf(hero.rarity);
+  const chosenRarityIdx = RARITY_ORDER.indexOf(chosenRarity);
+  if (chosenRarityIdx > heroRarityIdx) {
+    return { success: false, message: 'Non puoi catturare a una rarità superiore a quella dell\'eroe!' };
+  }
+  if (chosenRarityIdx < 0) {
+    return { success: false, message: 'Rarità non valida!' };
+  }
+
+  // Consuma energia in base alla rarità scelta
+  const energyCost = CAPTURE_ENERGY_COST[chosenRarity];
   const hasEnergy = await consumeEnergy(captorUserId, energyCost);
   if (!hasEnergy) {
     return { success: false, message: `Energia insufficiente! Servono ${energyCost} energia.` };
   }
 
-  // Aggiungi al roster
+  // Aggiungi al roster con la rarità di cattura
   await query(
-    'INSERT INTO roster (owner_user_id, hero_id) VALUES ($1, $2)',
-    [captorUserId, heroId]
+    'INSERT INTO roster (owner_user_id, hero_id, capture_rarity) VALUES ($1, $2, $3)',
+    [captorUserId, heroId, chosenRarity]
   );
 
   return { success: true, message: `Hai catturato ${hero.displayName}!` };
@@ -164,16 +179,96 @@ export async function captureHero(
 
 /**
  * Ottieni il roster di un giocatore.
+ * Per ogni eroe catturato, usa la capture_rarity dal roster
+ * e ricalcola le stats di conseguenza.
  */
 export async function getRoster(userId: string): Promise<Hero[]> {
   const result = await query(
-    `SELECT h.* FROM heroes h
+    `SELECT h.*, r.capture_rarity, r.id as roster_id FROM heroes h
      JOIN roster r ON r.hero_id = h.id
      WHERE r.owner_user_id = $1
-     ORDER BY h.rarity DESC, h.level DESC`,
+     ORDER BY r.capture_rarity DESC, h.level DESC`,
     [userId]
   );
-  return result.rows.map(rowToHero);
+  return result.rows.map((row) => {
+    const hero = rowToHero(row);
+    // Sovrascrivi rarità e stats con la capture_rarity
+    if (row.capture_rarity && row.capture_rarity !== row.rarity) {
+      hero.rarity = row.capture_rarity;
+      hero.stats = calculateStats(hero.heroClass, hero.rarity, hero.level);
+    }
+    return hero;
+  });
+}
+
+/**
+ * Upgrade della rarità di un eroe catturato nel roster.
+ * Richiede Essenze Eroiche. La rarità massima è quella dell'eroe originale.
+ */
+export async function upgradeRosteredHero(
+  userId: string,
+  heroId: string
+): Promise<{ success: boolean; message: string; hero?: Hero }> {
+  // Trova la entry nel roster
+  const rosterResult = await query(
+    'SELECT r.*, h.rarity AS original_rarity, h.hero_class, h.level FROM roster r JOIN heroes h ON r.hero_id = h.id WHERE r.owner_user_id = $1 AND r.hero_id = $2',
+    [userId, heroId]
+  );
+  if (rosterResult.rows.length === 0) {
+    return { success: false, message: 'Eroe non trovato nel tuo roster!' };
+  }
+
+  const rosterEntry = rosterResult.rows[0];
+  const currentRarity: Rarity = rosterEntry.capture_rarity;
+  const originalRarity: Rarity = rosterEntry.original_rarity;
+
+  // Trova la rarità successiva
+  const currentIdx = RARITY_ORDER.indexOf(currentRarity);
+  const originalIdx = RARITY_ORDER.indexOf(originalRarity);
+
+  if (currentIdx < 0 || currentIdx >= RARITY_ORDER.length - 1) {
+    return { success: false, message: 'Questo eroe è già alla rarità massima!' };
+  }
+
+  const nextRarity = RARITY_ORDER[currentIdx + 1];
+  const nextIdx = currentIdx + 1;
+
+  // Non può superare la rarità dell'eroe originale
+  if (nextIdx > originalIdx) {
+    return { success: false, message: 'Non puoi superare la rarità originale dell\'eroe!' };
+  }
+
+  // Controlla essenze
+  const essenceCost = UPGRADE_ESSENCE_COST[nextRarity];
+  const userResult = await query(
+    'SELECT essences FROM users WHERE twitch_user_id = $1',
+    [userId]
+  );
+  const userEssences = userResult.rows[0]?.essences || 0;
+  if (userEssences < essenceCost) {
+    return { success: false, message: `Essenze insufficienti! Servono ${essenceCost} Essenze Eroiche (ne hai ${userEssences}).` };
+  }
+
+  // Deduci essenze
+  await query(
+    'UPDATE users SET essences = essences - $1 WHERE twitch_user_id = $2',
+    [essenceCost, userId]
+  );
+
+  // Aggiorna la rarità nel roster
+  await query(
+    'UPDATE roster SET capture_rarity = $1 WHERE owner_user_id = $2 AND hero_id = $3',
+    [nextRarity, userId, heroId]
+  );
+
+  // Ritorna l'eroe aggiornato con le nuove stats
+  const hero = await getHeroById(heroId);
+  if (hero) {
+    hero.rarity = nextRarity;
+    hero.stats = calculateStats(hero.heroClass, nextRarity, hero.level);
+  }
+
+  return { success: true, message: `Rarità migliorata a ${nextRarity}!`, hero: hero || undefined };
 }
 
 /**

@@ -84,10 +84,10 @@ export async function handleChannelPointRedemption(
   switch (rewardType) {
     case 'energy_boost':
       await query(
-        'UPDATE users SET energy = LEAST(max_energy, energy + 30) WHERE twitch_user_id = $1',
+        'UPDATE users SET energy = LEAST(max_energy, energy + 60) WHERE twitch_user_id = $1',
         [userId]
       );
-      return { success: true, message: '+30 energia!' };
+      return { success: true, message: '+60 energia!' };
 
     case 'energy_full':
       await query(

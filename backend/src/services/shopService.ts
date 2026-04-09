@@ -159,7 +159,7 @@ export async function purchaseItem(
   switch (listing.itemType) {
     case 'energy':
       await query(
-        'UPDATE users SET energy = LEAST(max_energy, energy + 20) WHERE twitch_user_id = $1',
+        'UPDATE users SET energy = LEAST(max_energy, energy + 40) WHERE twitch_user_id = $1',
         [userId]
       );
       break;

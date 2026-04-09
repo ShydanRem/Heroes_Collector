@@ -169,7 +169,7 @@ async function handleChatMessage(event: any): Promise<void> {
 }
 
 /**
- * Quando un utente si iscrive: +1 mese sub, +10 energia.
+ * Quando un utente si iscrive: +1 mese sub, +15 energia.
  */
 async function handleSubscription(event: any): Promise<void> {
   const userId = event.user_id;
@@ -180,7 +180,7 @@ async function handleSubscription(event: any): Promise<void> {
   await userService.addActivity(userId, 'sub', 1);
 
   await query(
-    `UPDATE users SET energy = LEAST(max_energy, energy + 10)
+    `UPDATE users SET energy = LEAST(max_energy, energy + 15)
      WHERE twitch_user_id = $1`,
     [userId]
   );

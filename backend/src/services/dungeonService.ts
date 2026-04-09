@@ -3,7 +3,7 @@ import { runBattle, createFighter, BattleLogEntry, BattleOutcome, applySynergies
 import { generateWaveMonsters } from '../data/monsters';
 import { getPartyHeroes, getActiveParty } from './partyService';
 import { addExpToHero } from './heroService';
-import { addGold } from './userService';
+import { addGold, addEssences } from './userService';
 import { rollLoot, ITEM_MAP } from '../data/items';
 import { giveItem } from './itemService';
 import { rollModifier, DungeonModifier } from '../data/dungeonModifiers';
@@ -22,6 +22,7 @@ export interface DungeonResult {
   rewards: {
     exp: number;
     gold: number;
+    essences: number;
     items: string[];
   };
   partyHeroes: PartyHeroData[];
@@ -242,6 +243,12 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
   }
   await addGold(userId, totalGoldReward);
 
+  // Essenze Eroiche: 1-3 per zona completata, scale con la zona
+  const essenceReward = won ? Math.floor(1 + zone.order * 0.5 + Math.random() * 2) : 0;
+  if (essenceReward > 0) {
+    await addEssences(userId, essenceReward);
+  }
+
   // Gestisci progressi zona
   let nextZoneUnlocked: string | undefined;
 
@@ -313,6 +320,7 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
     rewards: {
       exp: totalExpReward,
       gold: totalGoldReward,
+      essences: essenceReward,
       items: droppedItems,
     },
     partyHeroes,

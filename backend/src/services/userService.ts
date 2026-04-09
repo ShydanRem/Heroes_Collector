@@ -117,12 +117,12 @@ export async function consumeEnergy(twitchUserId: string, amount: number): Promi
 }
 
 /**
- * Rigenera l'energia basandosi sul tempo passato (1 energia ogni 10 minuti).
+ * Rigenera l'energia basandosi sul tempo passato (1 energia ogni 8 minuti).
  */
 async function refreshEnergy(twitchUserId: string): Promise<void> {
   await query(
     `UPDATE users SET
-       energy = LEAST(max_energy, energy + EXTRACT(EPOCH FROM NOW() - last_energy_refresh) / 600),
+       energy = LEAST(max_energy, energy + EXTRACT(EPOCH FROM NOW() - last_energy_refresh) / 480),
        last_energy_refresh = NOW()
      WHERE twitch_user_id = $1`,
     [twitchUserId]
@@ -137,6 +137,18 @@ export async function addGold(twitchUserId: string, amount: number): Promise<voi
     'UPDATE users SET gold = gold + $1, updated_at = NOW() WHERE twitch_user_id = $2',
     [amount, twitchUserId]
   );
+}
+
+/**
+ * Aggiungi Essenze Eroiche a un utente.
+ */
+export async function addEssences(twitchUserId: string, amount: number): Promise<void> {
+  try {
+    await query(
+      'UPDATE users SET essences = COALESCE(essences, 0) + $1, updated_at = NOW() WHERE twitch_user_id = $2',
+      [amount, twitchUserId]
+    );
+  } catch { /* colonna potrebbe non esistere ancora */ }
 }
 
 /**
@@ -176,6 +188,7 @@ function rowToUser(row: any): UserProfile {
     gold: row.gold,
     energy: row.energy,
     maxEnergy: row.max_energy,
+    essences: row.essences || 0,
     lastEnergyRefresh: row.last_energy_refresh,
     createdAt: row.created_at,
   };

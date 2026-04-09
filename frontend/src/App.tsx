@@ -155,6 +155,7 @@ export default function App() {
           <div className="header-stats">
             <span className="gold">{profile.gold}g</span>
             <span className="energy">{Math.floor(profile.energy)}E</span>
+            <span className="essences">{profile.essences || 0}&#10022;</span>
           </div>
         )}
       </div>

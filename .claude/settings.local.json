@@ -14,7 +14,8 @@
       "Bash(ls -la *.zip)",
       "Bash(node:*)",
       "Bash(rm -f panel.html HeroesCollector.zip Her.zip)",
-      "Bash(cp index.html panel.html)"
+      "Bash(cp index.html panel.html)",
+      "Bash(rm -f panel.html HeroesCollector.zip)"
     ]
   }
 }

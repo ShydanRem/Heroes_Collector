@@ -2,7 +2,7 @@ import { query } from '../config/database';
 import { runBattle, createFighter, BattleLogEntry, applySynergies } from './battleEngine';
 import { getActiveParty, getPartyHeroes } from './partyService';
 import { addExpToHero } from './heroService';
-import { addGold } from './userService';
+import { addGold, addEssences } from './userService';
 
 // ============================================
 // RISULTATO PVP
@@ -147,6 +147,12 @@ export async function findAndFight(userId: string): Promise<PvpResult> {
     await addExpToHero(hero.id, expReward);
   }
   await addGold(userId, goldReward);
+
+  // Essenze: 1-2 per vittoria PVP
+  const essenceReward = outcome.won ? Math.floor(1 + Math.random() * 2) : 0;
+  if (essenceReward > 0) {
+    await addEssences(userId, essenceReward);
+  }
 
   // Salva battaglia
   const battleResult = await query(

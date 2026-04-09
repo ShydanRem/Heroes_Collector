@@ -2,7 +2,7 @@ import { query } from '../config/database';
 import { runBattle, createFighter, BattleLogEntry, applySynergies } from './battleEngine';
 import { getActiveParty, getPartyHeroes } from './partyService';
 import { addExpToHero } from './heroService';
-import { addGold } from './userService';
+import { addGold, addEssences } from './userService';
 import { giveItem } from './itemService';
 import { ITEMS } from '../data/items';
 import { Rarity } from '../types';
@@ -288,6 +288,10 @@ export async function attackRaid(userId: string): Promise<RaidAttackResult> {
     await addExpToHero(heroRow.id, expReward);
   }
   await addGold(userId, goldReward);
+
+  // Essenze: 2-5 per attacco raid, bonus se uccidi il boss
+  const essenceReward = Math.floor(2 + Math.random() * 3) + (bossDefeated ? 10 : 0);
+  await addEssences(userId, essenceReward);
 
   // Loot bonus se il boss e stato sconfitto
   if (bossDefeated) {

@@ -120,6 +120,7 @@ export interface UserProfile {
   gold: number;
   energy: number;
   maxEnergy: number;
+  essences: number;
   lastEnergyRefresh: Date;
   createdAt: Date;
 }
@@ -177,16 +178,28 @@ export const RARITY_MULTIPLIERS: Record<Rarity, number> = {
   [Rarity.MASTER]: 3.5,
 };
 
-// Energia necessaria per catturare un eroe per rarità
+// Energia necessaria per catturare un eroe per rarità (il giocatore sceglie a che rarità catturare)
 export const CAPTURE_ENERGY_COST: Record<Rarity, number> = {
   [Rarity.COMUNE]: 5,
-  [Rarity.NON_COMUNE]: 8,
+  [Rarity.NON_COMUNE]: 15,
+  [Rarity.RARO]: 30,
+  [Rarity.MOLTO_RARO]: 50,
+  [Rarity.EPICO]: 80,
+  [Rarity.LEGGENDARIO]: 120,
+  [Rarity.MITICO]: 160,
+  [Rarity.MASTER]: 200,
+};
+
+// Costo upgrade rarità in Essenze Eroiche
+export const UPGRADE_ESSENCE_COST: Record<Rarity, number> = {
+  [Rarity.COMUNE]: 0,
+  [Rarity.NON_COMUNE]: 5,
   [Rarity.RARO]: 12,
-  [Rarity.MOLTO_RARO]: 18,
-  [Rarity.EPICO]: 25,
-  [Rarity.LEGGENDARIO]: 35,
-  [Rarity.MITICO]: 50,
-  [Rarity.MASTER]: 75,
+  [Rarity.MOLTO_RARO]: 25,
+  [Rarity.EPICO]: 45,
+  [Rarity.LEGGENDARIO]: 80,
+  [Rarity.MITICO]: 130,
+  [Rarity.MASTER]: 200,
 };
 
 // EXP necessaria per livello (formula: base * livello^1.5)

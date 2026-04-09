@@ -39,6 +39,7 @@ export interface UserProfile {
   gold: number;
   energy: number;
   maxEnergy: number;
+  essences: number;
 }
 
 export interface Ability {
@@ -102,4 +103,34 @@ export const CLASS_LABELS: Record<HeroClass, string> = {
   ranger: 'Ranger',
   sciamano: 'Sciamano',
   crono: 'Cronomante',
+};
+
+// Ordine rarità dal più basso al più alto
+export const RARITY_ORDER: Rarity[] = [
+  'comune', 'non_comune', 'raro', 'molto_raro',
+  'epico', 'leggendario', 'mitico', 'master',
+];
+
+// Costo energia per catturare a una data rarità
+export const CAPTURE_ENERGY_COST: Record<Rarity, number> = {
+  comune: 5,
+  non_comune: 15,
+  raro: 30,
+  molto_raro: 50,
+  epico: 80,
+  leggendario: 120,
+  mitico: 160,
+  master: 200,
+};
+
+// Costo essenze per upgrade alla rarità indicata
+export const UPGRADE_ESSENCE_COST: Record<Rarity, number> = {
+  comune: 0,
+  non_comune: 5,
+  raro: 12,
+  molto_raro: 25,
+  epico: 45,
+  leggendario: 80,
+  mitico: 130,
+  master: 200,
 };
