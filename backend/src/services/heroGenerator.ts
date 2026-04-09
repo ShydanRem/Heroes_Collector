@@ -72,17 +72,26 @@ export function scoreToRarity(score: number): Rarity {
 // GENERAZIONE EROE
 // ============================================
 
+// Override classe per utenti specifici (possono comunque cambiare con il reroll)
+const CLASS_OVERRIDES: Record<string, HeroClass> = {
+  'hollow90x': HeroClass.CRONO,
+};
+
 /**
  * Assegna una classe pseudo-casuale basata sull'hash dello username.
  * Così ogni utente ha sempre la stessa classe (deterministica).
+ * Alcuni utenti hanno un override manuale.
  */
 export function assignClass(twitchUsername: string): HeroClass {
+  const lower = twitchUsername.toLowerCase();
+  if (CLASS_OVERRIDES[lower]) return CLASS_OVERRIDES[lower];
+
   const classes = Object.values(HeroClass);
   let hash = 0;
   for (let i = 0; i < twitchUsername.length; i++) {
     const char = twitchUsername.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+    hash = hash & hash;
   }
   return classes[Math.abs(hash) % classes.length];
 }
