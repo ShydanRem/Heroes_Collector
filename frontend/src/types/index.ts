@@ -95,11 +95,11 @@ export const CLASS_EMOJIS: Record<HeroClass, string> = {
 
 export const CLASS_LABELS: Record<HeroClass, string> = {
   guardiano: 'Guardiano',
-  lama: 'Lama',
-  arcano: 'Arcano',
-  custode: 'Custode',
-  ombra: 'Ombra',
+  lama: 'Berserker',
+  arcano: 'Stregone',
+  custode: 'Sacerdote',
+  ombra: 'Assassino',
   ranger: 'Ranger',
   sciamano: 'Sciamano',
-  crono: 'Crono',
+  crono: 'Cronomante',
 };

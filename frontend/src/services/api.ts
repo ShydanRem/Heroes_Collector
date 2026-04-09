@@ -96,6 +96,13 @@ export async function captureHero(heroId: string): Promise<{ message: string }> 
   return request(`/heroes/${heroId}/capture`, { method: 'POST' });
 }
 
+export async function rerollHeroClass(newClass: string): Promise<{ message: string; hero: Hero; cost: number }> {
+  return request('/heroes/reroll-class', {
+    method: 'POST',
+    body: JSON.stringify({ newClass }),
+  });
+}
+
 // ============ PARTIES ============
 
 export interface PartyData {

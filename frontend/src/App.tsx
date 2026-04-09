@@ -170,7 +170,7 @@ export default function App() {
       ))}
 
       <div className="content" key={tab}>
-        {tab === 'myhero' && profile && <MyHero profile={profile} hero={hero} />}
+        {tab === 'myhero' && profile && <MyHero profile={profile} hero={hero} onHeroUpdate={(h) => { setHero(h); loadProfile(); }} />}
         {tab === 'heroes' && <HeroList />}
         {tab === 'roster' && <Roster />}
         {tab === 'items' && <Inventory />}

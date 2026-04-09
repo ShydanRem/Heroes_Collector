@@ -70,3 +70,20 @@ heroRoutes.post('/:id/capture', async (req: Request, res: Response) => {
 heroRoutes.get('/classes/info', async (_req: Request, res: Response) => {
   res.json({ classes: CLASS_INFO });
 });
+
+// POST /api/heroes/reroll-class — Cambia classe dell'eroe (500 gold)
+heroRoutes.post('/reroll-class', async (req: Request, res: Response) => {
+  try {
+    const userId = req.twitchUser!.user_id;
+    const { newClass } = req.body;
+
+    if (!newClass) {
+      return res.status(400).json({ error: 'Specifica la nuova classe (newClass)' });
+    }
+
+    const hero = await heroService.rerollHeroClass(userId, newClass as HeroClass);
+    res.json({ message: 'Classe cambiata!', hero, cost: heroService.REROLL_COST });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});

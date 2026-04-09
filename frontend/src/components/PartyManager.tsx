@@ -16,7 +16,7 @@ interface SynergyDef {
 const SYNERGY_DEFS: SynergyDef[] = [
   { name: 'Muro di Ferro', emoji: '🛡️', description: '+20% DEF al party', requiredClasses: ['guardiano'], minCount: 2 },
   { name: 'Danza delle Lame', emoji: '⚔️', description: '+15% CRIT al party', requiredClasses: ['lama', 'ombra'], minCount: 2 },
-  { name: 'Circolo Arcano', emoji: '🔮', description: '+25% ATK per Arcano', requiredClasses: ['arcano'], minCount: 2 },
+  { name: 'Circolo Arcano', emoji: '🔮', description: '+25% ATK per Stregone', requiredClasses: ['arcano'], minCount: 2 },
   { name: 'Baluardo Sacro', emoji: '✨', description: '+30% HP al party', requiredClasses: ['custode', 'guardiano'], minCount: 2 },
   { name: 'Imboscata', emoji: '🏹', description: '+20% SPD al party', requiredClasses: ['ombra', 'ranger'], minCount: 2 },
   { name: 'Maledizione Ancestrale', emoji: '🌿', description: '+20% potenza debuff', requiredClasses: ['sciamano', 'arcano'], minCount: 2 },

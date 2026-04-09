@@ -264,6 +264,60 @@ export async function refreshHeroRarity(twitchUserId: string): Promise<Rarity | 
   return newRarity;
 }
 
+const REROLL_COST = 500;
+const ALL_CLASSES: HeroClass[] = [
+  HeroClass.GUARDIANO, HeroClass.LAMA, HeroClass.ARCANO, HeroClass.CUSTODE,
+  HeroClass.OMBRA, HeroClass.RANGER, HeroClass.SCIAMANO, HeroClass.CRONO,
+];
+
+/**
+ * Reroll della classe dell'eroe. Costa 500 gold, max 1 al giorno.
+ * Il giocatore sceglie la nuova classe.
+ */
+export async function rerollHeroClass(
+  twitchUserId: string,
+  newClass: HeroClass
+): Promise<Hero> {
+  // Verifica che la classe sia valida
+  if (!ALL_CLASSES.includes(newClass)) {
+    throw new Error('Classe non valida!');
+  }
+
+  // Prendi l'eroe
+  const hero = await getHeroByUserId(twitchUserId);
+  if (!hero) throw new Error('Non hai un eroe!');
+
+  if (hero.heroClass === newClass) {
+    throw new Error('Hai gia questa classe!');
+  }
+
+  // Controlla gold
+  const userResult = await query('SELECT gold FROM users WHERE twitch_user_id = $1', [twitchUserId]);
+  const gold = userResult.rows[0]?.gold || 0;
+  if (gold < REROLL_COST) {
+    throw new Error(`Servono ${REROLL_COST} gold! Ne hai ${gold}.`);
+  }
+
+  // Ricalcola stats e abilita per la nuova classe
+  const newStats = calculateStats(newClass, hero.rarity, hero.level);
+  const newAbilities = selectAbilities(newClass, hero.rarity, hero.level, twitchUserId);
+
+  // Applica
+  await query('UPDATE users SET gold = gold - $1 WHERE twitch_user_id = $2', [REROLL_COST, twitchUserId]);
+  await query(
+    `UPDATE heroes SET hero_class = $1,
+     hp = $2, atk = $3, def = $4, spd = $5, crit = $6, crit_dmg = $7,
+     ability_ids = $8, updated_at = NOW()
+     WHERE twitch_user_id = $9`,
+    [newClass, newStats.hp, newStats.atk, newStats.def, newStats.spd,
+     newStats.crit, newStats.critDmg, newAbilities, twitchUserId]
+  );
+
+  return (await getHeroByUserId(twitchUserId))!;
+}
+
+export { REROLL_COST };
+
 // Helper
 function rowToHero(row: any): Hero {
   return {

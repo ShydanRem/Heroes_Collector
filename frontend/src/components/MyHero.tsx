@@ -1,17 +1,25 @@
 import React, { useState } from 'react';
-import { Hero, UserProfile, RARITY_COLORS, RARITY_LABELS, CLASS_LABELS } from '../types';
+import { Hero, HeroClass, UserProfile, RARITY_COLORS, RARITY_LABELS, CLASS_LABELS, CLASS_EMOJIS } from '../types';
 import { HeroSprite } from './HeroSprite';
 import { HintBanner } from './Tooltip';
 import { Missions } from './Missions';
 import { Achievements } from './Achievements';
+import * as api from '../services/api';
 
 interface MyHeroProps {
   profile: UserProfile;
   hero: Hero | null;
+  onHeroUpdate?: (hero: Hero) => void;
 }
 
-export function MyHero({ profile, hero }: MyHeroProps) {
+const ALL_CLASSES: HeroClass[] = ['guardiano', 'lama', 'arcano', 'custode', 'ombra', 'ranger', 'sciamano', 'crono'];
+const REROLL_COST = 500;
+
+export function MyHero({ profile, hero, onHeroUpdate }: MyHeroProps) {
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showReroll, setShowReroll] = useState(false);
+  const [rerolling, setRerolling] = useState(false);
+  const [rerollMsg, setRerollMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   if (!hero) {
     return (
@@ -97,6 +105,67 @@ export function MyHero({ profile, hero }: MyHeroProps) {
             <span>{profile.activityScore.toFixed(3)}</span>
           </div>
         </div>
+      </div>
+
+      {/* Reroll Classe */}
+      <div style={{ marginTop: 8 }}>
+        <button
+          className="btn btn-secondary"
+          onClick={() => setShowReroll(!showReroll)}
+          style={{ width: '100%', fontSize: 11 }}
+        >
+          Cambia Classe ({REROLL_COST} gold)
+        </button>
+
+        {showReroll && (
+          <div style={{
+            background: '#1f1f23', borderRadius: 8, padding: 10, marginTop: 6,
+            border: '1px solid #333',
+          }}>
+            <div style={{ fontSize: 10, color: '#adadb8', marginBottom: 6 }}>
+              Scegli la nuova classe:
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 4 }}>
+              {ALL_CLASSES.filter(c => c !== hero.heroClass).map(cls => (
+                <button
+                  key={cls}
+                  className="btn btn-secondary"
+                  disabled={rerolling || profile.gold < REROLL_COST}
+                  onClick={async () => {
+                    setRerolling(true);
+                    setRerollMsg(null);
+                    try {
+                      const result = await api.rerollHeroClass(cls);
+                      setRerollMsg({ text: `Ora sei un ${CLASS_LABELS[cls]}!`, type: 'success' });
+                      onHeroUpdate?.(result.hero);
+                      setShowReroll(false);
+                    } catch (err: any) {
+                      setRerollMsg({ text: err.message, type: 'error' });
+                    } finally {
+                      setRerolling(false);
+                    }
+                  }}
+                  style={{ fontSize: 10, padding: '6px 4px', display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}
+                >
+                  {CLASS_EMOJIS[cls]} {CLASS_LABELS[cls]}
+                </button>
+              ))}
+            </div>
+            {profile.gold < REROLL_COST && (
+              <div style={{ fontSize: 10, color: '#f59e0b', marginTop: 6, textAlign: 'center' }}>
+                Servono {REROLL_COST} gold (hai {profile.gold})
+              </div>
+            )}
+            {rerollMsg && (
+              <div style={{
+                fontSize: 10, marginTop: 6, textAlign: 'center',
+                color: rerollMsg.type === 'success' ? '#22c55e' : '#f44336',
+              }}>
+                {rerollMsg.text}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Missioni Giornaliere */}
