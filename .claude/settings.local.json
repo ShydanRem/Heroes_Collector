@@ -11,7 +11,10 @@
       "Bash(rm -f Her.zip)",
       "Bash(rm index.html)",
       "Bash(powershell -command \"Compress-Archive -Path 'C:\\\\Users\\\\Alessio\\\\Estensione\\\\frontend\\\\dist\\\\*' -DestinationPath 'C:\\\\Users\\\\Alessio\\\\Estensione\\\\frontend\\\\dist\\\\HeroesCollector.zip'\")",
-      "Bash(ls -la *.zip)"
+      "Bash(ls -la *.zip)",
+      "Bash(node:*)",
+      "Bash(rm -f panel.html HeroesCollector.zip Her.zip)",
+      "Bash(cp index.html panel.html)"
     ]
   }
 }

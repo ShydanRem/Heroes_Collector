@@ -10,6 +10,8 @@ import { Leaderboard } from './components/Leaderboard';
 import { Inventory } from './components/Inventory';
 import { RaidBoss } from './components/RaidBoss';
 import { Shop } from './components/Shop';
+import { HeroReveal } from './components/HeroReveal';
+import { Tutorial } from './components/Tutorial';
 import * as api from './services/api';
 
 type Tab = 'myhero' | 'heroes' | 'roster' | 'items' | 'party' | 'dungeon' | 'pvp' | 'raid' | 'shop' | 'rank';
@@ -33,6 +35,9 @@ export default function App() {
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [showReveal, setShowReveal] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [revealHero, setRevealHero] = useState<Hero | null>(null);
 
   useEffect(() => { initAuth(); }, []);
 
@@ -73,8 +78,8 @@ export default function App() {
       // username e displayName sono fallback se non disponibili dal token
       const data = await api.joinGame('viewer', 'Viewer');
       setProfile(data.profile);
-      setHero(data.hero);
-      setJoined(true);
+      setRevealHero(data.hero);
+      setShowReveal(true);
     } catch (err: any) {
       console.error('Errore join:', err);
       setJoinError(err.message || 'Errore di connessione al server');
@@ -111,6 +116,16 @@ export default function App() {
             </div>
           )}
         </div>
+        {showReveal && revealHero && (
+          <HeroReveal hero={revealHero} onComplete={() => {
+            setShowReveal(false);
+            setHero(revealHero);
+            setJoined(true);
+            if (!localStorage.getItem('heroesCollector_tutorialDone')) {
+              setShowTutorial(true);
+            }
+          }} />
+        )}
       </div>
     );
   }
@@ -166,6 +181,10 @@ export default function App() {
         {tab === 'raid' && <RaidBoss />}
         {tab === 'rank' && <Leaderboard />}
       </div>
+
+      {showTutorial && (
+        <Tutorial onComplete={() => setShowTutorial(false)} />
+      )}
     </div>
   );
 }
