@@ -15,12 +15,95 @@ interface HeroSpriteProps {
  * Il colore primario cambia con la rarità.
  * Supporta animazioni CSS.
  */
+// Sprite personalizzati per utenti specifici
+function getCustomSprite(name: string | undefined, color: string, dark: string, light: string, rarity: Rarity): React.ReactNode | null {
+  if (!name) return null;
+  const lower = name.toLowerCase();
+
+  if (lower === 'shydanrem') {
+    return (
+      <g>
+        {/* Maglietta verde */}
+        <rect x="22" y="28" width="20" height="18" rx="2" fill="#2e7d32" />
+        {/* Gilet marrone scuro */}
+        <path d="M22 28 L26 28 L26 46 L22 46 Z" fill="#3e2723" />
+        <path d="M38 28 L42 28 L42 46 L38 46 Z" fill="#3e2723" />
+        <path d="M26 28 L28 28 L28 34 L26 34 Z" fill="#4e342e" />
+        <path d="M36 28 L38 28 L38 34 L36 34 Z" fill="#4e342e" />
+        {/* Colletto gilet */}
+        <path d="M26 28 L29 32 L26 32 Z" fill="#4e342e" />
+        <path d="M38 28 L35 32 L38 32 Z" fill="#4e342e" />
+        {/* Testa pelata */}
+        <circle cx="32" cy="18" r="10" fill="#ffd5b4" />
+        {/* Cranio liscio - riflesso luce */}
+        <ellipse cx="30" cy="13" rx="5" ry="3" fill="#ffe0c0" opacity="0.4" />
+        {/* Sopracciglia */}
+        <rect x="26" y="16" width="4" height="1.2" rx="0.5" fill="#5d4037" />
+        <rect x="34" y="16" width="4" height="1.2" rx="0.5" fill="#5d4037" />
+        {/* Occhi */}
+        <circle cx="29" cy="19" r="1.5" fill={color}>
+          <animate attributeName="opacity" values="0.7;1;0.7" dur="1.5s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="35" cy="19" r="1.5" fill={color}>
+          <animate attributeName="opacity" values="0.7;1;0.7" dur="1.5s" repeatCount="indefinite" />
+        </circle>
+        {/* Barba */}
+        <path d="M26 22 Q26 28 32 30 Q38 28 38 22" fill="#5d4037" />
+        <path d="M27 23 Q27 27 32 29 Q37 27 37 23" fill="#6d4c41" />
+        {/* Baffi */}
+        <path d="M28 22 Q32 24 36 22" fill="none" stroke="#5d4037" strokeWidth="1.2" />
+        {/* Braccia */}
+        <rect x="14" y="30" width="8" height="4" rx="2" fill="#ffd5b4" />
+        <rect x="42" y="30" width="8" height="4" rx="2" fill="#ffd5b4" />
+        {/* Spade — lame colorate per rarità */}
+        <rect x="9" y="12" width="3" height="22" rx="0.5" fill={light} transform="rotate(-12 10 23)" />
+        <rect x="9" y="12" width="3" height="22" rx="0.5" fill={color} opacity="0.4" transform="rotate(-12 10 23)" />
+        <polygon points="10.5,10 8,6 13,6" fill={light} transform="rotate(-12 10 8)" />
+        <rect x="52" y="12" width="3" height="22" rx="0.5" fill={light} transform="rotate(12 53 23)" />
+        <rect x="52" y="12" width="3" height="22" rx="0.5" fill={color} opacity="0.4" transform="rotate(12 53 23)" />
+        <polygon points="53.5,10 51,6 56,6" fill={light} transform="rotate(12 53 8)" />
+        {/* Guardia spade */}
+        <rect x="7" y="33" width="7" height="3" rx="1" fill={dark} transform="rotate(-12 10 34)" />
+        <rect x="50" y="33" width="7" height="3" rx="1" fill={dark} transform="rotate(12 53 34)" />
+        {/* Impugnatura */}
+        <rect x="9" y="35" width="3" height="6" rx="1" fill="#333" transform="rotate(-12 10 38)" />
+        <rect x="52" y="35" width="3" height="6" rx="1" fill="#333" transform="rotate(12 53 38)" />
+        {/* Glow spade per epico+ */}
+        {(['epico', 'leggendario', 'mitico', 'master'] as const).includes(rarity as any) && (
+          <>
+            <rect x="9" y="12" width="3" height="22" rx="0.5" fill={color} opacity="0.3" transform="rotate(-12 10 23)">
+              <animate attributeName="opacity" values="0.1;0.4;0.1" dur="2s" repeatCount="indefinite" />
+            </rect>
+            <rect x="52" y="12" width="3" height="22" rx="0.5" fill={color} opacity="0.3" transform="rotate(12 53 23)">
+              <animate attributeName="opacity" values="0.1;0.4;0.1" dur="2s" repeatCount="indefinite" />
+            </rect>
+          </>
+        )}
+        {/* Pantaloni marroni chiari */}
+        <rect x="24" y="46" width="7" height="12" rx="2" fill="#a1887f" />
+        <rect x="33" y="46" width="7" height="12" rx="2" fill="#a1887f" />
+        {/* Cintura */}
+        <rect x="22" y="44" width="20" height="3" rx="1" fill="#4e342e" />
+        <rect x="30" y="44" width="4" height="3" rx="1" fill="#8d6e63" />
+        {/* Stivali */}
+        <rect x="23" y="56" width="9" height="4" rx="2" fill="#3e2723" />
+        <rect x="32" y="56" width="9" height="4" rx="2" fill="#3e2723" />
+      </g>
+    );
+  }
+
+  return null;
+}
+
 export function HeroSprite({ heroClass, rarity, size = 64, animate = 'idle', flip = false, name }: HeroSpriteProps) {
   const color = RARITY_COLORS[rarity] || '#9e9e9e';
   const darkColor = darken(color, 30);
   const lightColor = lighten(color, 30);
   const skinColor = '#ffd5b4';
   const animClass = `sprite-${animate}`;
+
+  // Check per sprite personalizzato
+  const customSprite = getCustomSprite(name, color, darkColor, lightColor, rarity);
 
   return (
     <div
@@ -42,7 +125,7 @@ export function HeroSprite({ heroClass, rarity, size = 64, animate = 'idle', fli
           </circle>
         )}
 
-        {getClassBody(heroClass, color, darkColor, lightColor, skinColor)}
+        {customSprite || getClassBody(heroClass, color, darkColor, lightColor, skinColor)}
       </svg>
     </div>
   );
