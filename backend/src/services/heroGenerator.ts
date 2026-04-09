@@ -75,6 +75,7 @@ export function scoreToRarity(score: number): Rarity {
 // Override classe per utenti specifici (possono comunque cambiare con il reroll)
 const CLASS_OVERRIDES: Record<string, HeroClass> = {
   'hollow90x': HeroClass.CRONO,
+  'shydanrem': HeroClass.OMBRA,
 };
 
 /**
