@@ -23,128 +23,97 @@ function getCustomSprite(name: string | undefined, color: string, dark: string, 
   if (lower === 'shydanrem') {
     return (
       <g>
-        {/* === SPADA SINISTRA — in mano, punta in alto === */}
-        <g transform="translate(8, 18) rotate(-25 6 20)">
-          {/* Lama */}
-          <rect x="5" y="0" width="2.5" height="20" rx="0.5" fill={light} />
-          <rect x="5.5" y="0" width="1.5" height="18" rx="0.3" fill={color} opacity="0.5" />
-          {/* Punta */}
-          <polygon points="6.25,-3 4,1 8.5,1" fill={light} />
-          {/* Guardia */}
-          <rect x="2" y="20" width="9" height="2.5" rx="1" fill={dark} />
-          {/* Impugnatura */}
-          <rect x="5" y="22" width="3" height="7" rx="1" fill="#2c1810" />
-          <rect x="5.5" y="23" width="2" height="1" rx="0.3" fill={dark} />
-          <rect x="5.5" y="26" width="2" height="1" rx="0.3" fill={dark} />
-          {/* Pomolo */}
-          <circle cx="6.5" cy="30" r="1.8" fill={dark} />
-        </g>
-
-        {/* === SPADA DESTRA — in mano, punta in alto === */}
-        <g transform="translate(48, 18) rotate(25 6 20)">
-          <rect x="5" y="0" width="2.5" height="20" rx="0.5" fill={light} />
-          <rect x="5.5" y="0" width="1.5" height="18" rx="0.3" fill={color} opacity="0.5" />
-          <polygon points="6.25,-3 4,1 8.5,1" fill={light} />
-          <rect x="2" y="20" width="9" height="2.5" rx="1" fill={dark} />
-          <rect x="5" y="22" width="3" height="7" rx="1" fill="#2c1810" />
-          <rect x="5.5" y="23" width="2" height="1" rx="0.3" fill={dark} />
-          <rect x="5.5" y="26" width="2" height="1" rx="0.3" fill={dark} />
-          <circle cx="6.5" cy="30" r="1.8" fill={dark} />
-        </g>
-
-        {/* Glow spade per epico+ */}
-        {(['epico', 'leggendario', 'mitico', 'master'] as const).includes(rarity as any) && (
-          <>
-            <g transform="translate(8, 18) rotate(-25 6 20)">
-              <rect x="4" y="-1" width="4.5" height="22" rx="1" fill={color} opacity="0.15">
-                <animate attributeName="opacity" values="0.08;0.25;0.08" dur="2s" repeatCount="indefinite" />
-              </rect>
-            </g>
-            <g transform="translate(48, 18) rotate(25 6 20)">
-              <rect x="4" y="-1" width="4.5" height="22" rx="1" fill={color} opacity="0.15">
-                <animate attributeName="opacity" values="0.08;0.25;0.08" dur="2s" repeatCount="indefinite" />
-              </rect>
-            </g>
-          </>
-        )}
-
         {/* === CORPO === */}
         {/* Maglietta verde */}
-        <path d="M22 28 L20 46 L44 46 L42 28 Z" fill="#2e7d32" />
-        {/* Gilet marrone scuro — aperto */}
-        <path d="M22 28 L20 46 L27 46 L28 28 Z" fill="#3e2723" />
-        <path d="M42 28 L44 46 L37 46 L36 28 Z" fill="#3e2723" />
+        <rect x="24" y="26" width="16" height="18" rx="2" fill="#2e7d32" />
+        {/* Gilet marrone scuro */}
+        <path d="M24 26 L24 44 L28 44 L28 26 Z" fill="#3e2723" />
+        <path d="M36 26 L36 44 L40 44 L40 26 Z" fill="#3e2723" />
         {/* Risvolto gilet */}
-        <path d="M28 28 L30 34 L28 34 Z" fill="#4e342e" />
-        <path d="M36 28 L34 34 L36 34 Z" fill="#4e342e" />
-        {/* Scollo maglietta */}
-        <path d="M29 28 Q32 31 35 28" fill="#1b5e20" />
+        <path d="M28 26 L30 31 L28 31 Z" fill="#4e342e" />
+        <path d="M36 26 L34 31 L36 31 Z" fill="#4e342e" />
+        {/* Scollo */}
+        <path d="M30 26 Q32 29 34 26" fill="#1b5e20" />
 
-        {/* === TESTA PELATA === */}
-        <circle cx="32" cy="18" r="10" fill="#ffd5b4" />
+        {/* === TESTA — piu piccola, proporzionata === */}
+        <circle cx="32" cy="18" r="8" fill="#ffd5b4" />
         {/* Riflesso cranio */}
-        <ellipse cx="29" cy="12" rx="6" ry="3.5" fill="#ffe8d0" opacity="0.35" />
-        <ellipse cx="34" cy="10" rx="3" ry="2" fill="#fff0e0" opacity="0.2" />
+        <ellipse cx="30" cy="13" rx="4" ry="2.5" fill="#ffe8d0" opacity="0.3" />
 
-        {/* Sopracciglia folte */}
-        <path d="M25.5 16 Q28 14.5 30.5 16" fill="none" stroke="#4e342e" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M33.5 16 Q36 14.5 38.5 16" fill="none" stroke="#4e342e" strokeWidth="1.5" strokeLinecap="round" />
+        {/* Sopracciglia */}
+        <path d="M27 16.5 Q29 15.5 31 16.5" fill="none" stroke="#4e342e" strokeWidth="1.2" strokeLinecap="round" />
+        <path d="M33 16.5 Q35 15.5 37 16.5" fill="none" stroke="#4e342e" strokeWidth="1.2" strokeLinecap="round" />
 
-        {/* Occhi — brillano col colore rarità */}
-        <ellipse cx="28.5" cy="18.5" rx="2" ry="1.8" fill="#fff" />
-        <ellipse cx="35.5" cy="18.5" rx="2" ry="1.8" fill="#fff" />
-        <circle cx="29" cy="18.5" r="1.2" fill={color}>
+        {/* Occhi */}
+        <ellipse cx="29" cy="18.5" rx="1.5" ry="1.3" fill="#fff" />
+        <ellipse cx="35" cy="18.5" rx="1.5" ry="1.3" fill="#fff" />
+        <circle cx="29.3" cy="18.5" r="0.9" fill={color}>
           <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite" />
         </circle>
-        <circle cx="36" cy="18.5" r="1.2" fill={color}>
+        <circle cx="35.3" cy="18.5" r="0.9" fill={color}>
           <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite" />
         </circle>
 
         {/* Naso */}
-        <path d="M31 20 Q32 22 33 20" fill="none" stroke="#e8b89a" strokeWidth="0.8" />
+        <path d="M31.5 20 Q32 21 32.5 20" fill="none" stroke="#e0a888" strokeWidth="0.6" />
 
-        {/* === BARBA CURATA === */}
-        {/* Baffi — folti e definiti */}
-        <path d="M28 22.5 Q26 23.5 25 22.5" fill="none" stroke="#5d4037" strokeWidth="1.8" strokeLinecap="round" />
-        <path d="M36 22.5 Q38 23.5 39 22.5" fill="none" stroke="#5d4037" strokeWidth="1.8" strokeLinecap="round" />
-        {/* Connessione baffi-barba */}
-        <path d="M28 23 L28 25" stroke="#5d4037" strokeWidth="1" />
-        <path d="M36 23 L36 25" stroke="#5d4037" strokeWidth="1" />
-        {/* Barba — forma piena, bordo definito */}
-        <path d="M25 22 Q25 28 28 30 Q30 31 32 31.5 Q34 31 36 30 Q39 28 39 22" fill="#5d4037" />
-        {/* Barba interna — texture */}
-        <path d="M26 23 Q26 27 29 29 Q31 30 32 30.5 Q33 30 35 29 Q38 27 38 23" fill="#6d4c41" />
-        {/* Linee texture barba */}
-        <path d="M29 25 L30 29" stroke="#5d4037" strokeWidth="0.5" opacity="0.5" />
-        <path d="M32 25 L32 30" stroke="#5d4037" strokeWidth="0.5" opacity="0.5" />
-        <path d="M35 25 L34 29" stroke="#5d4037" strokeWidth="0.5" opacity="0.5" />
+        {/* === BARBA — compatta, ben definita === */}
+        {/* Baffi */}
+        <path d="M29 21.5 Q27.5 22.5 26.5 21.8" fill="none" stroke="#6d4c41" strokeWidth="1.3" strokeLinecap="round" />
+        <path d="M35 21.5 Q36.5 22.5 37.5 21.8" fill="none" stroke="#6d4c41" strokeWidth="1.3" strokeLinecap="round" />
+        {/* Barba corta e curata */}
+        <path d="M26.5 22 Q26 25 29 27 Q31 28 32 28 Q33 28 35 27 Q38 25 37.5 22" fill="#6d4c41" />
+        <path d="M27.5 22.5 Q27 24.5 29.5 26.5 Q31 27 32 27 Q33 27 34.5 26.5 Q37 24.5 36.5 22.5" fill="#795548" />
 
-        {/* === BRACCIA — estese con mani che impugnano === */}
-        {/* Braccio sx */}
-        <path d="M20 30 L12 34 L10 38" fill="none" stroke="#ffd5b4" strokeWidth="5" strokeLinecap="round" />
-        <circle cx="10" cy="38" r="3" fill="#ffd5b4" />
-        {/* Braccio dx */}
-        <path d="M44 30 L52 34 L54 38" fill="none" stroke="#ffd5b4" strokeWidth="5" strokeLinecap="round" />
-        <circle cx="54" cy="38" r="3" fill="#ffd5b4" />
+        {/* === BRACCIA — attaccate al corpo === */}
+        {/* Braccio sx con mano */}
+        <rect x="16" y="28" width="8" height="5" rx="2.5" fill="#ffd5b4" />
+        <circle cx="15" cy="30.5" r="2.5" fill="#ffd5b4" />
+        {/* Braccio dx con mano */}
+        <rect x="40" y="28" width="8" height="5" rx="2.5" fill="#ffd5b4" />
+        <circle cx="49" cy="30.5" r="2.5" fill="#ffd5b4" />
+
+        {/* === SPADA SX — punta in basso, in mano === */}
+        {/* Impugnatura */}
+        <rect x="13.5" y="28" width="3" height="5" rx="1" fill="#2c1810" />
+        {/* Guardia */}
+        <rect x="11" y="33" width="8" height="2" rx="0.8" fill={dark} />
+        {/* Lama verso il basso */}
+        <rect x="13.8" y="35" width="2.5" height="18" rx="0.5" fill={light} />
+        <rect x="14.2" y="35" width="1.7" height="16" rx="0.3" fill={color} opacity="0.4" />
+        {/* Punta */}
+        <polygon points="15,53 13,53 15,57" fill={light} />
+
+        {/* === SPADA DX — punta in basso, in mano === */}
+        <rect x="47.5" y="28" width="3" height="5" rx="1" fill="#2c1810" />
+        <rect x="45" y="33" width="8" height="2" rx="0.8" fill={dark} />
+        <rect x="47.8" y="35" width="2.5" height="18" rx="0.5" fill={light} />
+        <rect x="48.2" y="35" width="1.7" height="16" rx="0.3" fill={color} opacity="0.4" />
+        <polygon points="49,53 51,53 49,57" fill={light} />
+
+        {/* Glow spade per epico+ */}
+        {(['epico', 'leggendario', 'mitico', 'master'] as const).includes(rarity as any) && (
+          <>
+            <rect x="13" y="35" width="4" height="18" rx="1" fill={color} opacity="0.15">
+              <animate attributeName="opacity" values="0.05;0.25;0.05" dur="2s" repeatCount="indefinite" />
+            </rect>
+            <rect x="47" y="35" width="4" height="18" rx="1" fill={color} opacity="0.15">
+              <animate attributeName="opacity" values="0.05;0.25;0.05" dur="2s" repeatCount="indefinite" />
+            </rect>
+          </>
+        )}
 
         {/* === CINTURA === */}
-        <rect x="20" y="44" width="24" height="3" rx="1" fill="#4e342e" />
-        <rect x="30" y="44" width="4" height="3" rx="1" fill={dark} />
-        <circle cx="32" cy="45.5" r="1" fill={light} opacity="0.6" />
+        <rect x="23" y="43" width="18" height="3" rx="1" fill="#4e342e" />
+        <circle cx="32" cy="44.5" r="1.2" fill={dark} />
 
-        {/* === PANTALONI MARRONI CHIARI === */}
-        <rect x="23" y="47" width="7" height="11" rx="2" fill="#a1887f" />
-        <rect x="34" y="47" width="7" height="11" rx="2" fill="#a1887f" />
-        {/* Piega pantaloni */}
-        <line x1="26" y1="48" x2="26" y2="56" stroke="#8d6e63" strokeWidth="0.5" opacity="0.4" />
-        <line x1="38" y1="48" x2="38" y2="56" stroke="#8d6e63" strokeWidth="0.5" opacity="0.4" />
+        {/* === PANTALONI === */}
+        <rect x="25" y="46" width="6" height="11" rx="2" fill="#a1887f" />
+        <rect x="33" y="46" width="6" height="11" rx="2" fill="#a1887f" />
 
         {/* === STIVALI === */}
-        <rect x="22" y="56" width="9" height="5" rx="2" fill="#3e2723" />
-        <rect x="33" y="56" width="9" height="5" rx="2" fill="#3e2723" />
-        {/* Suola */}
-        <rect x="21" y="59" width="11" height="2" rx="1" fill="#2c1810" />
-        <rect x="32" y="59" width="11" height="2" rx="1" fill="#2c1810" />
+        <rect x="24" y="55" width="8" height="5" rx="2" fill="#3e2723" />
+        <rect x="32" y="55" width="8" height="5" rx="2" fill="#3e2723" />
       </g>
     );
   }
