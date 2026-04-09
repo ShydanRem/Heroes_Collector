@@ -5,7 +5,7 @@ const router = Router();
 
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.twitchUser!.user_id;
     const [achievements, unlockedCount] = await Promise.all([
       getAchievements(userId),
       getUnlockedCount(userId),

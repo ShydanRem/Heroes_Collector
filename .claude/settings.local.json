@@ -4,7 +4,14 @@
       "Bash(npx tsc:*)",
       "Bash(npx tsx:*)",
       "Bash(grep -rn \"style=\\\\{.*background.*\\\\|style=\\\\{.*color:\" /c/Users/Alessio/Estensione/frontend/src/components/*.tsx)",
-      "Bash(node -e \"console.log\\('test'\\)\")"
+      "Bash(node -e \"console.log\\('test'\\)\")",
+      "Bash(grep -o \"heroes-collector.onrender.com\" dist/assets/index-*.js)",
+      "Bash(npm run:*)",
+      "Bash(cp:*)",
+      "Bash(rm -f Her.zip)",
+      "Bash(rm index.html)",
+      "Bash(powershell -command \"Compress-Archive -Path 'C:\\\\Users\\\\Alessio\\\\Estensione\\\\frontend\\\\dist\\\\*' -DestinationPath 'C:\\\\Users\\\\Alessio\\\\Estensione\\\\frontend\\\\dist\\\\HeroesCollector.zip'\")",
+      "Bash(ls -la *.zip)"
     ]
   }
 }

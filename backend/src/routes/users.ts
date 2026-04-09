@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import * as userService from '../services/userService';
 import * as heroService from '../services/heroService';
+import { getTwitchUserInfo } from '../services/twitchService';
 
 export const userRoutes = Router();
 
@@ -28,13 +29,22 @@ userRoutes.get('/me', async (req: Request, res: Response) => {
 userRoutes.post('/join', async (req: Request, res: Response) => {
   try {
     const twitchUser = req.twitchUser!;
-    const { username, displayName } = req.body;
+
+    // Recupera il vero nome utente da Twitch API
+    let username = twitchUser.opaque_user_id;
+    let displayName = twitchUser.opaque_user_id;
+
+    const twitchInfo = await getTwitchUserInfo(twitchUser.user_id);
+    if (twitchInfo) {
+      username = twitchInfo.login;
+      displayName = twitchInfo.displayName;
+    }
 
     // Crea o trova l'utente
     const profile = await userService.findOrCreateUser(
       twitchUser.user_id,
-      username || twitchUser.opaque_user_id,
-      displayName || username || twitchUser.opaque_user_id
+      username,
+      displayName
     );
 
     // Opt-in

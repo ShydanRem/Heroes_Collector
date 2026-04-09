@@ -20,14 +20,26 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers['Authorization'] = `Bearer ${authToken}`;
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-  });
+  const url = `${API_BASE}${path}`;
+  let response: Response;
+
+  try {
+    response = await fetch(url, { ...options, headers });
+  } catch (networkErr) {
+    // Errore di rete: CORS, server irraggiungibile, CSP block
+    throw new Error(`Connessione fallita a ${API_BASE} — controlla che il server sia attivo`);
+  }
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Errore sconosciuto' }));
-    throw new Error(error.error || `HTTP ${response.status}`);
+    const text = await response.text().catch(() => '');
+    let errorMsg: string;
+    try {
+      const json = JSON.parse(text);
+      errorMsg = json.error || `HTTP ${response.status}`;
+    } catch {
+      errorMsg = `HTTP ${response.status}: ${text.slice(0, 100) || response.statusText}`;
+    }
+    throw new Error(errorMsg);
   }
 
   return response.json();

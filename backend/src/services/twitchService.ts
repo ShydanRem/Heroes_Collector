@@ -29,6 +29,28 @@ async function getAppToken(): Promise<string> {
 }
 
 /**
+ * Recupera username e display name di un utente Twitch dal suo ID.
+ */
+export async function getTwitchUserInfo(userId: string): Promise<{ login: string; displayName: string } | null> {
+  try {
+    const token = await getAppToken();
+    const response = await axios.get('https://api.twitch.tv/helix/users', {
+      params: { id: userId },
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Client-Id': env.twitch.clientId,
+      },
+    });
+    const user = response.data.data?.[0];
+    if (!user) return null;
+    return { login: user.login, displayName: user.display_name };
+  } catch (err) {
+    console.error('Errore getTwitchUserInfo:', err);
+    return null;
+  }
+}
+
+/**
  * Registra i webhook EventSub per ricevere eventi dal canale.
  */
 export async function registerEventSub(callbackUrl: string): Promise<void> {

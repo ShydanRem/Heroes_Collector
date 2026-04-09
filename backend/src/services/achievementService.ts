@@ -36,49 +36,60 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'equipped', name: 'Armato Fino ai Denti', description: 'Equipaggia arma, armatura e accessorio su un eroe', icon: '🛡️', category: 'progressione' },
 ];
 
-export async function getAchievements(userId: number) {
-  const result = await query(
-    'SELECT achievement_id, unlocked_at FROM user_achievements WHERE user_id = $1',
-    [userId]
-  );
+export async function getAchievements(userId: string) {
+  try {
+    const result = await query(
+      'SELECT achievement_id, unlocked_at FROM user_achievements WHERE user_id = $1',
+      [userId]
+    );
 
-  const unlockedMap = new Map<string, string>();
-  for (const row of result.rows) {
-    unlockedMap.set(row.achievement_id, row.unlocked_at);
+    const unlockedMap = new Map<string, string>();
+    for (const row of result.rows) {
+      unlockedMap.set(row.achievement_id, row.unlocked_at);
+    }
+
+    return ACHIEVEMENTS.map((a) => ({
+      ...a,
+      unlocked: unlockedMap.has(a.id),
+      unlockedAt: unlockedMap.get(a.id) || null,
+    }));
+  } catch {
+    // Tabella non esiste ancora
+    return ACHIEVEMENTS.map((a) => ({ ...a, unlocked: false, unlockedAt: null }));
   }
-
-  return ACHIEVEMENTS.map((a) => ({
-    ...a,
-    unlocked: unlockedMap.has(a.id),
-    unlockedAt: unlockedMap.get(a.id) || null,
-  }));
 }
 
-export async function checkAndUnlock(userId: number, achievementId: string): Promise<AchievementDef | null> {
+export async function checkAndUnlock(userId: string, achievementId: string): Promise<AchievementDef | null> {
   const def = ACHIEVEMENTS.find((a) => a.id === achievementId);
   if (!def) return null;
 
-  // Check if already unlocked
-  const existing = await query(
-    'SELECT id FROM user_achievements WHERE user_id = $1 AND achievement_id = $2',
-    [userId, achievementId]
-  );
+  try {
+    const existing = await query(
+      'SELECT id FROM user_achievements WHERE user_id = $1 AND achievement_id = $2',
+      [userId, achievementId]
+    );
 
-  if (existing.rows.length > 0) return null;
+    if (existing.rows.length > 0) return null;
 
-  // Unlock
-  await query(
-    'INSERT INTO user_achievements (user_id, achievement_id) VALUES ($1, $2)',
-    [userId, achievementId]
-  );
+    await query(
+      'INSERT INTO user_achievements (user_id, achievement_id) VALUES ($1, $2)',
+      [userId, achievementId]
+    );
 
-  return def;
+    return def;
+  } catch {
+    return null;
+  }
 }
 
-export async function getUnlockedCount(userId: number): Promise<number> {
-  const result = await query(
-    'SELECT COUNT(*) as count FROM user_achievements WHERE user_id = $1',
-    [userId]
-  );
-  return parseInt(result.rows[0].count, 10);
+export async function getUnlockedCount(userId: string): Promise<number> {
+  try {
+    const result = await query(
+      'SELECT COUNT(*) as count FROM user_achievements WHERE user_id = $1',
+      [userId]
+    );
+    return parseInt(result.rows[0].count, 10);
+  } catch {
+    return 0;
+  }
 }
