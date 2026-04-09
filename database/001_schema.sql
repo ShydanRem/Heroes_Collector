@@ -34,8 +34,8 @@ CREATE TABLE users (
   sub_months       INTEGER DEFAULT 0,
   follow_age_days  INTEGER DEFAULT 0,
   gold             INTEGER DEFAULT 0,
-  energy           FLOAT DEFAULT 50,
-  max_energy       FLOAT DEFAULT 50,
+  energy           FLOAT DEFAULT 30,
+  max_energy       FLOAT DEFAULT 200,
   last_energy_refresh TIMESTAMPTZ DEFAULT NOW(),
   created_at       TIMESTAMPTZ DEFAULT NOW(),
   updated_at       TIMESTAMPTZ DEFAULT NOW()

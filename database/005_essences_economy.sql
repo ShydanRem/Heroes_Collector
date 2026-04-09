@@ -15,4 +15,4 @@ UPDATE users SET max_energy = 200 WHERE max_energy < 200;
 
 -- Aggiorna default per nuovi utenti
 ALTER TABLE users ALTER COLUMN max_energy SET DEFAULT 200;
-ALTER TABLE users ALTER COLUMN energy SET DEFAULT 200;
+ALTER TABLE users ALTER COLUMN energy SET DEFAULT 30;

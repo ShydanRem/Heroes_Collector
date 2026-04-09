@@ -15,7 +15,8 @@
       "Bash(node:*)",
       "Bash(rm -f panel.html HeroesCollector.zip Her.zip)",
       "Bash(cp index.html panel.html)",
-      "Bash(rm -f panel.html HeroesCollector.zip)"
+      "Bash(rm -f panel.html HeroesCollector.zip)",
+      "Bash(grep:*)"
     ]
   }
 }
