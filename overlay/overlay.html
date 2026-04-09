@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: transparent;
+    font-family: 'Segoe UI', 'Inter', sans-serif;
+    overflow: hidden;
+    width: 420px;
+    height: 140px;
+  }
+
+  .overlay {
+    position: relative;
+    width: 420px;
+    height: 140px;
+  }
+
+  .card {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(14, 14, 16, 0.92) 0%, rgba(26, 10, 46, 0.92) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(145, 71, 255, 0.3);
+    padding: 12px 16px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(10px);
+  }
+
+  .card.active {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .card.exit {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .card-icon {
+    font-size: 20px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(145, 71, 255, 0.15);
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #9147ff;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .card-subtitle {
+    font-size: 9px;
+    color: #737380;
+    font-weight: 600;
+  }
+
+  .brand {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 8px;
+    color: rgba(145, 71, 255, 0.4);
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* Top Heroes */
+  .hero-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+    font-size: 12px;
+  }
+
+  .hero-rank {
+    width: 18px;
+    font-weight: 900;
+    text-align: center;
+  }
+
+  .hero-name {
+    flex: 1;
+    color: #efeff1;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hero-class {
+    font-size: 10px;
+    color: #adadb8;
+    padding: 1px 6px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+  }
+
+  .hero-level {
+    font-size: 11px;
+    font-weight: 800;
+    color: #9147ff;
+    min-width: 36px;
+    text-align: right;
+  }
+
+  /* Rarity colors */
+  .rarity-comune { color: #9ca3af; }
+  .rarity-non_comune { color: #22c55e; }
+  .rarity-raro { color: #3b82f6; }
+  .rarity-molto_raro { color: #a855f7; }
+  .rarity-epico { color: #f59e0b; }
+  .rarity-leggendario { color: #ef4444; }
+  .rarity-mitico { color: #ec4899; }
+  .rarity-master { color: #fbbf24; }
+
+  /* PVP */
+  .pvp-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 12px;
+  }
+
+  .pvp-medal { font-size: 16px; width: 24px; text-align: center; }
+  .pvp-name { flex: 1; color: #efeff1; font-weight: 600; }
+  .pvp-elo { font-weight: 800; color: #ffd700; font-size: 14px; }
+  .pvp-record { font-size: 10px; color: #737380; }
+
+  /* Raid */
+  .raid-info { text-align: center; padding: 4px 0; }
+  .raid-name { font-size: 18px; font-weight: 800; color: #f44336; margin-bottom: 4px; }
+  .raid-hp-bar {
+    height: 16px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 6px 0;
+    position: relative;
+  }
+  .raid-hp-fill {
+    height: 100%;
+    border-radius: 8px;
+    transition: width 1s ease;
+  }
+  .raid-hp-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  }
+
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    padding: 4px 0;
+  }
+
+  .stat-box {
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    padding: 8px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 22px;
+    font-weight: 900;
+    color: #9147ff;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    color: #737380;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* CTA */
+  .cta-card {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+
+  .cta-text {
+    font-size: 15px;
+    font-weight: 800;
+    color: #efeff1;
+    margin-bottom: 4px;
+  }
+
+  .cta-sub {
+    font-size: 11px;
+    color: #adadb8;
+    line-height: 1.5;
+  }
+
+  .cta-arrow {
+    font-size: 20px;
+    margin-top: 6px;
+    animation: bounce 1.5s ease infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(4px); }
+  }
+
+  /* Capture alert */
+  .capture-alert {
+    text-align: center;
+    padding: 8px 0;
+  }
+
+  .capture-title {
+    font-size: 11px;
+    color: #f59e0b;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .capture-hero {
+    font-size: 16px;
+    font-weight: 800;
+    color: #efeff1;
+  }
+
+  .capture-by {
+    font-size: 11px;
+    color: #adadb8;
+    margin-top: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay">
+  <!-- Cards get injected here -->
+</div>
+
+<script>
+// ===== CONFIGURAZIONE =====
+const API_URL = 'https://heroes-collector.onrender.com/api/overlay';
+const ROTATE_INTERVAL = 8000;  // 8 secondi per card
+const FETCH_INTERVAL = 30000;  // refresh dati ogni 30s
+
+const CLASS_LABELS = {
+  guardiano: 'Guardiano', lama: 'Berserker', arcano: 'Stregone', custode: 'Sacerdote',
+  ombra: 'Assassino', ranger: 'Ranger', sciamano: 'Sciamano', crono: 'Cronomante',
+};
+
+const CLASS_EMOJIS = {
+  guardiano: '🛡️', lama: '⚔️', arcano: '🔮', custode: '✨',
+  ombra: '🗡️', ranger: '🏹', sciamano: '🌿', crono: '⏳',
+};
+
+let data = null;
+let currentSlide = 0;
+let slides = [];
+
+async function fetchData() {
+  try {
+    const res = await fetch(API_URL);
+    data = await res.json();
+    buildSlides();
+  } catch (e) {
+    console.error('Fetch error:', e);
+  }
+}
+
+function buildSlides() {
+  slides = [];
+
+  // CTA sempre presente
+  slides.push(buildCTA());
+
+  // Top eroi (se ci sono)
+  if (data.topHeroes.length > 0) {
+    slides.push(buildTopHeroes());
+  }
+
+  // Top PVP (se ci sono)
+  if (data.topPvp.length > 0) {
+    slides.push(buildTopPvp());
+  }
+
+  // Raid boss (se attivo)
+  if (data.raidBoss && !data.raidBoss.defeated) {
+    slides.push(buildRaid());
+  }
+
+  // Stats
+  if (data.stats.totalPlayers > 0) {
+    slides.push(buildStats());
+  }
+
+  // Ultima cattura
+  if (data.lastCapture) {
+    slides.push(buildCapture());
+  }
+}
+
+function buildCTA() {
+  return `
+    <div class="card-header">
+      <div class="card-icon">🎮</div>
+      <div>
+        <div class="card-title">Heroes Collector</div>
+        <div class="card-subtitle">Estensione attiva</div>
+      </div>
+    </div>
+    <div class="cta-card">
+      <div class="cta-text">Gioca adesso!</div>
+      <div class="cta-sub">Clicca sul pannello sotto il video<br>per diventare un eroe e combattere!</div>
+      <div class="cta-arrow">👇</div>
+    </div>
+  `;
+}
+
+function buildTopHeroes() {
+  const rows = data.topHeroes.slice(0, 4).map((h, i) => {
+    const rankColors = ['#ffd700', '#c0c0c0', '#cd7f32', '#737380'];
+    return `
+      <div class="hero-row">
+        <div class="hero-rank" style="color:${rankColors[i] || '#737380'}">#${i + 1}</div>
+        <div class="hero-name rarity-${h.rarity}">${h.name}</div>
+        <div class="hero-class">${CLASS_EMOJIS[h.heroClass] || ''} ${CLASS_LABELS[h.heroClass] || h.heroClass}</div>
+        <div class="hero-level">Lv.${h.level}</div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="card-header">
+      <div class="card-icon">🏆</div>
+      <div>
+        <div class="card-title">Top Eroi</div>
+        <div class="card-subtitle">I piu forti del canale</div>
+      </div>
+    </div>
+    ${rows}
+  `;
+}
+
+function buildTopPvp() {
+  const medals = ['🥇', '🥈', '🥉'];
+  const rows = data.topPvp.map((p, i) => `
+    <div class="pvp-row">
+      <div class="pvp-medal">${medals[i] || ''}</div>
+      <div class="pvp-name">${p.name}</div>
+      <div class="pvp-record">${p.wins}W ${p.losses}L</div>
+      <div class="pvp-elo">${p.elo}</div>
+    </div>
+  `).join('');
+
+  return `
+    <div class="card-header">
+      <div class="card-icon">⚔️</div>
+      <div>
+        <div class="card-title">Arena PVP</div>
+        <div class="card-subtitle">Classifica ELO</div>
+      </div>
+    </div>
+    ${rows}
+  `;
+}
+
+function buildRaid() {
+  const boss = data.raidBoss;
+  const hpColor = boss.hpPercent > 50 ? '#22c55e' : boss.hpPercent > 20 ? '#ff9800' : '#f44336';
+  return `
+    <div class="card-header">
+      <div class="card-icon">🐉</div>
+      <div>
+        <div class="card-title">Raid Boss</div>
+        <div class="card-subtitle">Aiuta a sconfiggerlo!</div>
+      </div>
+    </div>
+    <div class="raid-info">
+      <div class="raid-name">${boss.emoji} ${boss.name}</div>
+      <div class="raid-hp-bar">
+        <div class="raid-hp-fill" style="width:${boss.hpPercent}%;background:${hpColor}"></div>
+        <div class="raid-hp-text">${boss.hpPercent}% HP</div>
+      </div>
+    </div>
+  `;
+}
+
+function buildStats() {
+  const s = data.stats;
+  return `
+    <div class="card-header">
+      <div class="card-icon">📊</div>
+      <div>
+        <div class="card-title">Heroes Collector</div>
+        <div class="card-subtitle">Stats del canale</div>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-value">${s.totalPlayers}</div>
+        <div class="stat-label">Giocatori</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">${s.totalHeroes}</div>
+        <div class="stat-label">Eroi</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">${s.totalDungeons}</div>
+        <div class="stat-label">Dungeon</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">${s.totalPvp}</div>
+        <div class="stat-label">PVP</div>
+      </div>
+    </div>
+  `;
+}
+
+function buildCapture() {
+  const c = data.lastCapture;
+  return `
+    <div class="card-header">
+      <div class="card-icon">🎣</div>
+      <div>
+        <div class="card-title">Cattura!</div>
+        <div class="card-subtitle">Ultima cattura</div>
+      </div>
+    </div>
+    <div class="capture-alert">
+      <div class="capture-title">Nuovo eroe catturato!</div>
+      <div class="capture-hero rarity-${c.rarity}">${CLASS_EMOJIS[c.heroClass] || ''} ${c.heroName}</div>
+      <div class="capture-by">catturato da <strong>${c.captorName}</strong></div>
+    </div>
+  `;
+}
+
+// ===== ROTAZIONE =====
+function showSlide() {
+  if (slides.length === 0) return;
+
+  const overlay = document.getElementById('overlay');
+  const oldCard = overlay.querySelector('.card.active');
+
+  if (oldCard) {
+    oldCard.classList.remove('active');
+    oldCard.classList.add('exit');
+    setTimeout(() => oldCard.remove(), 500);
+  }
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = slides[currentSlide % slides.length] + '<div class="brand">Heroes Collector</div>';
+  overlay.appendChild(card);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => card.classList.add('active'));
+  });
+
+  currentSlide++;
+}
+
+// ===== INIT =====
+fetchData().then(() => {
+  showSlide();
+  setInterval(showSlide, ROTATE_INTERVAL);
+  setInterval(fetchData, FETCH_INTERVAL);
+});
+</script>
+
+</body>
+</html>

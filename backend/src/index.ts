@@ -14,6 +14,7 @@ import { missionRoutes } from './routes/missions';
 import { twitchRoutes } from './routes/twitch';
 import { achievementRoutes } from './routes/achievements';
 import { zoneRoutes } from './routes/zones';
+import { overlayRoutes } from './routes/overlay';
 import { twitchAuth } from './middleware/twitchAuth';
 
 const app = express();
@@ -31,8 +32,9 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', version: '0.1.0' });
 });
 
-// Routes Twitch webhook (NON protette da auth - Twitch manda direttamente)
+// Routes pubbliche (no auth)
 app.use('/api/twitch', twitchRoutes);
+app.use('/api/overlay', overlayRoutes);
 
 // Routes protette da auth Twitch
 app.use('/api/users', twitchAuth, userRoutes);
