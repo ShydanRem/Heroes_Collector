@@ -43,7 +43,17 @@ export default function App() {
 
   function initAuth() {
     if (window.Twitch?.ext) {
+      // Timeout di sicurezza: se onAuthorized non risponde entro 5s
+      // (es. mobile senza identita condivisa), sblocca comunque il loading
+      const authTimeout = setTimeout(() => {
+        if (loading) {
+          console.warn('Twitch auth timeout — sblocco UI');
+          setLoading(false);
+        }
+      }, 5000);
+
       window.Twitch.ext.onAuthorized((auth) => {
+        clearTimeout(authTimeout);
         api.setAuthToken(auth.token);
         loadProfile();
       });
@@ -97,19 +107,32 @@ export default function App() {
   }
 
   if (!joined) {
+    // Se non c'e auth token (timeout o identita non condivisa su mobile)
+    const noAuth = !loading && !profile && !joinError;
+
     return (
       <div className="app">
         <div className="join-screen">
           <div className="join-logo">HC</div>
           <h2>Heroes Collector</h2>
-          <p>
-            Diventa un eroe collezionabile!<br />
-            La tua attivita sul canale determina la tua rarita e forza.<br />
-            Cattura altri viewer, forma un party e combatti!
-          </p>
-          <button className="btn btn-primary" onClick={handleJoin} disabled={joining}>
-            {joining ? 'Creazione eroe...' : 'Unisciti al gioco!'}
-          </button>
+          {noAuth ? (
+            <p style={{ fontSize: 11 }}>
+              Per giocare devi condividere la tua identita con l'estensione.<br /><br />
+              <strong>Su mobile:</strong> tocca l'icona dell'estensione e consenti l'accesso.<br />
+              <strong>Su desktop:</strong> clicca "Consenti" nel popup dell'estensione.
+            </p>
+          ) : (
+            <>
+              <p>
+                Diventa un eroe collezionabile!<br />
+                La tua attivita sul canale determina la tua rarita e forza.<br />
+                Cattura altri viewer, forma un party e combatti!
+              </p>
+              <button className="btn btn-primary" onClick={handleJoin} disabled={joining}>
+                {joining ? 'Creazione eroe...' : 'Unisciti al gioco!'}
+              </button>
+            </>
+          )}
           {joinError && (
             <div style={{ color: '#f44336', fontSize: 11, marginTop: 10, maxWidth: 260 }}>
               {joinError}
