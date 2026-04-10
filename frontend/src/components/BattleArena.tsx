@@ -48,6 +48,7 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
   const [fighters, setFighters] = useState<Map<string, ArenaFighter>>(new Map());
   const [activeActorId, setActiveActorId] = useState<string | null>(null);
   const [activeTargetId, setActiveTargetId] = useState<string | null>(null);
+  const [actionType, setActionType] = useState<'melee' | 'magic' | 'heal' | 'buff' | null>(null);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [finished, setFinished] = useState(false);
@@ -121,6 +122,33 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
     setActiveActorId(actorId);
     setActiveTargetId(targetId);
 
+    // Determina tipo azione dall'entry
+    if (entry.heal) {
+      setActionType('heal');
+    } else if (entry.statusApplied && !entry.damage) {
+      setActionType('buff');
+    } else if (entry.action && (
+      entry.action.toLowerCase().includes('arcano') ||
+      entry.action.toLowerCase().includes('magia') ||
+      entry.action.toLowerCase().includes('fuoco') ||
+      entry.action.toLowerCase().includes('tuono') ||
+      entry.action.toLowerCase().includes('oscur') ||
+      entry.action.toLowerCase().includes('dardo') ||
+      entry.action.toLowerCase().includes('tempesta') ||
+      entry.action.toLowerCase().includes('nube') ||
+      entry.action.toLowerCase().includes('piaga') ||
+      entry.action.toLowerCase().includes('eclissi') ||
+      entry.action.toLowerCase().includes('bomba') ||
+      entry.action.toLowerCase().includes('fiala') ||
+      entry.action.toLowerCase().includes('tocco della morte') ||
+      entry.action.toLowerCase().includes('maledizione') ||
+      entry.action.toLowerCase().includes('pioggia')
+    )) {
+      setActionType('magic');
+    } else {
+      setActionType('melee');
+    }
+
     if (targetId) {
       // Danno
       if (entry.damage) {
@@ -181,6 +209,7 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
     setTimeout(() => {
       setActiveActorId(null);
       setActiveTargetId(null);
+      setActionType(null);
     }, speed * 0.6);
   }
 
@@ -199,17 +228,17 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
 
   // ============ RENDER ============
 
-  // Posizioni diagonali stile FF (sfalsati, non in fila)
-  // left team: in basso a sinistra, formazione a V verso destra
-  // right team: in basso a destra, formazione a V verso sinistra
+  // Posizioni FF classico: entrambi i team in diagonale parallela
+  // Left team: dal basso-centro verso alto-sinistra (il primo e' davanti al centro)
+  // Right team: dal basso-centro verso alto-destra (speculare)
   const getPosition = (index: number, total: number, side: 'left' | 'right') => {
-    const baseX = side === 'left' ? 8 : 52;
-    const dirX = side === 'left' ? 1 : -1;
-    // Sfalsamento diagonale: ogni fighter successivo sale e si sposta
-    const offsetX = index * 8 * dirX;
-    const offsetY = index * 22;
-    // Il primo e' in basso-davanti, l'ultimo in alto-dietro
-    const bottom = 16 + offsetY;
+    // Distanziati di piu': left team a ~20%, right team a ~80%
+    const baseX = side === 'left' ? 18 : 72;
+    // Entrambi i team salgono verso l'esterno (lontano dal centro)
+    const dirX = side === 'left' ? -1.5 : 1.5;
+    const offsetX = index * 5 * dirX;
+    const offsetY = index * 24;
+    const bottom = 18 + offsetY;
     const left = baseX + offsetX;
     return { bottom: `${bottom}px`, left: `${left}%` };
   };
@@ -222,7 +251,7 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
 
     let animClass = '';
     if (!fighter.isAlive) animClass = 'dead';
-    else if (isActing) animClass = 'acting';
+    else if (isActing) animClass = `acting action-${actionType || 'melee'}`;
     else if (isTargeted) animClass = 'hit';
 
     const myFloats = floatingTexts.filter(ft => ft.fighterId === fighter.id);
