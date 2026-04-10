@@ -414,6 +414,42 @@ export async function claimMission(missionId: string): Promise<{ gold: number; e
   return request(`/missions/${missionId}/claim`, { method: 'POST' });
 }
 
+// ============ DAILY LOGIN ============
+
+export interface DailyReward {
+  day: number;
+  gold: number;
+  energy: number;
+  essences: number;
+  label: string;
+}
+
+export interface DailyLoginStatus {
+  canClaim: boolean;
+  currentStreak: number;
+  bestStreak: number;
+  todayReward: DailyReward;
+  streakDay: number;
+  claimedToday: boolean;
+  rewards: DailyReward[];
+}
+
+export interface ClaimResult {
+  gold: number;
+  energy: number;
+  essences: number;
+  newStreak: number;
+  streakDay: number;
+}
+
+export async function getDailyLoginStatus(): Promise<DailyLoginStatus> {
+  return request('/daily-login');
+}
+
+export async function claimDailyLogin(): Promise<ClaimResult> {
+  return request('/daily-login/claim', { method: 'POST' });
+}
+
 // ============ ACHIEVEMENTS ============
 
 export interface Achievement {

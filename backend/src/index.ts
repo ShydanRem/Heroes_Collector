@@ -15,6 +15,7 @@ import { twitchRoutes } from './routes/twitch';
 import { achievementRoutes } from './routes/achievements';
 import { zoneRoutes } from './routes/zones';
 import { overlayRoutes } from './routes/overlay';
+import { dailyLoginRoutes } from './routes/dailyLogin';
 import { twitchAuth } from './middleware/twitchAuth';
 
 const app = express();
@@ -47,6 +48,7 @@ app.use('/api/shop', twitchAuth, shopRoutes);
 app.use('/api/missions', twitchAuth, missionRoutes);
 app.use('/api/achievements', twitchAuth, achievementRoutes);
 app.use('/api/zones', twitchAuth, zoneRoutes);
+app.use('/api/daily-login', twitchAuth, dailyLoginRoutes);
 
 // WebSocket per aggiornamenti real-time
 io.on('connection', (socket) => {

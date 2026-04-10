@@ -4,6 +4,7 @@ import { HeroSprite } from './HeroSprite';
 import { HintBanner } from './Tooltip';
 import { Missions } from './Missions';
 import { Achievements } from './Achievements';
+import { DailyLogin } from './DailyLogin';
 import * as api from '../services/api';
 
 interface MyHeroProps {
@@ -202,6 +203,9 @@ export function MyHero({ profile, hero, onHeroUpdate }: MyHeroProps) {
           </div>
         </div>
       </div>
+
+      {/* Daily Login */}
+      <DailyLogin onClaim={() => window.location.reload()} />
 
       {/* Reroll Classe */}
       <div style={{ marginTop: 6 }}>
