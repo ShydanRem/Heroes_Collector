@@ -331,7 +331,7 @@ export function HeroReveal({ hero, onComplete }: HeroRevealProps) {
         {phase === 'sprite' && (
           <div className="reveal-sprite-container" style={{ position: 'relative' }}>
             <div className="reveal-sprite-glow" style={{ background: rarityColor }} />
-            <HeroSprite heroClass={hero.heroClass} rarity={hero.rarity} size={96} animate="idle" />
+            <HeroSprite heroClass={hero.heroClass} rarity={hero.rarity} size={96} animate="idle" name={hero.displayName} />
           </div>
         )}
 
@@ -340,7 +340,7 @@ export function HeroReveal({ hero, onComplete }: HeroRevealProps) {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div className="reveal-sprite-container" style={{ position: 'relative', marginBottom: 12 }}>
               <div className="reveal-sprite-glow" style={{ background: rarityColor }} />
-              <HeroSprite heroClass={hero.heroClass} rarity={hero.rarity} size={80} animate="idle" />
+              <HeroSprite heroClass={hero.heroClass} rarity={hero.rarity} size={80} animate="idle" name={hero.displayName} />
             </div>
             <div className="reveal-name" style={{ color: rarityColor }}>{hero.displayName}</div>
             <div className="reveal-stats-grid">
@@ -357,7 +357,7 @@ export function HeroReveal({ hero, onComplete }: HeroRevealProps) {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div style={{ position: 'relative', marginBottom: 12 }}>
               <div className="reveal-sprite-glow" style={{ background: rarityColor }} />
-              <HeroSprite heroClass={hero.heroClass} rarity={hero.rarity} size={80} animate="idle" />
+              <HeroSprite heroClass={hero.heroClass} rarity={hero.rarity} size={80} animate="idle" name={hero.displayName} />
             </div>
             <div style={{ fontSize: 18, fontWeight: 700, color: rarityColor, marginBottom: 4 }}>
               {hero.displayName}

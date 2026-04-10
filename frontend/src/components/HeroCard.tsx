@@ -24,6 +24,7 @@ export function HeroCard({ hero, onClick, compact }: HeroCardProps) {
             rarity={hero.rarity}
             size={36}
             animate="idle"
+            name={hero.displayName}
           />
           <div>
             <span className="hero-name">{hero.displayName}</span>

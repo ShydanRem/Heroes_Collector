@@ -238,7 +238,7 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
           {fighter.isMonster ? (
             <MonsterSprite name={fighter.monsterName || fighter.name} emoji={fighter.emoji || '👹'} tier={fighter.tier || 'minion'} size={38} />
           ) : (
-            <HeroSprite heroClass={fighter.heroClass || 'lama'} rarity={fighter.rarity || 'comune'} size={38} flip={side === 'right'} />
+            <HeroSprite heroClass={fighter.heroClass || 'lama'} rarity={fighter.rarity || 'comune'} size={38} flip={side === 'right'} name={fighter.name} />
           )}
         </div>
 
