@@ -199,7 +199,22 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
 
   // ============ RENDER ============
 
-  const renderFighter = (fighter: ArenaFighter, index: number, side: 'left' | 'right') => {
+  // Posizioni diagonali stile FF (sfalsati, non in fila)
+  // left team: in basso a sinistra, formazione a V verso destra
+  // right team: in basso a destra, formazione a V verso sinistra
+  const getPosition = (index: number, total: number, side: 'left' | 'right') => {
+    const baseX = side === 'left' ? 8 : 52;
+    const dirX = side === 'left' ? 1 : -1;
+    // Sfalsamento diagonale: ogni fighter successivo sale e si sposta
+    const offsetX = index * 8 * dirX;
+    const offsetY = index * 22;
+    // Il primo e' in basso-davanti, l'ultimo in alto-dietro
+    const bottom = 16 + offsetY;
+    const left = baseX + offsetX;
+    return { bottom: `${bottom}px`, left: `${left}%` };
+  };
+
+  const renderFighter = (fighter: ArenaFighter, index: number, total: number, side: 'left' | 'right') => {
     const isActing = activeActorId === fighter.id;
     const isTargeted = activeTargetId === fighter.id;
     const hpPercent = Math.max(0, (fighter.currentHp / fighter.maxHp) * 100);
@@ -210,24 +225,33 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
     else if (isActing) animClass = 'acting';
     else if (isTargeted) animClass = 'hit';
 
-    // Floating texts per questo fighter
     const myFloats = floatingTexts.filter(ft => ft.fighterId === fighter.id);
+    const pos = getPosition(index, total, side);
+
+    // Sprite piu' grande per chi e' davanti (prospettiva)
+    const spriteSize = 44 - index * 2;
+    // Ombra a terra sotto lo sprite
+    const shadowWidth = spriteSize * 0.8;
 
     return (
-      <div key={fighter.id} className={`arena-fighter ${animClass}`}
+      <div key={fighter.id} className={`arena-fighter ${animClass} arena-fighter-${side}`}
         style={{
+          position: 'absolute',
+          bottom: pos.bottom,
+          left: pos.left,
+          transform: 'translateX(-50%)',
           display: 'flex', flexDirection: 'column', alignItems: 'center',
-          opacity: fighter.isAlive ? 1 : 0.25,
-          transition: 'opacity 0.4s',
-          position: 'relative',
+          opacity: fighter.isAlive ? 1 : 0.2,
+          transition: 'opacity 0.5s ease',
+          zIndex: 10 - index, // chi e' davanti ha z-index piu' alto
         }}
       >
         {/* Floating texts */}
         {myFloats.map(ft => (
           <div key={ft.id} className={`floating-text floating-${ft.type}`}
             style={{
-              position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%)',
-              color: ft.color, zIndex: 10,
+              position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)',
+              color: ft.color, zIndex: 20,
             }}>
             {ft.text}
           </div>
@@ -236,15 +260,22 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
         {/* Sprite */}
         <div className={`fighter-sprite-wrapper ${isActing ? 'sprite-acting' : ''} ${isTargeted ? 'sprite-hit' : ''}`}>
           {fighter.isMonster ? (
-            <MonsterSprite name={fighter.monsterName || fighter.name} emoji={fighter.emoji || '👹'} tier={fighter.tier || 'minion'} size={38} />
+            <MonsterSprite name={fighter.monsterName || fighter.name} emoji={fighter.emoji || '👹'} tier={fighter.tier || 'minion'} size={spriteSize} />
           ) : (
-            <HeroSprite heroClass={fighter.heroClass || 'lama'} rarity={fighter.rarity || 'comune'} size={38} flip={side === 'right'} name={fighter.name} />
+            <HeroSprite heroClass={fighter.heroClass || 'lama'} rarity={fighter.rarity || 'comune'} size={spriteSize} flip={side === 'right'} name={fighter.name} />
           )}
         </div>
 
+        {/* Ombra a terra */}
+        <div style={{
+          width: shadowWidth, height: 4, borderRadius: '50%',
+          background: 'radial-gradient(ellipse, rgba(0,0,0,0.4) 0%, transparent 70%)',
+          marginTop: -2,
+        }} />
+
         {/* HP bar */}
-        <div style={{ width: 42, marginTop: 2 }}>
-          <div style={{ height: 3, background: '#333', borderRadius: 2, overflow: 'hidden' }}>
+        <div style={{ width: 46, marginTop: 2 }}>
+          <div style={{ height: 4, background: 'rgba(0,0,0,0.5)', borderRadius: 2, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{
               width: `${hpPercent}%`, height: '100%', background: hpColor,
               borderRadius: 2, transition: 'width 0.3s ease',
@@ -254,9 +285,10 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
 
         {/* Nome */}
         <div style={{
-          fontSize: 7, color: fighter.isAlive ? '#adadb8' : '#555',
-          marginTop: 1, maxWidth: 48, overflow: 'hidden',
+          fontSize: 7, color: fighter.isAlive ? '#ccc' : '#444',
+          marginTop: 1, maxWidth: 52, overflow: 'hidden',
           textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center',
+          textShadow: '0 1px 2px rgba(0,0,0,0.8)',
         }}>
           {fighter.name.length > 10 ? fighter.name.split(' ').pop() : fighter.name}
         </div>
@@ -272,16 +304,15 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
     <div className="battle-arena">
       <div className="arena-field">
         <div className="arena-bg" />
+        {/* Linea orizzonte / terreno */}
+        <div className="arena-ground" />
 
-        <div className="arena-team arena-team-left">
-          {leftFighters.map((f, i) => renderFighter(f, i, 'left'))}
-        </div>
+        {/* Fighter posizionati in diagonale stile FF */}
+        {leftFighters.map((f, i) => renderFighter(f, i, leftFighters.length, 'left'))}
+        {rightFighters.map((f, i) => renderFighter(f, i, rightFighters.length, 'right'))}
 
+        {/* VS al centro, molto tenue */}
         <div className="arena-vs">VS</div>
-
-        <div className="arena-team arena-team-right">
-          {rightFighters.map((f, i) => renderFighter(f, i, 'right'))}
-        </div>
       </div>
 
       {/* Messaggio */}
