@@ -31,10 +31,59 @@ export interface ClaimResult {
 }
 
 /**
+ * Trova le date di live recenti = date in cui almeno un utente ha fatto claim.
+ * Serve per sapere se la streak e' da resettare o meno.
+ * La streak si rompe SOLO se c'e' stata una live (altri hanno riscosso) e tu non c'eri.
+ */
+async function getLiveDates(limit: number = 10): Promise<string[]> {
+  const result = await query(
+    `SELECT DISTINCT login_date FROM daily_logins
+     ORDER BY login_date DESC LIMIT $1`,
+    [limit]
+  );
+  return result.rows.map((r: any) => new Date(r.login_date).toISOString().split('T')[0]);
+}
+
+/**
+ * Ottieni le date in cui un utente specifico ha fatto claim.
+ */
+async function getUserClaimDates(userId: string, limit: number = 10): Promise<string[]> {
+  const result = await query(
+    `SELECT login_date FROM daily_logins
+     WHERE twitch_user_id = $1
+     ORDER BY login_date DESC LIMIT $2`,
+    [userId, limit]
+  );
+  return result.rows.map((r: any) => new Date(r.login_date).toISOString().split('T')[0]);
+}
+
+/**
+ * Calcola se l'utente ha perso una live (= c'e' stata una live e lui non c'era).
+ * Se si, la streak si resetta.
+ */
+async function calculateStreak(userId: string, currentStreak: number): Promise<number> {
+  const liveDates = await getLiveDates(10);
+  const userDates = new Set(await getUserClaimDates(userId, 10));
+  const today = new Date().toISOString().split('T')[0];
+
+  // Controlla le date di live passate (escludi oggi, oggi puo ancora riscuotere)
+  for (const liveDate of liveDates) {
+    if (liveDate === today) continue; // oggi non conta ancora
+    if (!userDates.has(liveDate)) {
+      // C'e stata una live e l'utente non c'era = streak persa
+      return 0;
+    }
+    // Se c'era, la streak regge — basta controllare fino alla prima live mancata
+    break;
+  }
+
+  return currentStreak;
+}
+
+/**
  * Ottieni lo stato del daily login per un utente.
  */
 export async function getDailyLoginStatus(userId: string): Promise<DailyLoginStatus> {
-  // Assicura che le colonne esistano
   await ensureColumns();
 
   const userResult = await query(
@@ -47,28 +96,26 @@ export async function getDailyLoginStatus(userId: string): Promise<DailyLoginSta
   }
 
   const user = userResult.rows[0];
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  const lastLogin = user.last_login_date ? new Date(user.last_login_date).toISOString().split('T')[0] : null;
+  const today = new Date().toISOString().split('T')[0];
+  const lastLogin = user.last_login_date
+    ? new Date(user.last_login_date).toISOString().split('T')[0]
+    : null;
 
-  // Controlla se ha gia riscosso oggi
   const claimedToday = lastLogin === today;
 
-  // Calcola la streak corrente
+  // Calcola streak tenendo conto solo dei giorni di live
   let currentStreak = user.login_streak || 0;
-
-  // Se ha perso un giorno (non ieri e non oggi), streak torna a 0
-  if (lastLogin && !claimedToday) {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-    if (lastLogin !== yesterdayStr) {
-      // Ha saltato almeno un giorno: streak reset
-      currentStreak = 0;
+  if (!claimedToday && currentStreak > 0) {
+    currentStreak = await calculateStreak(userId, currentStreak);
+    // Se la streak e' stata resettata, aggiorna il DB
+    if (currentStreak === 0 && (user.login_streak || 0) > 0) {
+      await query(
+        'UPDATE users SET login_streak = 0 WHERE twitch_user_id = $1',
+        [userId]
+      );
     }
   }
 
-  // Il giorno nel ciclo (1-7), poi ricomincia
   const streakDay = claimedToday
     ? ((currentStreak - 1) % 7) + 1
     : (currentStreak % 7) + 1;
