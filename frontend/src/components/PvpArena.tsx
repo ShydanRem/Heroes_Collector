@@ -46,56 +46,26 @@ export function PvpArena() {
     loadRank();
   }
 
+  function heroToFighter(hero: any, team: 'left' | 'right'): ArenaFighter {
+    return {
+      id: hero.id || `unknown_${Math.random()}`,
+      name: hero.name || 'Sconosciuto',
+      heroClass: (hero.heroClass || 'lama') as HeroClass,
+      rarity: (hero.rarity || 'comune') as Rarity,
+      isMonster: false,
+      maxHp: hero.maxHp || 100,
+      currentHp: hero.maxHp || 100,
+      team,
+      isAlive: true,
+    };
+  }
+
   function buildTeams(): { left: ArenaFighter[]; right: ArenaFighter[] } {
     if (!result) return { left: [], right: [] };
-
-    // Costruisci team dal risultato PVP
-    // Fallback: se i partyHeroes non sono disponibili, crea fighter dal log
-    let leftHeroes = result.myPartyHeroes || [];
-    let rightHeroes = result.opponentPartyHeroes || [];
-
-    // Se i team sono vuoti, prova a ricostruirli dagli attori nel log
-    if (leftHeroes.length === 0 && rightHeroes.length === 0 && result.log.length > 0) {
-      const seenActors = new Map<string, { id: string; name: string }>();
-      for (const entry of result.log) {
-        if (entry.actorId && entry.actor && entry.actor !== 'status') {
-          seenActors.set(entry.actorId, { id: entry.actorId, name: entry.actor });
-        }
-        if (entry.targetId && entry.target && entry.target !== 'status') {
-          seenActors.set(entry.targetId, { id: entry.targetId, name: entry.target });
-        }
-      }
-      const actors = Array.from(seenActors.values());
-      const half = Math.ceil(actors.length / 2);
-      leftHeroes = actors.slice(0, half).map(a => ({ id: a.id, name: a.name, heroClass: 'lama', rarity: 'comune', maxHp: 100 }));
-      rightHeroes = actors.slice(half).map(a => ({ id: a.id, name: a.name, heroClass: 'lama', rarity: 'comune', maxHp: 100 }));
-    }
-
-    const left: ArenaFighter[] = leftHeroes.map((hero: any) => ({
-      id: hero.id,
-      name: hero.name,
-      heroClass: (hero.heroClass || 'lama') as HeroClass,
-      rarity: (hero.rarity || 'comune') as Rarity,
-      isMonster: false,
-      maxHp: hero.maxHp || 100,
-      currentHp: hero.maxHp || 100,
-      team: 'left' as const,
-      isAlive: true,
-    }));
-
-    const right: ArenaFighter[] = rightHeroes.map((hero: any) => ({
-      id: hero.id,
-      name: hero.name,
-      heroClass: (hero.heroClass || 'lama') as HeroClass,
-      rarity: (hero.rarity || 'comune') as Rarity,
-      isMonster: false,
-      maxHp: hero.maxHp || 100,
-      currentHp: hero.maxHp || 100,
-      team: 'right' as const,
-      isAlive: true,
-    }));
-
-    return { left, right };
+    return {
+      left: (result.myPartyHeroes || []).map((h: any) => heroToFighter(h, 'left')),
+      right: (result.opponentPartyHeroes || []).map((h: any) => heroToFighter(h, 'right')),
+    };
   }
 
   // ===== IDLE =====

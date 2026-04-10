@@ -264,23 +264,49 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
 
       return positions;
     } else {
-      // Nemici: sfalsati fronte/retro alternati
-      const positions: { fighter: ArenaFighter; x: number; y: number; row: 'front' | 'back' }[] = [];
-      const total = team.length;
-      const spacing = Math.min(38, 120 / Math.max(total, 1));
-      const startY = 110 - ((total - 1) * spacing) / 2;
+      // Right team: controlla se sono eroi (PVP) o mostri (dungeon)
+      const hasHeroes = team.some(f => !f.isMonster);
 
-      team.forEach((f, i) => {
-        const isFront = i % 2 === 0;
-        positions.push({
-          fighter: f,
-          x: isFront ? 68 : 86,
-          y: startY + i * spacing,
-          row: isFront ? 'front' : 'back',
+      if (hasHeroes) {
+        // PVP: stessa logica del party ma specchiata
+        const front = team.filter(f => isFrontRow(f));
+        const back = team.filter(f => !isFrontRow(f));
+        const positions: { fighter: ArenaFighter; x: number; y: number; row: 'front' | 'back' }[] = [];
+
+        front.forEach((f, i) => {
+          const totalFront = front.length;
+          const spacing = Math.min(40, 120 / Math.max(totalFront, 1));
+          const startY = 110 - ((totalFront - 1) * spacing) / 2;
+          positions.push({ fighter: f, x: 70, y: startY + i * spacing, row: 'front' });
         });
-      });
 
-      return positions;
+        back.forEach((f, i) => {
+          const totalBack = back.length;
+          const spacing = Math.min(40, 120 / Math.max(totalBack, 1));
+          const startY = 110 - ((totalBack - 1) * spacing) / 2;
+          positions.push({ fighter: f, x: 88, y: startY + i * spacing, row: 'back' });
+        });
+
+        return positions;
+      } else {
+        // Dungeon: mostri sfalsati fronte/retro alternati
+        const positions: { fighter: ArenaFighter; x: number; y: number; row: 'front' | 'back' }[] = [];
+        const total = team.length;
+        const spacing = Math.min(38, 120 / Math.max(total, 1));
+        const startY = 110 - ((total - 1) * spacing) / 2;
+
+        team.forEach((f, i) => {
+          const isFront = i % 2 === 0;
+          positions.push({
+            fighter: f,
+            x: isFront ? 68 : 86,
+            y: startY + i * spacing,
+            row: isFront ? 'front' : 'back',
+          });
+        });
+
+        return positions;
+      }
     }
   }
 
