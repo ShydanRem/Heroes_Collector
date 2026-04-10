@@ -50,13 +50,19 @@ body {
 }
 
 /* ============ APP LAYOUT ============ */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
 .app {
   max-width: 340px;
-  min-height: 500px;
+  height: 100vh;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   background: var(--bg-primary);
+  overflow: hidden;
 }
 
 /* ============ HEADER ============ */
@@ -167,6 +173,8 @@ body {
   flex: 1;
   padding: 10px;
   overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0; /* necessario per flex + overflow */
   animation: contentFade 0.15s ease;
 }
 
@@ -513,7 +521,8 @@ body {
   justify-content: center;
   padding: 32px 24px;
   text-align: center;
-  min-height: 480px;
+  flex: 1;
+  overflow-y: auto;
   background: radial-gradient(ellipse at center top, rgba(145,71,255,0.08) 0%, transparent 60%);
 }
 
