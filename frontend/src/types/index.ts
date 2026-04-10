@@ -6,7 +6,8 @@ export type Rarity =
 
 export type HeroClass =
   | 'guardiano' | 'lama' | 'arcano' | 'custode'
-  | 'ombra' | 'ranger' | 'sciamano' | 'crono';
+  | 'ombra' | 'ranger' | 'sciamano' | 'crono'
+  | 'dragoon' | 'samurai' | 'necromante' | 'alchimista';
 
 export interface HeroStats {
   hp: number;
@@ -92,6 +93,10 @@ export const CLASS_EMOJIS: Record<HeroClass, string> = {
   ranger: '🏹',
   sciamano: '🌿',
   crono: '⏳',
+  dragoon: '🐲',
+  samurai: '⛩️',
+  necromante: '💀',
+  alchimista: '⚗️',
 };
 
 export const CLASS_LABELS: Record<HeroClass, string> = {
@@ -103,6 +108,10 @@ export const CLASS_LABELS: Record<HeroClass, string> = {
   ranger: 'Ranger',
   sciamano: 'Sciamano',
   crono: 'Cronomante',
+  dragoon: 'Dragoon',
+  samurai: 'Samurai',
+  necromante: 'Necromante',
+  alchimista: 'Alchimista',
 };
 
 // Ordine rarità dal più basso al più alto

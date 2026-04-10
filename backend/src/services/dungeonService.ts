@@ -250,9 +250,10 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
     await addEssences(userId, essenceReward);
   }
 
-  // Punti classifica settimanale
+  // Punti classifica settimanale + missioni giornaliere
   if (won) {
     try { await addWeeklyPoints(userId, POINTS.DUNGEON_CLEAR, 'dungeons_cleared'); } catch { /* */ }
+    try { const { progressMission } = await import('./missionService'); await progressMission(userId, 'dungeon'); } catch { /* */ }
   }
 
   // Gestisci progressi zona

@@ -294,8 +294,9 @@ export async function attackRaid(userId: string): Promise<RaidAttackResult> {
   const essenceReward = Math.floor(2 + Math.random() * 3) + (bossDefeated ? 10 : 0);
   await addEssences(userId, essenceReward);
 
-  // Punti classifica settimanale
+  // Punti classifica settimanale + missioni giornaliere
   try { await addWeeklyPoints(userId, POINTS.RAID_ATTACK, 'raid_damage'); } catch { /* */ }
+  try { const { progressMission } = await import('./missionService'); await progressMission(userId, 'raid'); } catch { /* */ }
 
   // Loot bonus se il boss e stato sconfitto
   if (bossDefeated) {

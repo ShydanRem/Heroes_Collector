@@ -155,10 +155,13 @@ export async function findAndFight(userId: string): Promise<PvpResult> {
     await addEssences(userId, essenceReward);
   }
 
-  // Punti classifica settimanale
+  // Punti classifica settimanale + missioni giornaliere
   try {
     await addWeeklyPoints(userId, outcome.won ? POINTS.PVP_WIN : POINTS.PVP_LOSS, 'pvp_wins');
   } catch { /* */ }
+  if (outcome.won) {
+    try { const { progressMission } = await import('./missionService'); await progressMission(userId, 'pvp'); } catch { /* */ }
+  }
 
   // Salva battaglia
   const battleResult = await query(

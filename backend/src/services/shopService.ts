@@ -218,6 +218,12 @@ export async function purchaseItem(
     );
   }
 
+  // Progresso missioni giornaliere
+  try {
+    const { progressMission } = await import('./missionService');
+    await progressMission(userId, 'shop');
+  } catch { /* */ }
+
   return { success: true, message: `Acquistato: ${listing.name}!` };
 }
 

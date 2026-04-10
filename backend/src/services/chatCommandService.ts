@@ -5,6 +5,7 @@ import { env } from '../config/env';
 const CLASS_LABELS: Record<string, string> = {
   guardiano: 'Guardiano', lama: 'Berserker', arcano: 'Stregone', custode: 'Sacerdote',
   ombra: 'Assassino', ranger: 'Ranger', sciamano: 'Sciamano', crono: 'Cronomante',
+  dragoon: 'Dragoon', samurai: 'Samurai', necromante: 'Necromante', alchimista: 'Alchimista',
 };
 
 const RARITY_LABELS: Record<string, string> = {

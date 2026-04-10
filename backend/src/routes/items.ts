@@ -29,6 +29,11 @@ itemRoutes.post('/equip', async (req: Request, res: Response) => {
     if (!result.success) {
       return res.status(400).json({ error: result.message });
     }
+    // Progresso missioni giornaliere
+    try {
+      const { progressMission } = await import('../services/missionService');
+      await progressMission(userId, 'equip');
+    } catch { /* */ }
     res.json({ message: result.message });
   } catch (err) {
     console.error('Errore POST /equip:', err);

@@ -14,7 +14,7 @@ interface MyHeroProps {
   onProfileRefresh?: () => void;
 }
 
-const ALL_CLASSES: HeroClass[] = ['guardiano', 'lama', 'arcano', 'custode', 'ombra', 'ranger', 'sciamano', 'crono'];
+const ALL_CLASSES: HeroClass[] = ['guardiano', 'lama', 'arcano', 'custode', 'ombra', 'ranger', 'sciamano', 'crono', 'dragoon', 'samurai', 'necromante', 'alchimista'];
 const REROLL_COST = 500;
 const EXP_BASE = 100;
 

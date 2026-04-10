@@ -784,6 +784,30 @@ export const ABILITIES: Ability[] = [
     statusChance: 100,
     minRarity: Rarity.RARO,
   },
+
+  // ===================== DRAGOON =====================
+  { id: 'atk_lancio_celeste', name: 'Lancio Celeste', description: 'Salta in aria e piomba sul nemico con la lancia.', type: AbilityType.ATTACCO, target: TargetType.SINGOLO_NEMICO, heroClass: HeroClass.DRAGOON, power: 2.0, cooldown: 3 },
+  { id: 'atk_carica_lancia', name: 'Carica della Lancia', description: 'Carica frontale devastante.', type: AbilityType.ATTACCO, target: TargetType.SINGOLO_NEMICO, heroClass: HeroClass.DRAGOON, power: 1.5, cooldown: 1, statusEffect: StatusEffect.STORDIMENTO, statusDuration: 1, statusChance: 40 },
+  { id: 'def_scaglie_drago', name: 'Scaglie di Drago', description: 'Si riveste di scaglie draconiche.', type: AbilityType.DIFESA, target: TargetType.SE_STESSO, heroClass: HeroClass.DRAGOON, power: 0.4, cooldown: 3, statusEffect: StatusEffect.SCUDO, statusDuration: 2 },
+  { id: 'ult_pioggia_lance', name: 'Pioggia di Lance', description: 'Evoca una pioggia di lance su tutti i nemici.', type: AbilityType.ULTIMATE, target: TargetType.TUTTI_NEMICI, heroClass: HeroClass.DRAGOON, power: 1.6, cooldown: 4, minRarity: Rarity.RARO },
+
+  // ===================== SAMURAI =====================
+  { id: 'atk_iaido', name: 'Iaido', description: 'Estrae la katana e colpisce in un unico movimento fulmineo.', type: AbilityType.ATTACCO, target: TargetType.SINGOLO_NEMICO, heroClass: HeroClass.SAMURAI, power: 1.7, cooldown: 2 },
+  { id: 'atk_taglio_vento', name: 'Taglio del Vento', description: 'Un fendente cosi veloce da colpire tutti i nemici.', type: AbilityType.ATTACCO, target: TargetType.TUTTI_NEMICI, heroClass: HeroClass.SAMURAI, power: 1.1, cooldown: 2, statusEffect: StatusEffect.SANGUINAMENTO, statusDuration: 2, statusChance: 35 },
+  { id: 'def_bushido', name: 'Via del Bushido', description: 'Posizione difensiva con contrattacco.', type: AbilityType.DIFESA, target: TargetType.SE_STESSO, heroClass: HeroClass.SAMURAI, power: 0.3, cooldown: 3, statusEffect: StatusEffect.RIFLESSO, statusDuration: 2 },
+  { id: 'ult_mille_lame', name: 'Mille Lame', description: 'Scatena una raffica di fendenti sul bersaglio.', type: AbilityType.ULTIMATE, target: TargetType.SINGOLO_NEMICO, heroClass: HeroClass.SAMURAI, power: 2.5, cooldown: 4, minRarity: Rarity.RARO },
+
+  // ===================== NECROMANTE =====================
+  { id: 'atk_tocco_morte', name: 'Tocco della Morte', description: 'Infligge danni oscuri e drena vita.', type: AbilityType.ATTACCO, target: TargetType.SINGOLO_NEMICO, heroClass: HeroClass.NECROMANTE, power: 1.4, cooldown: 1 },
+  { id: 'debuff_maledizione_ossa', name: 'Maledizione delle Ossa', description: 'Maledice il bersaglio, riducendone DEF e SPD.', type: AbilityType.DEBUFF, target: TargetType.SINGOLO_NEMICO, heroClass: HeroClass.NECROMANTE, power: 0, cooldown: 2, statusEffect: StatusEffect.MALEDIZIONE, statusDuration: 3, statusChance: 80 },
+  { id: 'atk_piaga_oscura', name: 'Piaga Oscura', description: 'Infetta tutti i nemici con energia necrotica.', type: AbilityType.ATTACCO, target: TargetType.TUTTI_NEMICI, heroClass: HeroClass.NECROMANTE, power: 1.0, cooldown: 2, statusEffect: StatusEffect.VELENO, statusDuration: 3, statusChance: 60 },
+  { id: 'ult_eclissi_anima', name: 'Eclissi dell\'Anima', description: 'Drena l\'essenza vitale di tutti i nemici.', type: AbilityType.ULTIMATE, target: TargetType.TUTTI_NEMICI, heroClass: HeroClass.NECROMANTE, power: 1.8, cooldown: 4, minRarity: Rarity.RARO },
+
+  // ===================== ALCHIMISTA =====================
+  { id: 'sup_pozione_cura', name: 'Pozione Curativa', description: 'Lancia una pozione che cura un alleato.', type: AbilityType.SUPPORTO, target: TargetType.SINGOLO_ALLEATO, heroClass: HeroClass.ALCHIMISTA, power: 1.5, cooldown: 1 },
+  { id: 'debuff_fiala_acida', name: 'Fiala Acida', description: 'Fiala corrosiva che riduce la DEF.', type: AbilityType.DEBUFF, target: TargetType.SINGOLO_NEMICO, heroClass: HeroClass.ALCHIMISTA, power: 0.8, cooldown: 2, statusEffect: StatusEffect.BRUCIATURA, statusDuration: 2, statusChance: 70 },
+  { id: 'sup_elisir_forza', name: 'Elisir di Forza', description: 'Potenzia un alleato con un elisir che aumenta ATK.', type: AbilityType.SUPPORTO, target: TargetType.SINGOLO_ALLEATO, heroClass: HeroClass.ALCHIMISTA, power: 0, cooldown: 3, statusEffect: StatusEffect.FURIA, statusDuration: 3 },
+  { id: 'ult_bomba_alchemica', name: 'Bomba Alchemica', description: 'Bomba esplosiva che colpisce e avvelena tutti.', type: AbilityType.ULTIMATE, target: TargetType.TUTTI_NEMICI, heroClass: HeroClass.ALCHIMISTA, power: 1.4, cooldown: 4, statusEffect: StatusEffect.VELENO, statusDuration: 2, statusChance: 50, minRarity: Rarity.RARO },
 ];
 
 // Mappa per accesso rapido per ID

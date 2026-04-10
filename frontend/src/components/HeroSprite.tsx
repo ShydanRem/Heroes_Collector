@@ -400,6 +400,136 @@ function getClassBody(heroClass: HeroClass, color: string, dark: string, light: 
         </g>
       );
 
+    case 'dragoon':
+      return (
+        <g>
+          {/* Armatura pesante */}
+          <rect x="22" y="26" width="20" height="22" rx="3" fill="#37474f" />
+          <rect x="24" y="28" width="16" height="18" rx="2" fill={color} opacity="0.3" />
+          {/* Spalline corazzate */}
+          <ellipse cx="22" cy="28" rx="5" ry="4" fill="#455a64" />
+          <ellipse cx="42" cy="28" rx="5" ry="4" fill="#455a64" />
+          {/* Testa */}
+          <circle cx="32" cy="18" r="9" fill={skin} />
+          {/* Elmo da dragoon con visiera */}
+          <path d="M23 18 Q23 8 32 6 Q41 8 41 18" fill="#37474f" />
+          <path d="M25 16 L39 16" stroke={color} strokeWidth="1.5" />
+          {/* Cresta elmo */}
+          <path d="M32 6 L32 2 L35 6" fill="#f44336" />
+          {/* Occhi */}
+          <circle cx="29" cy="20" r="1.5" fill={color} />
+          <circle cx="35" cy="20" r="1.5" fill={color} />
+          {/* Lancia lunga */}
+          <rect x="46" y="8" width="2.5" height="44" rx="1" fill="#8d6e63" />
+          <polygon points="47.25,4 44,12 50.5,12" fill={color} />
+          {/* Piedi con stivali */}
+          <rect x="24" y="48" width="7" height="5" rx="2" fill="#37474f" />
+          <rect x="33" y="48" width="7" height="5" rx="2" fill="#37474f" />
+        </g>
+      );
+
+    case 'samurai':
+      return (
+        <g>
+          {/* Kimono */}
+          <path d="M24 28 L22 52 L42 52 L40 28 Z" fill="#1a237e" />
+          <path d="M32 28 L32 52" stroke={color} strokeWidth="1" opacity="0.4" />
+          {/* Cintura obi */}
+          <rect x="23" y="38" width="18" height="3" rx="1" fill={color} />
+          {/* Testa */}
+          <circle cx="32" cy="18" r="9" fill={skin} />
+          {/* Capelli raccolti (chonmage) */}
+          <path d="M23 16 Q24 8 32 7 Q40 8 41 16" fill="#1a1a2e" />
+          <ellipse cx="32" cy="8" rx="3" ry="2" fill="#1a1a2e" />
+          {/* Occhi determinati */}
+          <line x1="27" y1="19" x2="31" y2="19.5" stroke="#1a1a2e" strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="33" y1="19.5" x2="37" y2="19" stroke="#1a1a2e" strokeWidth="1.5" strokeLinecap="round" />
+          <circle cx="29" cy="19.5" r="0.8" fill={color} />
+          <circle cx="35" cy="19.5" r="0.8" fill={color} />
+          {/* Katana al fianco */}
+          <rect x="18" y="36" width="1.5" height="18" rx="0.5" fill="#e0e0e0" transform="rotate(-15 18 36)" />
+          <rect x="17.5" y="35" width="2.5" height="3" rx="1" fill={color} transform="rotate(-15 18 36)" />
+          {/* Piedi con geta */}
+          <rect x="25" y="52" width="6" height="3" rx="1" fill="#4e342e" />
+          <rect x="33" y="52" width="6" height="3" rx="1" fill="#4e342e" />
+        </g>
+      );
+
+    case 'necromante':
+      return (
+        <g>
+          {/* Veste lunga oscura */}
+          <path d="M24 28 L20 56 L44 56 L40 28 Z" fill="#1a0a2e" />
+          <path d="M26 30 L22 54 L42 54 L38 30 Z" fill={color} opacity="0.15" />
+          {/* Testa */}
+          <circle cx="32" cy="18" r="9" fill={skin} />
+          {/* Cappuccio */}
+          <path d="M22 22 Q22 8 32 5 Q42 8 42 22" fill="#1a0a2e" />
+          <path d="M24 22 Q24 10 32 7 Q40 10 40 22" fill="#2a1040" />
+          {/* Occhi luminosi inquietanti */}
+          <circle cx="29" cy="19" r="1.5" fill="#00e676">
+            <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="35" cy="19" r="1.5" fill="#00e676">
+            <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite" />
+          </circle>
+          {/* Teschio sul petto */}
+          <circle cx="32" cy="35" r="3" fill="#e0e0e0" opacity="0.6" />
+          <circle cx="30.5" cy="34.5" r="0.8" fill="#1a0a2e" />
+          <circle cx="33.5" cy="34.5" r="0.8" fill="#1a0a2e" />
+          {/* Mano con energia oscura */}
+          <circle cx="17" cy="38" r="3" fill={color} opacity="0.3">
+            <animate attributeName="r" values="3;4;3" dur="1.5s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="17" cy="38" r="2" fill={skin} />
+          {/* Particelle oscure */}
+          <circle cx="20" cy="44" r="1" fill={color} opacity="0.4">
+            <animate attributeName="cy" values="44;40;44" dur="2s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="44" cy="32" r="1.2" fill={color} opacity="0.3">
+            <animate attributeName="cy" values="32;28;32" dur="2.5s" repeatCount="indefinite" />
+          </circle>
+        </g>
+      );
+
+    case 'alchimista':
+      return (
+        <g>
+          {/* Camice da laboratorio */}
+          <rect x="23" y="26" width="18" height="22" rx="2" fill="#f5f5f5" />
+          <rect x="24" y="27" width="16" height="20" rx="1.5" fill="#e8e8e8" />
+          {/* Cintura con fiale */}
+          <rect x="23" y="38" width="18" height="3" rx="1" fill="#795548" />
+          <rect x="26" y="36" width="3" height="5" rx="1" fill="#4caf50" />
+          <rect x="31" y="36" width="3" height="5" rx="1" fill="#f44336" />
+          <rect x="36" y="36" width="3" height="5" rx="1" fill="#2196f3" />
+          {/* Testa */}
+          <circle cx="32" cy="18" r="9" fill={skin} />
+          {/* Occhialoni */}
+          <circle cx="28" cy="18" r="4" fill="none" stroke="#795548" strokeWidth="1.5" />
+          <circle cx="36" cy="18" r="4" fill="none" stroke="#795548" strokeWidth="1.5" />
+          <line x1="32" y1="18" x2="32" y2="18" stroke="#795548" strokeWidth="1.5" />
+          <circle cx="28" cy="18" r="3" fill="#bbdefb" opacity="0.3" />
+          <circle cx="36" cy="18" r="3" fill="#bbdefb" opacity="0.3" />
+          {/* Pupille */}
+          <circle cx="28" cy="18.5" r="1" fill={color} />
+          <circle cx="36" cy="18.5" r="1" fill={color} />
+          {/* Capelli arruffati */}
+          <path d="M23 14 Q24 8 28 9 Q30 6 32 8 Q34 6 36 9 Q40 8 41 14" fill="#ff8f00" />
+          {/* Fiasca in mano */}
+          <ellipse cx="48" cy="34" rx="3" ry="4" fill={color} opacity="0.4" />
+          <rect x="46.5" y="28" width="3" height="3" rx="1" fill="#795548" />
+          {/* Fumi dalla fiasca */}
+          <circle cx="48" cy="26" r="1.5" fill={color} opacity="0.2">
+            <animate attributeName="cy" values="26;22;18" dur="2s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.3;0.1;0" dur="2s" repeatCount="indefinite" />
+          </circle>
+          {/* Piedi */}
+          <rect x="25" y="48" width="6" height="4" rx="2" fill="#795548" />
+          <rect x="33" y="48" width="6" height="4" rx="2" fill="#795548" />
+        </g>
+      );
+
     default:
       return (
         <g>

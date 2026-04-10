@@ -26,6 +26,18 @@ export const CLASS_BASE_STATS: Record<HeroClass, HeroStats> = {
   [HeroClass.CRONO]: {
     hp: 145, atk: 35, def: 32, spd: 60, crit: 12, critDmg: 145,
   },
+  [HeroClass.DRAGOON]: {
+    hp: 200, atk: 50, def: 42, spd: 22, crit: 10, critDmg: 175,
+  },
+  [HeroClass.SAMURAI]: {
+    hp: 155, atk: 58, def: 38, spd: 38, crit: 22, critDmg: 165,
+  },
+  [HeroClass.NECROMANTE]: {
+    hp: 125, atk: 60, def: 22, spd: 32, crit: 12, critDmg: 155,
+  },
+  [HeroClass.ALCHIMISTA]: {
+    hp: 150, atk: 30, def: 30, spd: 35, crit: 8, critDmg: 135,
+  },
 };
 
 // Crescita stats per livello (aggiunta per livello)
@@ -53,6 +65,18 @@ export const CLASS_GROWTH: Record<HeroClass, HeroStats> = {
   },
   [HeroClass.CRONO]: {
     hp: 15, atk: 3.5, def: 2.5, spd: 5, crit: 0.3, critDmg: 0.6,
+  },
+  [HeroClass.DRAGOON]: {
+    hp: 24, atk: 5.5, def: 4, spd: 1, crit: 0.3, critDmg: 1.2,
+  },
+  [HeroClass.SAMURAI]: {
+    hp: 17, atk: 6.5, def: 3.5, spd: 2.5, crit: 0.5, critDmg: 1,
+  },
+  [HeroClass.NECROMANTE]: {
+    hp: 13, atk: 7, def: 1.5, spd: 2, crit: 0.3, critDmg: 0.8,
+  },
+  [HeroClass.ALCHIMISTA]: {
+    hp: 16, atk: 3, def: 2.5, spd: 2.5, crit: 0.2, critDmg: 0.4,
   },
 };
 
@@ -105,6 +129,30 @@ export const CLASS_INFO: Record<HeroClass, { name: string; emoji: string; role: 
     emoji: '⏳',
     role: 'Utility',
     description: 'Manipola la velocita. Rallenta nemici e accelera alleati.',
+  },
+  [HeroClass.DRAGOON]: {
+    name: 'Dragoon',
+    emoji: '🐲',
+    role: 'Tank/DPS',
+    description: 'Lanciere corazzato. Salta in aria e piomba sui nemici con colpi devastanti.',
+  },
+  [HeroClass.SAMURAI]: {
+    name: 'Samurai',
+    emoji: '⛩️',
+    role: 'DPS Melee',
+    description: 'Spadaccino disciplinato. Colpi precisi, buona difesa, onore sopra tutto.',
+  },
+  [HeroClass.NECROMANTE]: {
+    name: 'Necromante',
+    emoji: '💀',
+    role: 'DPS/Debuffer',
+    description: 'Mago oscuro. Drena vita, avvelena e maledice. Forte ma fragile.',
+  },
+  [HeroClass.ALCHIMISTA]: {
+    name: 'Alchimista',
+    emoji: '⚗️',
+    role: 'Support',
+    description: 'Maestro delle pozioni. Cura, buffa e lancia veleni. Molto versatile.',
   },
 };
 
@@ -177,8 +225,37 @@ export const SYNERGIES: Synergy[] = [
     requiredClasses: [
       HeroClass.GUARDIANO, HeroClass.LAMA, HeroClass.ARCANO, HeroClass.CUSTODE,
       HeroClass.OMBRA, HeroClass.RANGER, HeroClass.SCIAMANO, HeroClass.CRONO,
+      HeroClass.DRAGOON, HeroClass.SAMURAI, HeroClass.NECROMANTE, HeroClass.ALCHIMISTA,
     ],
     minCount: 4,
     effect: { bonus: 10, description: '+10% a tutte le stats' },
+  },
+  {
+    name: 'Assalto dal Cielo',
+    description: '+20% ATK se nel party ci sono Dragoon + Berserker',
+    requiredClasses: [HeroClass.DRAGOON, HeroClass.LAMA],
+    minCount: 2,
+    effect: { stat: 'atk', bonus: 20, description: '+20% ATK al party' },
+  },
+  {
+    name: 'Via della Spada',
+    description: '+15% CRIT DMG se nel party ci sono Samurai + Assassino',
+    requiredClasses: [HeroClass.SAMURAI, HeroClass.OMBRA],
+    minCount: 2,
+    effect: { stat: 'critDmg', bonus: 15, description: '+15% CRIT DMG al party' },
+  },
+  {
+    name: 'Patto Oscuro',
+    description: '+20% ATK se nel party ci sono Necromante + Sciamano',
+    requiredClasses: [HeroClass.NECROMANTE, HeroClass.SCIAMANO],
+    minCount: 2,
+    effect: { stat: 'atk', bonus: 20, description: '+20% potenza oscura' },
+  },
+  {
+    name: 'Laboratorio da Campo',
+    description: '+25% HP se nel party ci sono Alchimista + Sacerdote',
+    requiredClasses: [HeroClass.ALCHIMISTA, HeroClass.CUSTODE],
+    minCount: 2,
+    effect: { stat: 'hp', bonus: 25, description: '+25% HP al party' },
   },
 ];

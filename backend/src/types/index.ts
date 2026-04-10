@@ -24,6 +24,10 @@ export enum HeroClass {
   RANGER = 'ranger',
   SCIAMANO = 'sciamano',
   CRONO = 'crono',
+  DRAGOON = 'dragoon',
+  SAMURAI = 'samurai',
+  NECROMANTE = 'necromante',
+  ALCHIMISTA = 'alchimista',
 }
 
 // Tipo di abilità
