@@ -174,6 +174,12 @@ export async function claimDailyLogin(userId: string): Promise<ClaimResult> {
     } catch { /* colonna potrebbe non esistere */ }
   }
 
+  // Punti classifica settimanale
+  try {
+    const { addWeeklyPointsGeneric, POINTS } = await import('./weeklyService');
+    await addWeeklyPointsGeneric(userId, POINTS.DAILY_LOGIN);
+  } catch { /* */ }
+
   // Log nel diario
   await query(
     `INSERT INTO daily_logins (twitch_user_id, login_date, streak_day, reward_gold, reward_energy, reward_essences)

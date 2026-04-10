@@ -3,6 +3,7 @@ import { runBattle, createFighter, BattleLogEntry, applySynergies } from './batt
 import { getActiveParty, getPartyHeroes } from './partyService';
 import { addExpToHero } from './heroService';
 import { addGold, addEssences } from './userService';
+import { addWeeklyPoints, POINTS } from './weeklyService';
 import { giveItem } from './itemService';
 import { ITEMS } from '../data/items';
 import { Rarity } from '../types';
@@ -292,6 +293,9 @@ export async function attackRaid(userId: string): Promise<RaidAttackResult> {
   // Essenze: 2-5 per attacco raid, bonus se uccidi il boss
   const essenceReward = Math.floor(2 + Math.random() * 3) + (bossDefeated ? 10 : 0);
   await addEssences(userId, essenceReward);
+
+  // Punti classifica settimanale
+  try { await addWeeklyPoints(userId, POINTS.RAID_ATTACK, 'raid_damage'); } catch { /* */ }
 
   // Loot bonus se il boss e stato sconfitto
   if (bossDefeated) {

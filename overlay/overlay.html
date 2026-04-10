@@ -355,6 +355,25 @@
   .event-toast-text { font-size: 12px; font-weight: 700; color: #efeff1; }
   .event-toast-sub { font-size: 10px; color: #adadb8; }
 
+  /* === Rare Drop Alert === */
+  .event-toast.rare-drop {
+    border-color: rgba(239, 68, 68, 0.7);
+    background: linear-gradient(135deg, rgba(14, 14, 16, 0.97), rgba(60, 10, 10, 0.97));
+    animation: rarePulse 0.6s ease 2;
+  }
+  .event-toast.rare-drop.mitico {
+    border-color: rgba(236, 72, 153, 0.7);
+    background: linear-gradient(135deg, rgba(14, 14, 16, 0.97), rgba(60, 10, 40, 0.97));
+  }
+  .event-toast.rare-drop.master {
+    border-color: rgba(251, 191, 36, 0.8);
+    background: linear-gradient(135deg, rgba(14, 14, 16, 0.97), rgba(60, 40, 0, 0.97));
+  }
+  @keyframes rarePulse {
+    0%, 100% { transform: translateX(-50%) translateY(0) scale(1); }
+    50% { transform: translateX(-50%) translateY(0) scale(1.05); }
+  }
+
   /* === Fallback offline === */
   .offline-card {
     text-align: center;
@@ -440,14 +459,39 @@ async function fetchData() {
 let toastQueue = [];
 let toastBusy = false;
 
+const RARITY_EMOJIS = {
+  leggendario: '\u{1F525}', mitico: '\u{1F48E}', master: '\u{1F451}',
+};
+const RARITY_LABELS_OV = {
+  leggendario: 'LEGGENDARIO', mitico: 'MITICO', master: 'MASTER',
+};
+
 function checkForNewEvents() {
   if (!prevData || !data) return;
 
-  // Nuova cattura
+  // Drop rari (leggendario+)
+  if (data.rareDrops && data.rareDrops.length > 0) {
+    const prevRareIds = (prevData.rareDrops || []).map(r => r.capturedAt);
+    for (const drop of data.rareDrops) {
+      if (!prevRareIds.includes(drop.capturedAt)) {
+        const emoji = RARITY_EMOJIS[drop.rarity] || '\u2728';
+        const label = RARITY_LABELS_OV[drop.rarity] || drop.rarity.toUpperCase();
+        showToast(
+          emoji,
+          `${label}! ${drop.heroName}`,
+          `catturato da ${drop.captorName}`,
+          drop.rarity
+        );
+      }
+    }
+  }
+
+  // Nuova cattura (non rara)
   if (data.recentCaptures && data.recentCaptures.length > 0) {
     const newest = data.recentCaptures[0];
     const prevNewest = prevData.recentCaptures && prevData.recentCaptures[0];
-    if (!prevNewest || newest.capturedAt !== prevNewest.capturedAt) {
+    const isRare = ['leggendario', 'mitico', 'master'].includes(newest.rarity);
+    if (!isRare && (!prevNewest || newest.capturedAt !== prevNewest.capturedAt)) {
       showToast(
         '\u{1F3A3}',
         `${newest.heroName} catturato!`,
@@ -462,8 +506,8 @@ function checkForNewEvents() {
   }
 }
 
-function showToast(icon, text, sub) {
-  toastQueue.push({ icon, text, sub });
+function showToast(icon, text, sub, rarity) {
+  toastQueue.push({ icon, text, sub, rarity });
   if (!toastBusy) processToast();
 }
 
@@ -475,11 +519,18 @@ function processToast() {
   document.getElementById('toastIcon').textContent = t.icon;
   document.getElementById('toastText').textContent = t.text;
   document.getElementById('toastSub').textContent = t.sub;
+  // Stile speciale per drop rari
+  el.className = 'event-toast';
+  if (t.rarity && ['leggendario', 'mitico', 'master'].includes(t.rarity)) {
+    el.classList.add('rare-drop', t.rarity);
+  }
   el.classList.add('show');
+  const duration = t.rarity && ['leggendario', 'mitico', 'master'].includes(t.rarity) ? 6000 : 4000;
   setTimeout(() => {
     el.classList.remove('show');
+    el.className = 'event-toast';
     setTimeout(processToast, 500);
-  }, 4000);
+  }, duration);
 }
 
 // ===== COUNT-UP ANIMAZIONE =====

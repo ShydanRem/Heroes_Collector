@@ -93,6 +93,11 @@ overlayRoutes.get('/', async (_req: Request, res: Response) => {
       raidBoss,
       lastCapture,
       recentCaptures,
+      // Drop rari: catture leggendario+ negli ultimi 5 minuti
+      rareDrops: recentCaptures.filter((c: any) =>
+        ['leggendario', 'mitico', 'master'].includes(c.rarity) &&
+        c.capturedAt && (Date.now() - new Date(c.capturedAt).getTime()) < 5 * 60 * 1000
+      ),
       stats: {
         totalPlayers: parseInt(stats.rows[0].total_players),
         totalHeroes: parseInt(stats.rows[0].total_heroes),

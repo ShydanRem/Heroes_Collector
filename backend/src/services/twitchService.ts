@@ -2,6 +2,7 @@ import axios from 'axios';
 import { env } from '../config/env';
 import * as userService from './userService';
 import { handleChannelPointRedemption, CHANNEL_POINT_REWARDS } from './channelPointsService';
+import { handleChatCommand } from './chatCommandService';
 import { query } from '../config/database';
 
 let appAccessToken: string | null = null;
@@ -148,11 +149,14 @@ export async function handleEventSubEvent(
 
 /**
  * Quando un utente scrive in chat: +1 messaggio, +1 energia.
+ * Se e' un comando (!hero, !stats ecc), gestiscilo.
  */
 async function handleChatMessage(event: any): Promise<void> {
   const userId = event.chatter_user_id;
   const username = event.chatter_user_login;
   const displayName = event.chatter_user_name;
+  const message = event.message?.text || '';
+  const broadcasterId = event.broadcaster_user_id || env.broadcasterId;
 
   // Assicurati che l'utente esista nel DB
   await userService.findOrCreateUser(userId, username, displayName);
@@ -166,6 +170,11 @@ async function handleChatMessage(event: any): Promise<void> {
      WHERE twitch_user_id = $1`,
     [userId]
   );
+
+  // Gestisci comandi chat
+  if (message.startsWith('!')) {
+    await handleChatCommand(userId, username, displayName, message, broadcasterId);
+  }
 }
 
 /**

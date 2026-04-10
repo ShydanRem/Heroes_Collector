@@ -174,6 +174,12 @@ export async function captureHero(
     [captorUserId, heroId, chosenRarity]
   );
 
+  // Punti classifica settimanale
+  try {
+    const { addWeeklyPoints, POINTS } = await import('./weeklyService');
+    await addWeeklyPoints(captorUserId, POINTS.CAPTURE, 'captures');
+  } catch { /* */ }
+
   return { success: true, message: `Hai catturato ${hero.displayName}!` };
 }
 

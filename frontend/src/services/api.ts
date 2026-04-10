@@ -450,6 +450,37 @@ export async function claimDailyLogin(): Promise<ClaimResult> {
   return request('/daily-login/claim', { method: 'POST' });
 }
 
+// ============ WEEKLY LEADERBOARD ============
+
+export interface WeeklyEntry {
+  rank: number;
+  userId: string;
+  displayName: string;
+  points: number;
+  dungeonsCleared: number;
+  pvpWins: number;
+  raidDamage: number;
+  captures: number;
+  heroClass: string;
+  rarity: string;
+  level: number;
+}
+
+export interface WeeklyChampion {
+  displayName: string;
+  points: number;
+  title: string;
+  weekNumber: number;
+}
+
+export async function getWeeklyLeaderboard(): Promise<{ leaderboard: WeeklyEntry[]; champion: WeeklyChampion | null }> {
+  return request('/weekly');
+}
+
+export async function getMyWeeklyScore(): Promise<{ score: any | null }> {
+  return request('/weekly/me');
+}
+
 // ============ ACHIEVEMENTS ============
 
 export interface Achievement {

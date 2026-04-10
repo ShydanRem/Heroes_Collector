@@ -3,6 +3,7 @@ import { runBattle, createFighter, BattleLogEntry, applySynergies } from './batt
 import { getActiveParty, getPartyHeroes } from './partyService';
 import { addExpToHero } from './heroService';
 import { addGold, addEssences } from './userService';
+import { addWeeklyPoints, POINTS } from './weeklyService';
 
 // ============================================
 // RISULTATO PVP
@@ -153,6 +154,11 @@ export async function findAndFight(userId: string): Promise<PvpResult> {
   if (essenceReward > 0) {
     await addEssences(userId, essenceReward);
   }
+
+  // Punti classifica settimanale
+  try {
+    await addWeeklyPoints(userId, outcome.won ? POINTS.PVP_WIN : POINTS.PVP_LOSS, 'pvp_wins');
+  } catch { /* */ }
 
   // Salva battaglia
   const battleResult = await query(

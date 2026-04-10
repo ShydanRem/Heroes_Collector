@@ -4,6 +4,7 @@ import { generateWaveMonsters } from '../data/monsters';
 import { getPartyHeroes, getActiveParty } from './partyService';
 import { addExpToHero } from './heroService';
 import { addGold, addEssences } from './userService';
+import { addWeeklyPoints, POINTS } from './weeklyService';
 import { rollLoot, ITEM_MAP } from '../data/items';
 import { giveItem } from './itemService';
 import { rollModifier, DungeonModifier } from '../data/dungeonModifiers';
@@ -247,6 +248,11 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
   const essenceReward = won ? Math.floor(1 + zone.order * 0.5 + Math.random() * 2) : 0;
   if (essenceReward > 0) {
     await addEssences(userId, essenceReward);
+  }
+
+  // Punti classifica settimanale
+  if (won) {
+    try { await addWeeklyPoints(userId, POINTS.DUNGEON_CLEAR, 'dungeons_cleared'); } catch { /* */ }
   }
 
   // Gestisci progressi zona
