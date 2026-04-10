@@ -228,22 +228,63 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
 
   // ============ RENDER ============
 
-  // Posizioni FF classico: entrambi i team in diagonale parallela
-  // Left team: dal basso-centro verso alto-sinistra (il primo e' davanti al centro)
-  // Right team: dal basso-centro verso alto-destra (speculare)
-  const getPosition = (index: number, total: number, side: 'left' | 'right') => {
-    // Distanziati di piu': left team a ~20%, right team a ~80%
-    const baseX = side === 'left' ? 18 : 72;
-    // Entrambi i team salgono verso l'esterno (lontano dal centro)
-    const dirX = side === 'left' ? -1.5 : 1.5;
-    const offsetX = index * 5 * dirX;
-    const offsetY = index * 24;
-    const bottom = 18 + offsetY;
-    const left = baseX + offsetX;
-    return { bottom: `${bottom}px`, left: `${left}%` };
-  };
+  // Ruoli per determinare front/back row
+  const FRONT_ROLES = new Set(['guardiano', 'dragoon', 'lama', 'samurai', 'ombra']);
+  // Tutto il resto (arcano, custode, ranger, sciamano, crono, necromante, alchimista) = back
 
-  const renderFighter = (fighter: ArenaFighter, index: number, total: number, side: 'left' | 'right') => {
+  function isFrontRow(fighter: ArenaFighter): boolean {
+    if (fighter.isMonster) return true; // i mostri non hanno classe, gestiamo con stagger
+    return FRONT_ROLES.has(fighter.heroClass || '');
+  }
+
+  // Posiziona il party (left): front row davanti, back row dietro
+  // Posiziona i nemici (right): sfalsati fronte/retro alternati
+  function getFormation(team: ArenaFighter[], side: 'left' | 'right'): { fighter: ArenaFighter; x: number; y: number; row: 'front' | 'back' }[] {
+    if (side === 'left') {
+      // Party: dividi in front e back per ruolo
+      const front = team.filter(f => isFrontRow(f));
+      const back = team.filter(f => !isFrontRow(f));
+      const positions: { fighter: ArenaFighter; x: number; y: number; row: 'front' | 'back' }[] = [];
+
+      // Front row: X piu' avanti (verso il centro), distribuiti verticalmente
+      front.forEach((f, i) => {
+        const totalFront = front.length;
+        const spacing = Math.min(40, 120 / Math.max(totalFront, 1));
+        const startY = 110 - ((totalFront - 1) * spacing) / 2;
+        positions.push({ fighter: f, x: 28, y: startY + i * spacing, row: 'front' });
+      });
+
+      // Back row: X piu' indietro (verso il bordo sinistro)
+      back.forEach((f, i) => {
+        const totalBack = back.length;
+        const spacing = Math.min(40, 120 / Math.max(totalBack, 1));
+        const startY = 110 - ((totalBack - 1) * spacing) / 2;
+        positions.push({ fighter: f, x: 10, y: startY + i * spacing, row: 'back' });
+      });
+
+      return positions;
+    } else {
+      // Nemici: sfalsati fronte/retro alternati
+      const positions: { fighter: ArenaFighter; x: number; y: number; row: 'front' | 'back' }[] = [];
+      const total = team.length;
+      const spacing = Math.min(38, 120 / Math.max(total, 1));
+      const startY = 110 - ((total - 1) * spacing) / 2;
+
+      team.forEach((f, i) => {
+        const isFront = i % 2 === 0;
+        positions.push({
+          fighter: f,
+          x: isFront ? 68 : 86,
+          y: startY + i * spacing,
+          row: isFront ? 'front' : 'back',
+        });
+      });
+
+      return positions;
+    }
+  }
+
+  const renderFighter = (fighter: ArenaFighter, x: number, y: number, row: 'front' | 'back', side: 'left' | 'right') => {
     const isActing = activeActorId === fighter.id;
     const isTargeted = activeTargetId === fighter.id;
     const hpPercent = Math.max(0, (fighter.currentHp / fighter.maxHp) * 100);
@@ -255,24 +296,22 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
     else if (isTargeted) animClass = 'hit';
 
     const myFloats = floatingTexts.filter(ft => ft.fighterId === fighter.id);
-    const pos = getPosition(index, total, side);
 
-    // Sprite piu' grande per chi e' davanti (prospettiva)
-    const spriteSize = 44 - index * 2;
-    // Ombra a terra sotto lo sprite
-    const shadowWidth = spriteSize * 0.8;
+    // Front row sprite leggermente piu' grande
+    const spriteSize = row === 'front' ? 42 : 36;
+    const shadowWidth = spriteSize * 0.7;
 
     return (
       <div key={fighter.id} className={`arena-fighter ${animClass} arena-fighter-${side}`}
         style={{
           position: 'absolute',
-          bottom: pos.bottom,
-          left: pos.left,
-          transform: 'translateX(-50%)',
+          left: `${x}%`,
+          top: `${y}px`,
+          transform: 'translate(-50%, -50%)',
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           opacity: fighter.isAlive ? 1 : 0.2,
           transition: 'opacity 0.5s ease',
-          zIndex: 10 - index, // chi e' davanti ha z-index piu' alto
+          zIndex: row === 'front' ? 6 : 4,
         }}
       >
         {/* Floating texts */}
@@ -298,13 +337,13 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
         {/* Ombra a terra */}
         <div style={{
           width: shadowWidth, height: 4, borderRadius: '50%',
-          background: 'radial-gradient(ellipse, rgba(0,0,0,0.4) 0%, transparent 70%)',
-          marginTop: -2,
+          background: 'radial-gradient(ellipse, rgba(0,0,0,0.35) 0%, transparent 70%)',
+          marginTop: -1,
         }} />
 
         {/* HP bar */}
-        <div style={{ width: 46, marginTop: 2 }}>
-          <div style={{ height: 4, background: 'rgba(0,0,0,0.5)', borderRadius: 2, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ width: 44, marginTop: 1 }}>
+          <div style={{ height: 3, background: 'rgba(0,0,0,0.5)', borderRadius: 2, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
             <div style={{
               width: `${hpPercent}%`, height: '100%', background: hpColor,
               borderRadius: 2, transition: 'width 0.3s ease',
@@ -314,8 +353,8 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
 
         {/* Nome */}
         <div style={{
-          fontSize: 7, color: fighter.isAlive ? '#ccc' : '#444',
-          marginTop: 1, maxWidth: 52, overflow: 'hidden',
+          fontSize: 7, color: fighter.isAlive ? '#bbb' : '#444',
+          marginTop: 1, maxWidth: 50, overflow: 'hidden',
           textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center',
           textShadow: '0 1px 2px rgba(0,0,0,0.8)',
         }}>
@@ -336,9 +375,14 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
         {/* Linea orizzonte / terreno */}
         <div className="arena-ground" />
 
-        {/* Fighter posizionati in diagonale stile FF */}
-        {leftFighters.map((f, i) => renderFighter(f, i, leftFighters.length, 'left'))}
-        {rightFighters.map((f, i) => renderFighter(f, i, rightFighters.length, 'right'))}
+        {/* Party a sinistra: melee davanti, caster/healer dietro */}
+        {getFormation(leftFighters, 'left').map(({ fighter, x, y, row }) =>
+          renderFighter(fighter, x, y, row, 'left')
+        )}
+        {/* Nemici a destra: sfalsati fronte/retro */}
+        {getFormation(rightFighters, 'right').map(({ fighter, x, y, row }) =>
+          renderFighter(fighter, x, y, row, 'right')
+        )}
 
         {/* VS al centro, molto tenue */}
         <div className="arena-vs">VS</div>
