@@ -39,13 +39,15 @@ export function twitchAuth(req: Request, res: Response, next: NextFunction) {
     const decoded = jwt.verify(token, secret) as any;
 
     // Il JWT Twitch usa 'user_id' se l'utente ha condiviso l'identita,
-    // altrimenti solo 'opaque_user_id'. Usiamo opaque come fallback.
+    // altrimenti solo 'opaque_user_id'.
+    const isIdentityShared = !!decoded.user_id;
     req.twitchUser = {
       channel_id: decoded.channel_id,
       user_id: decoded.user_id || decoded.opaque_user_id,
       opaque_user_id: decoded.opaque_user_id,
       role: decoded.role || 'viewer',
       pubsub_perms: decoded.pubsub_perms,
+      is_unlinked: !isIdentityShared,
     };
     next();
   } catch (err) {

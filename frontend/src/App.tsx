@@ -115,7 +115,7 @@ export default function App() {
         <div className="join-screen">
           <div className="join-logo">HC</div>
           <h2>Heroes Collector</h2>
-          {noAuth ? (
+          {noAuth || joinError?.includes('identita') ? (
             <p style={{ fontSize: 11 }}>
               Per giocare devi condividere la tua identita con l'estensione.<br /><br />
               <strong>Su mobile:</strong> tocca l'icona dell'estensione e consenti l'accesso.<br />

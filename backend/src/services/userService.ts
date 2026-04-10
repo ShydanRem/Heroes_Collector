@@ -41,6 +41,24 @@ export async function optIn(twitchUserId: string): Promise<void> {
 }
 
 /**
+ * Aggiorna username e display name di un utente (e del suo eroe).
+ * Usato per fixare utenti che avevano un opaque_user_id come nome.
+ */
+export async function updateUserNames(twitchUserId: string, username: string, displayName: string): Promise<void> {
+  await query(
+    `UPDATE users SET twitch_username = $1, display_name = $2, updated_at = NOW()
+     WHERE twitch_user_id = $3`,
+    [username, displayName, twitchUserId]
+  );
+  // Aggiorna anche l'eroe associato
+  await query(
+    `UPDATE heroes SET twitch_username = $1, display_name = $2, updated_at = NOW()
+     WHERE twitch_user_id = $3`,
+    [username, displayName, twitchUserId]
+  );
+}
+
+/**
  * Aggiorna i contatori di attività.
  */
 export async function addActivity(

@@ -149,6 +149,7 @@ export interface TwitchToken {
   opaque_user_id: string;
   role: 'broadcaster' | 'moderator' | 'viewer' | 'external';
   pubsub_perms?: { listen?: string[]; send?: string[] };
+  is_unlinked?: boolean; // true se l'utente non ha condiviso l'identita
 }
 
 // ============================================
