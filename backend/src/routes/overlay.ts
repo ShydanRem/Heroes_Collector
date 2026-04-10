@@ -54,24 +54,26 @@ overlayRoutes.get('/', async (_req: Request, res: Response) => {
          (SELECT COUNT(*) FROM battles WHERE battle_type = 'pvp') as total_pvp`
     );
 
-    // Ultimo eroe catturato (ultimi 5 minuti)
+    // Ultime 3 catture con timestamp
     let lastCapture = null;
+    let recentCaptures: any[] = [];
     try {
       const capture = await query(
-        `SELECT h.display_name, h.hero_class, h.rarity, u.display_name as captor_name
+        `SELECT h.display_name, h.hero_class, h.rarity, u.display_name as captor_name, r.captured_at
          FROM roster r
          JOIN heroes h ON h.id = r.hero_id
          JOIN users u ON u.twitch_user_id = r.user_id
-         ORDER BY r.captured_at DESC LIMIT 1`
+         ORDER BY r.captured_at DESC LIMIT 3`
       );
-      if (capture.rows.length > 0) {
-        const c = capture.rows[0];
-        lastCapture = {
-          heroName: c.display_name,
-          heroClass: c.hero_class,
-          rarity: c.rarity,
-          captorName: c.captor_name,
-        };
+      recentCaptures = capture.rows.map(c => ({
+        heroName: c.display_name,
+        heroClass: c.hero_class,
+        rarity: c.rarity,
+        captorName: c.captor_name,
+        capturedAt: c.captured_at,
+      }));
+      if (recentCaptures.length > 0) {
+        lastCapture = recentCaptures[0];
       }
     } catch { /* */ }
 
@@ -90,6 +92,7 @@ overlayRoutes.get('/', async (_req: Request, res: Response) => {
       })),
       raidBoss,
       lastCapture,
+      recentCaptures,
       stats: {
         totalPlayers: parseInt(stats.rows[0].total_players),
         totalHeroes: parseInt(stats.rows[0].total_heroes),

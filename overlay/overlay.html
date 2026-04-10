@@ -2,21 +2,25 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
     background: transparent;
-    font-family: 'Segoe UI', 'Inter', sans-serif;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
     overflow: hidden;
-    width: 420px;
-    height: 190px;
+    width: 100vw;
+    height: 100vh;
   }
 
   .overlay {
     position: relative;
     width: 420px;
     height: 190px;
+    /* Scala proporzionalmente se OBS ridimensiona */
+    transform-origin: top left;
   }
 
   .card {
@@ -88,7 +92,31 @@
     text-transform: uppercase;
   }
 
-  /* Top Heroes */
+  /* === Indicatore slide === */
+  .slide-dots {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+  }
+
+  .slide-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(145, 71, 255, 0.25);
+    transition: all 0.3s ease;
+  }
+
+  .slide-dot.active {
+    background: #9147ff;
+    box-shadow: 0 0 6px rgba(145, 71, 255, 0.6);
+    transform: scale(1.3);
+  }
+
+  /* === Top Heroes === */
   .hero-row {
     display: flex;
     align-items: center;
@@ -128,17 +156,17 @@
     text-align: right;
   }
 
-  /* Rarity colors */
+  /* === Rarity colors + glow per rarita alte === */
   .rarity-comune { color: #9ca3af; }
   .rarity-non_comune { color: #22c55e; }
   .rarity-raro { color: #3b82f6; }
-  .rarity-molto_raro { color: #a855f7; }
-  .rarity-epico { color: #f59e0b; }
-  .rarity-leggendario { color: #ef4444; }
-  .rarity-mitico { color: #ec4899; }
-  .rarity-master { color: #fbbf24; }
+  .rarity-molto_raro { color: #a855f7; text-shadow: 0 0 6px rgba(168, 85, 247, 0.4); }
+  .rarity-epico { color: #f59e0b; text-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
+  .rarity-leggendario { color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+  .rarity-mitico { color: #ec4899; text-shadow: 0 0 12px rgba(236, 72, 153, 0.6); }
+  .rarity-master { color: #fbbf24; text-shadow: 0 0 14px rgba(251, 191, 36, 0.7); }
 
-  /* PVP */
+  /* === PVP === */
   .pvp-row {
     display: flex;
     align-items: center;
@@ -152,7 +180,7 @@
   .pvp-elo { font-weight: 800; color: #ffd700; font-size: 14px; }
   .pvp-record { font-size: 10px; color: #737380; }
 
-  /* Raid */
+  /* === Raid === */
   .raid-info { text-align: center; padding: 4px 0; }
   .raid-name { font-size: 18px; font-weight: 800; color: #f44336; margin-bottom: 4px; }
   .raid-hp-bar {
@@ -180,7 +208,22 @@
     text-shadow: 0 1px 2px rgba(0,0,0,0.8);
   }
 
-  /* Stats */
+  /* Pulsazione HP bassa */
+  @keyframes hpPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  .raid-hp-fill.critical {
+    animation: hpPulse 0.8s ease infinite;
+  }
+
+  .raid-participants {
+    font-size: 10px;
+    color: #adadb8;
+    margin-top: 4px;
+  }
+
+  /* === Stats === */
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -209,7 +252,7 @@
     letter-spacing: 0.5px;
   }
 
-  /* CTA */
+  /* === CTA === */
   .cta-card {
     text-align: center;
     display: flex;
@@ -224,6 +267,22 @@
     font-weight: 800;
     color: #efeff1;
     margin-bottom: 4px;
+    position: relative;
+  }
+
+  /* Shimmer su CTA */
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+
+  .cta-shimmer {
+    background: linear-gradient(90deg, #efeff1 30%, #9147ff 50%, #efeff1 70%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 3s linear infinite;
   }
 
   .cta-sub {
@@ -243,31 +302,76 @@
     50% { transform: translateY(4px); }
   }
 
-  /* Capture alert */
-  .capture-alert {
+  /* === Catture recenti (mini feed) === */
+  .captures-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 2px 0;
+  }
+
+  .capture-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 8px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 6px;
+    font-size: 11px;
+  }
+
+  .capture-emoji { font-size: 14px; width: 20px; text-align: center; }
+  .capture-hero-name { flex: 1; font-weight: 700; }
+  .capture-by { color: #737380; font-size: 10px; }
+  .capture-time { color: #53535f; font-size: 9px; min-width: 32px; text-align: right; }
+
+  /* === Notifica pop-up eventi === */
+  .event-toast {
+    position: fixed;
+    top: 200px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: linear-gradient(135deg, rgba(14, 14, 16, 0.95), rgba(26, 10, 46, 0.95));
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    border-radius: 10px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .event-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .event-toast-icon { font-size: 18px; }
+  .event-toast-text { font-size: 12px; font-weight: 700; color: #efeff1; }
+  .event-toast-sub { font-size: 10px; color: #adadb8; }
+
+  /* === Fallback offline === */
+  .offline-card {
     text-align: center;
-    padding: 8px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 6px;
   }
 
-  .capture-title {
-    font-size: 11px;
-    color: #f59e0b;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-  }
+  .offline-icon { font-size: 28px; opacity: 0.5; }
+  .offline-text { font-size: 12px; color: #737380; }
 
-  .capture-hero {
-    font-size: 16px;
-    font-weight: 800;
-    color: #efeff1;
-  }
-
-  .capture-by {
-    font-size: 11px;
-    color: #adadb8;
-    margin-top: 2px;
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 </style>
 </head>
@@ -277,11 +381,20 @@
   <!-- Cards get injected here -->
 </div>
 
+<div class="event-toast" id="eventToast">
+  <span class="event-toast-icon" id="toastIcon"></span>
+  <div>
+    <div class="event-toast-text" id="toastText"></div>
+    <div class="event-toast-sub" id="toastSub"></div>
+  </div>
+</div>
+
 <script>
 // ===== CONFIGURAZIONE =====
 const API_URL = 'https://heroes-collector.onrender.com/api/overlay';
-const ROTATE_INTERVAL = 8000;  // 8 secondi per card
-const FETCH_INTERVAL = 30000;  // refresh dati ogni 30s
+const ROTATE_INTERVAL = 8000;
+const FETCH_INTERVAL = 30000;
+const CAPTURE_STALE_MINUTES = 30; // nascondi catture piu vecchie di 30 min
 
 const CLASS_LABELS = {
   guardiano: 'Guardiano', lama: 'Berserker', arcano: 'Stregone', custode: 'Sacerdote',
@@ -289,69 +402,193 @@ const CLASS_LABELS = {
 };
 
 const CLASS_EMOJIS = {
-  guardiano: '🛡️', lama: '⚔️', arcano: '🔮', custode: '✨',
-  ombra: '🗡️', ranger: '🏹', sciamano: '🌿', crono: '⏳',
+  guardiano: '\u{1F6E1}\uFE0F', lama: '\u2694\uFE0F', arcano: '\u{1F52E}', custode: '\u2728',
+  ombra: '\u{1F5E1}\uFE0F', ranger: '\u{1F3F9}', sciamano: '\u{1F33F}', crono: '\u231B',
 };
 
 let data = null;
+let prevData = null;
 let currentSlide = 0;
 let slides = [];
+let retryDelay = 1000;
+let offline = false;
 
+// ===== FETCH CON RETRY + BACKOFF =====
 async function fetchData() {
   try {
     const res = await fetch(API_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    prevData = data;
     data = await res.json();
+    retryDelay = 1000; // reset backoff
+    offline = false;
+    checkForNewEvents();
     buildSlides();
   } catch (e) {
     console.error('Fetch error:', e);
+    if (!data) {
+      offline = true;
+      buildSlides();
+    }
+    // Retry con exponential backoff (max 60s)
+    retryDelay = Math.min(retryDelay * 2, 60000);
+    setTimeout(fetchData, retryDelay);
   }
 }
 
+// ===== EVENTI / NOTIFICHE POP-UP =====
+let toastQueue = [];
+let toastBusy = false;
+
+function checkForNewEvents() {
+  if (!prevData || !data) return;
+
+  // Nuova cattura
+  if (data.recentCaptures && data.recentCaptures.length > 0) {
+    const newest = data.recentCaptures[0];
+    const prevNewest = prevData.recentCaptures && prevData.recentCaptures[0];
+    if (!prevNewest || newest.capturedAt !== prevNewest.capturedAt) {
+      showToast(
+        '\u{1F3A3}',
+        `${newest.heroName} catturato!`,
+        `da ${newest.captorName}`
+      );
+    }
+  }
+
+  // Raid boss sconfitto
+  if (data.raidBoss && data.raidBoss.defeated && prevData.raidBoss && !prevData.raidBoss.defeated) {
+    showToast('\u{1F480}', `${data.raidBoss.name} sconfitto!`, 'Raid completato');
+  }
+}
+
+function showToast(icon, text, sub) {
+  toastQueue.push({ icon, text, sub });
+  if (!toastBusy) processToast();
+}
+
+function processToast() {
+  if (toastQueue.length === 0) { toastBusy = false; return; }
+  toastBusy = true;
+  const t = toastQueue.shift();
+  const el = document.getElementById('eventToast');
+  document.getElementById('toastIcon').textContent = t.icon;
+  document.getElementById('toastText').textContent = t.text;
+  document.getElementById('toastSub').textContent = t.sub;
+  el.classList.add('show');
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(processToast, 500);
+  }, 4000);
+}
+
+// ===== COUNT-UP ANIMAZIONE =====
+function animateCountUp(element, target, duration = 800) {
+  const start = 0;
+  const startTime = performance.now();
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // easeOutQuart
+    const eased = 1 - Math.pow(1 - progress, 4);
+    element.textContent = Math.round(start + (target - start) * eased);
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function activateCountUps(card) {
+  const els = card.querySelectorAll('[data-countup]');
+  els.forEach(el => {
+    const target = parseInt(el.getAttribute('data-countup'));
+    if (!isNaN(target) && target > 0) {
+      el.textContent = '0';
+      setTimeout(() => animateCountUp(el, target), 200);
+    }
+  });
+}
+
+// ===== TEMPO RELATIVO =====
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'ora';
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  return `${Math.floor(hours / 24)}g`;
+}
+
+function isFresh(dateStr, maxMinutes) {
+  return (Date.now() - new Date(dateStr).getTime()) < maxMinutes * 60000;
+}
+
+// ===== BUILD SLIDES =====
 function buildSlides() {
   slides = [];
 
-  // CTA sempre presente
-  slides.push(buildCTA());
-
-  // Top eroi (se ci sono)
-  if (data.topHeroes.length > 0) {
-    slides.push(buildTopHeroes());
+  if (offline || !data) {
+    slides.push({ html: buildOffline(), hasCountUp: false });
+    return;
   }
 
-  // Top PVP (se ci sono)
-  if (data.topPvp.length > 0) {
-    slides.push(buildTopPvp());
+  // CTA sempre
+  slides.push({ html: buildCTA(), hasCountUp: false });
+
+  if (data.topHeroes && data.topHeroes.length > 0) {
+    slides.push({ html: buildTopHeroes(), hasCountUp: false });
   }
 
-  // Raid boss (se attivo)
+  if (data.topPvp && data.topPvp.length > 0) {
+    slides.push({ html: buildTopPvp(), hasCountUp: true });
+  }
+
   if (data.raidBoss && !data.raidBoss.defeated) {
-    slides.push(buildRaid());
+    slides.push({ html: buildRaid(), hasCountUp: false });
   }
 
-  // Stats
-  if (data.stats.totalPlayers > 0) {
-    slides.push(buildStats());
+  if (data.stats && data.stats.totalPlayers > 0) {
+    slides.push({ html: buildStats(), hasCountUp: true });
   }
 
-  // Ultima cattura
-  if (data.lastCapture) {
-    slides.push(buildCapture());
+  // Catture recenti (solo se fresche)
+  const freshCaptures = (data.recentCaptures || []).filter(c =>
+    c.capturedAt && isFresh(c.capturedAt, CAPTURE_STALE_MINUTES)
+  );
+  if (freshCaptures.length > 0) {
+    slides.push({ html: buildCaptures(freshCaptures), hasCountUp: false });
   }
+}
+
+function buildOffline() {
+  return `
+    <div class="card-header">
+      <div class="card-icon">\u{1F3AE}</div>
+      <div>
+        <div class="card-title">Heroes Collector</div>
+        <div class="card-subtitle">Connessione in corso...</div>
+      </div>
+    </div>
+    <div class="offline-card">
+      <div class="offline-icon">\u23F3</div>
+      <div class="offline-text">Caricamento dati del gioco...</div>
+    </div>
+  `;
 }
 
 function buildCTA() {
   return `
     <div class="card-header">
-      <div class="card-icon">🎮</div>
+      <div class="card-icon">\u{1F3AE}</div>
       <div>
         <div class="card-title">Heroes Collector</div>
         <div class="card-subtitle">Estensione attiva</div>
       </div>
     </div>
     <div class="cta-card">
-      <div class="cta-text">Gioca adesso!</div>
+      <div class="cta-text cta-shimmer">Gioca adesso!</div>
       <div class="cta-sub">Clicca sul pannello sotto il video<br>per diventare un eroe e combattere!</div>
-      <div class="cta-arrow">👇</div>
+      <div class="cta-arrow">\u{1F447}</div>
     </div>
   `;
 }
@@ -360,7 +597,7 @@ function buildTopHeroes() {
   const rows = data.topHeroes.slice(0, 4).map((h, i) => {
     const rankColors = ['#ffd700', '#c0c0c0', '#cd7f32', '#737380'];
     return `
-      <div class="hero-row">
+      <div class="hero-row" style="animation: fadeInUp 0.3s ease ${i * 0.08}s both">
         <div class="hero-rank" style="color:${rankColors[i] || '#737380'}">#${i + 1}</div>
         <div class="hero-name rarity-${h.rarity}">${h.name}</div>
         <div class="hero-class">${CLASS_EMOJIS[h.heroClass] || ''} ${CLASS_LABELS[h.heroClass] || h.heroClass}</div>
@@ -371,7 +608,7 @@ function buildTopHeroes() {
 
   return `
     <div class="card-header">
-      <div class="card-icon">🏆</div>
+      <div class="card-icon">\u{1F3C6}</div>
       <div>
         <div class="card-title">Top Eroi</div>
         <div class="card-subtitle">I piu forti del canale</div>
@@ -382,19 +619,19 @@ function buildTopHeroes() {
 }
 
 function buildTopPvp() {
-  const medals = ['🥇', '🥈', '🥉'];
+  const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
   const rows = data.topPvp.map((p, i) => `
-    <div class="pvp-row">
+    <div class="pvp-row" style="animation: fadeInUp 0.3s ease ${i * 0.08}s both">
       <div class="pvp-medal">${medals[i] || ''}</div>
       <div class="pvp-name">${p.name}</div>
       <div class="pvp-record">${p.wins}W ${p.losses}L</div>
-      <div class="pvp-elo">${p.elo}</div>
+      <div class="pvp-elo" data-countup="${p.elo}">0</div>
     </div>
   `).join('');
 
   return `
     <div class="card-header">
-      <div class="card-icon">⚔️</div>
+      <div class="card-icon">\u2694\uFE0F</div>
       <div>
         <div class="card-title">Arena PVP</div>
         <div class="card-subtitle">Classifica ELO</div>
@@ -407,9 +644,10 @@ function buildTopPvp() {
 function buildRaid() {
   const boss = data.raidBoss;
   const hpColor = boss.hpPercent > 50 ? '#22c55e' : boss.hpPercent > 20 ? '#ff9800' : '#f44336';
+  const critical = boss.hpPercent <= 20 ? 'critical' : '';
   return `
     <div class="card-header">
-      <div class="card-icon">🐉</div>
+      <div class="card-icon">\u{1F409}</div>
       <div>
         <div class="card-title">Raid Boss</div>
         <div class="card-subtitle">Aiuta a sconfiggerlo!</div>
@@ -418,7 +656,7 @@ function buildRaid() {
     <div class="raid-info">
       <div class="raid-name">${boss.emoji} ${boss.name}</div>
       <div class="raid-hp-bar">
-        <div class="raid-hp-fill" style="width:${boss.hpPercent}%;background:${hpColor}"></div>
+        <div class="raid-hp-fill ${critical}" style="width:${boss.hpPercent}%;background:${hpColor}"></div>
         <div class="raid-hp-text">${boss.hpPercent}% HP</div>
       </div>
     </div>
@@ -429,7 +667,7 @@ function buildStats() {
   const s = data.stats;
   return `
     <div class="card-header">
-      <div class="card-icon">📊</div>
+      <div class="card-icon">\u{1F4CA}</div>
       <div>
         <div class="card-title">Heroes Collector</div>
         <div class="card-subtitle">Stats del canale</div>
@@ -437,44 +675,50 @@ function buildStats() {
     </div>
     <div class="stats-grid">
       <div class="stat-box">
-        <div class="stat-value">${s.totalPlayers}</div>
+        <div class="stat-value" data-countup="${s.totalPlayers}">0</div>
         <div class="stat-label">Giocatori</div>
       </div>
       <div class="stat-box">
-        <div class="stat-value">${s.totalHeroes}</div>
+        <div class="stat-value" data-countup="${s.totalHeroes}">0</div>
         <div class="stat-label">Eroi</div>
       </div>
       <div class="stat-box">
-        <div class="stat-value">${s.totalDungeons}</div>
+        <div class="stat-value" data-countup="${s.totalDungeons}">0</div>
         <div class="stat-label">Dungeon</div>
       </div>
       <div class="stat-box">
-        <div class="stat-value">${s.totalPvp}</div>
+        <div class="stat-value" data-countup="${s.totalPvp}">0</div>
         <div class="stat-label">PVP</div>
       </div>
     </div>
   `;
 }
 
-function buildCapture() {
-  const c = data.lastCapture;
+function buildCaptures(captures) {
+  const rows = captures.map((c, i) => `
+    <div class="capture-row" style="animation: fadeInUp 0.3s ease ${i * 0.08}s both">
+      <div class="capture-emoji">${CLASS_EMOJIS[c.heroClass] || '\u{1F3A3}'}</div>
+      <div class="capture-hero-name rarity-${c.rarity}">${c.heroName}</div>
+      <div class="capture-by">da ${c.captorName}</div>
+      <div class="capture-time">${timeAgo(c.capturedAt)}</div>
+    </div>
+  `).join('');
+
   return `
     <div class="card-header">
-      <div class="card-icon">🎣</div>
+      <div class="card-icon">\u{1F3A3}</div>
       <div>
-        <div class="card-title">Cattura!</div>
-        <div class="card-subtitle">Ultima cattura</div>
+        <div class="card-title">Catture recenti</div>
+        <div class="card-subtitle">Ultimi eroi catturati</div>
       </div>
     </div>
-    <div class="capture-alert">
-      <div class="capture-title">Nuovo eroe catturato!</div>
-      <div class="capture-hero rarity-${c.rarity}">${CLASS_EMOJIS[c.heroClass] || ''} ${c.heroName}</div>
-      <div class="capture-by">catturato da <strong>${c.captorName}</strong></div>
+    <div class="captures-feed">
+      ${rows}
     </div>
   `;
 }
 
-// ===== ROTAZIONE =====
+// ===== ROTAZIONE CON DOTS =====
 function showSlide() {
   if (slides.length === 0) return;
 
@@ -487,13 +731,30 @@ function showSlide() {
     setTimeout(() => oldCard.remove(), 500);
   }
 
+  const idx = currentSlide % slides.length;
+  const slide = slides[idx];
+
   const card = document.createElement('div');
   card.className = 'card';
-  card.innerHTML = slides[currentSlide % slides.length] + '<div class="brand">Heroes Collector</div>';
+
+  // Dots indicatore
+  const dotsHTML = slides.length > 1
+    ? `<div class="slide-dots">${slides.map((_, i) =>
+        `<div class="slide-dot${i === idx ? ' active' : ''}"></div>`
+      ).join('')}</div>`
+    : '';
+
+  card.innerHTML = slide.html + '<div class="brand">Heroes Collector</div>' + dotsHTML;
   overlay.appendChild(card);
 
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => card.classList.add('active'));
+    requestAnimationFrame(() => {
+      card.classList.add('active');
+      // Attiva count-up se la slide lo richiede
+      if (slide.hasCountUp) {
+        activateCountUps(card);
+      }
+    });
   });
 
   currentSlide++;
