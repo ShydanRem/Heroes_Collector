@@ -3,7 +3,7 @@ import { runBattle, createFighter, BattleLogEntry, BattleOutcome, applySynergies
 import { generateWaveMonsters } from '../data/monsters';
 import { getPartyHeroes, getActiveParty } from './partyService';
 import { addExpToHero } from './heroService';
-import { addGold, addEssences } from './userService';
+import { addGold, addEssences, consumeEnergy } from './userService';
 import { addWeeklyPoints, POINTS } from './weeklyService';
 import { rollLoot, ITEM_MAP } from '../data/items';
 import { giveItem } from './itemService';
@@ -95,6 +95,13 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
   }
   if (party.heroIds.length === 0) {
     throw new Error('Il tuo party e vuoto! Aggiungi almeno un eroe.');
+  }
+
+  // Costo energia per entrare (10 base + 5 per ordine zona)
+  const dungeonEnergyCost = 10 + (zone.order - 1) * 5;
+  const hasEnergy = await consumeEnergy(userId, dungeonEnergyCost);
+  if (!hasEnergy) {
+    throw new Error(`Energia insufficiente! Servono ${dungeonEnergyCost} energia per questa zona.`);
   }
 
   // Prendi gli eroi del party
@@ -245,7 +252,7 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
   await addGold(userId, totalGoldReward);
 
   // Essenze Eroiche: 1-3 per zona completata, scale con la zona
-  const essenceReward = won ? Math.floor(1 + zone.order * 0.5 + Math.random() * 2) : 0;
+  const essenceReward = won ? Math.min(3, Math.floor(1 + zone.order * 0.3 + Math.random())) : 0;
   if (essenceReward > 0) {
     await addEssences(userId, essenceReward);
   }
@@ -361,8 +368,8 @@ function calculateWaveExp(wave: number, avgLevel: number): number {
  * Gold per ondata.
  */
 function calculateWaveGold(wave: number, avgLevel: number): number {
-  const baseGold = 10 + avgLevel * 2;
-  const waveMultiplier = 1 + (wave - 1) * 0.3;
+  const baseGold = 7 + avgLevel * 1.4; // nerfato da 10 + lvl*2
+  const waveMultiplier = 1 + (wave - 1) * 0.2; // nerfato da 0.3
   return Math.floor(baseGold * waveMultiplier);
 }
 

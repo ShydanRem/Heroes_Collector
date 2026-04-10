@@ -16,7 +16,7 @@ interface MyHeroProps {
 
 const ALL_CLASSES: HeroClass[] = ['guardiano', 'lama', 'arcano', 'custode', 'ombra', 'ranger', 'sciamano', 'crono', 'dragoon', 'samurai', 'necromante', 'alchimista'];
 const REROLL_COST = 500;
-const EXP_BASE = 100;
+const EXP_BASE = 150;
 
 function expForLevel(level: number): number {
   return Math.floor(EXP_BASE * Math.pow(level, 1.5));

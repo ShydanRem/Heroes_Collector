@@ -135,12 +135,12 @@ export async function consumeEnergy(twitchUserId: string, amount: number): Promi
 }
 
 /**
- * Rigenera l'energia basandosi sul tempo passato (1 energia ogni 8 minuti).
+ * Rigenera l'energia basandosi sul tempo passato (1 energia ogni 10 minuti).
  */
 async function refreshEnergy(twitchUserId: string): Promise<void> {
   await query(
     `UPDATE users SET
-       energy = LEAST(max_energy, energy + EXTRACT(EPOCH FROM NOW() - last_energy_refresh) / 480),
+       energy = LEAST(max_energy, energy + EXTRACT(EPOCH FROM NOW() - last_energy_refresh) / 600),
        last_energy_refresh = NOW()
      WHERE twitch_user_id = $1`,
     [twitchUserId]

@@ -53,7 +53,17 @@ function calculateEloChange(playerElo: number, opponentElo: number, won: boolean
 /**
  * Trova un avversario con ELO simile e combatti.
  */
+const PVP_COOLDOWN_MS = 3 * 60 * 1000; // 3 minuti tra fight
+const pvpLastFight = new Map<string, number>();
+
 export async function findAndFight(userId: string): Promise<PvpResult> {
+  // Cooldown anti-spam
+  const lastFight = pvpLastFight.get(userId) || 0;
+  if (Date.now() - lastFight < PVP_COOLDOWN_MS) {
+    const remaining = Math.ceil((PVP_COOLDOWN_MS - (Date.now() - lastFight)) / 1000);
+    throw new Error(`Devi aspettare ${remaining} secondi prima del prossimo PVP!`);
+  }
+
   // Verifica party attivo
   const myParty = await getActiveParty(userId);
   if (!myParty || myParty.heroIds.length === 0) {
@@ -140,9 +150,9 @@ export async function findAndFight(userId: string): Promise<PvpResult> {
     );
   }
 
-  // Rewards
-  const expReward = outcome.won ? 50 : 15;
-  const goldReward = outcome.won ? 30 : 5;
+  // Rewards (bilanciati)
+  const expReward = outcome.won ? 25 : 5;
+  const goldReward = outcome.won ? 15 : 2;
 
   for (const hero of myHeroes) {
     await addExpToHero(hero.id, expReward);
@@ -179,6 +189,9 @@ export async function findAndFight(userId: string): Promise<PvpResult> {
       JSON.stringify({ exp: expReward, gold: goldReward }),
     ]
   );
+
+  // Segna timestamp cooldown
+  pvpLastFight.set(userId, Date.now());
 
   return {
     battleId: battleResult.rows[0].id,

@@ -311,7 +311,7 @@ export async function attackRaid(userId: string): Promise<RaidAttackResult> {
 
   // Rewards basati sul danno
   const expReward = Math.floor(damageDealt * 0.5) + 30;
-  const goldReward = Math.floor(damageDealt * 0.2) + 15;
+  const goldReward = Math.floor(damageDealt * 0.1) + 10;
   const droppedItems: string[] = [];
 
   for (const heroRow of heroRows) {
@@ -320,7 +320,7 @@ export async function attackRaid(userId: string): Promise<RaidAttackResult> {
   await addGold(userId, goldReward);
 
   // Essenze: 2-5 per attacco raid, bonus se uccidi il boss
-  const essenceReward = Math.floor(2 + Math.random() * 3) + (bossDefeated ? 10 : 0);
+  const essenceReward = Math.floor(1 + Math.random() * 2) + (bossDefeated ? 5 : 0);
   await addEssences(userId, essenceReward);
 
   // Punti classifica settimanale + missioni giornaliere

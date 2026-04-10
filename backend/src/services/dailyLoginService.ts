@@ -3,13 +3,13 @@ import { query } from '../config/database';
 // Reward progressivi per ogni giorno del ciclo (1-7)
 // Giorno 7 = jackpot
 const DAILY_REWARDS = [
-  { day: 1, gold: 50,  energy: 10, essences: 0, label: '50 Gold + 10 Energia' },
-  { day: 2, gold: 75,  energy: 15, essences: 0, label: '75 Gold + 15 Energia' },
-  { day: 3, gold: 100, energy: 20, essences: 1, label: '100 Gold + 20 Energia + 1 Essenza' },
-  { day: 4, gold: 125, energy: 20, essences: 1, label: '125 Gold + 20 Energia + 1 Essenza' },
-  { day: 5, gold: 150, energy: 25, essences: 2, label: '150 Gold + 25 Energia + 2 Essenze' },
-  { day: 6, gold: 200, energy: 30, essences: 3, label: '200 Gold + 30 Energia + 3 Essenze' },
-  { day: 7, gold: 400, energy: 50, essences: 5, label: '400 Gold + 50 Energia + 5 Essenze' },
+  { day: 1, gold: 25,  energy: 10, essences: 0, label: '25 Gold + 10 Energia' },
+  { day: 2, gold: 35,  energy: 10, essences: 0, label: '35 Gold + 10 Energia' },
+  { day: 3, gold: 50,  energy: 15, essences: 1, label: '50 Gold + 15 Energia + 1 Essenza' },
+  { day: 4, gold: 65,  energy: 15, essences: 1, label: '65 Gold + 15 Energia + 1 Essenza' },
+  { day: 5, gold: 80,  energy: 20, essences: 1, label: '80 Gold + 20 Energia + 1 Essenza' },
+  { day: 6, gold: 120, energy: 25, essences: 2, label: '120 Gold + 25 Energia + 2 Essenze' },
+  { day: 7, gold: 200, energy: 40, essences: 3, label: '200 Gold + 40 Energia + 3 Essenze' },
 ];
 
 export interface DailyLoginStatus {
