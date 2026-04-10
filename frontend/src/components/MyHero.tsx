@@ -11,6 +11,7 @@ interface MyHeroProps {
   profile: UserProfile;
   hero: Hero | null;
   onHeroUpdate?: (hero: Hero) => void;
+  onProfileRefresh?: () => void;
 }
 
 const ALL_CLASSES: HeroClass[] = ['guardiano', 'lama', 'arcano', 'custode', 'ombra', 'ranger', 'sciamano', 'crono'];
@@ -21,7 +22,7 @@ function expForLevel(level: number): number {
   return Math.floor(EXP_BASE * Math.pow(level, 1.5));
 }
 
-export function MyHero({ profile, hero, onHeroUpdate }: MyHeroProps) {
+export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHeroProps) {
   const [showAchievements, setShowAchievements] = useState(false);
   const [showReroll, setShowReroll] = useState(false);
   const [rerolling, setRerolling] = useState(false);
@@ -205,7 +206,7 @@ export function MyHero({ profile, hero, onHeroUpdate }: MyHeroProps) {
       </div>
 
       {/* Daily Login */}
-      <DailyLogin onClaim={() => window.location.reload()} />
+      <DailyLogin onClaim={() => onProfileRefresh?.()} />
 
       {/* Reroll Classe */}
       <div style={{ marginTop: 6 }}>

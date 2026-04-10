@@ -82,6 +82,14 @@ export default function App() {
     }
   }
 
+  async function refreshProfile() {
+    try {
+      const data = await api.getMyProfile();
+      setProfile(data.profile);
+      setHero(data.hero);
+    } catch { /* silenzioso */ }
+  }
+
   async function handleJoin() {
     setJoining(true);
     setJoinError(null);
@@ -189,7 +197,7 @@ export default function App() {
       {tabRows.map((row, rowIdx) => (
         <div className="tabs" key={rowIdx} style={rowIdx > 0 ? { borderTop: 'none' } : undefined}>
           {row.map(t => (
-            <button key={t.id} className={`tab ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>
+            <button key={t.id} className={`tab ${tab === t.id ? 'active' : ''}`} onClick={() => { setTab(t.id); refreshProfile(); }}>
               {t.label}
             </button>
           ))}
@@ -197,7 +205,7 @@ export default function App() {
       ))}
 
       <div className="content" key={tab}>
-        {tab === 'myhero' && profile && <MyHero profile={profile} hero={hero} onHeroUpdate={(h) => { setHero(h); loadProfile(); }} />}
+        {tab === 'myhero' && profile && <MyHero profile={profile} hero={hero} onHeroUpdate={(h) => { setHero(h); refreshProfile(); }} onProfileRefresh={refreshProfile} />}
         {tab === 'heroes' && <HeroList />}
         {tab === 'roster' && <Roster />}
         {tab === 'items' && <Inventory />}

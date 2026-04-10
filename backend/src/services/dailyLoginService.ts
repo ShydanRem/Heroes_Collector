@@ -31,50 +31,34 @@ export interface ClaimResult {
 }
 
 /**
- * Trova le date di live recenti = date in cui almeno un utente ha fatto claim.
- * Serve per sapere se la streak e' da resettare o meno.
- * La streak si rompe SOLO se c'e' stata una live (altri hanno riscosso) e tu non c'eri.
- */
-async function getLiveDates(limit: number = 10): Promise<string[]> {
-  const result = await query(
-    `SELECT DISTINCT login_date FROM daily_logins
-     ORDER BY login_date DESC LIMIT $1`,
-    [limit]
-  );
-  return result.rows.map((r: any) => new Date(r.login_date).toISOString().split('T')[0]);
-}
-
-/**
- * Ottieni le date in cui un utente specifico ha fatto claim.
- */
-async function getUserClaimDates(userId: string, limit: number = 10): Promise<string[]> {
-  const result = await query(
-    `SELECT login_date FROM daily_logins
-     WHERE twitch_user_id = $1
-     ORDER BY login_date DESC LIMIT $2`,
-    [userId, limit]
-  );
-  return result.rows.map((r: any) => new Date(r.login_date).toISOString().split('T')[0]);
-}
-
-/**
  * Calcola se l'utente ha perso una live (= c'e' stata una live e lui non c'era).
  * Se si, la streak si resetta.
  */
 async function calculateStreak(userId: string, currentStreak: number): Promise<number> {
-  const liveDates = await getLiveDates(10);
-  const userDates = new Set(await getUserClaimDates(userId, 10));
-  const today = new Date().toISOString().split('T')[0];
+  // Controlla se c'e' stata una live (altri claim) in un giorno passato in cui l'utente non c'era
+  // Tutto fatto in SQL per evitare problemi timezone
+  const result = await query(
+    `SELECT d.login_date FROM daily_logins d
+     WHERE d.login_date < CURRENT_DATE
+       AND d.login_date NOT IN (
+         SELECT login_date FROM daily_logins WHERE twitch_user_id = $1
+       )
+     ORDER BY d.login_date DESC LIMIT 1`,
+    [userId]
+  );
 
-  // Controlla le date di live passate (escludi oggi, oggi puo ancora riscuotere)
-  for (const liveDate of liveDates) {
-    if (liveDate === today) continue; // oggi non conta ancora
-    if (!userDates.has(liveDate)) {
-      // C'e stata una live e l'utente non c'era = streak persa
+  // Se c'e' almeno una data di live passata dove l'utente non c'era, streak persa
+  if (result.rows.length > 0) {
+    // Ma solo se e' piu' recente dell'ultimo claim dell'utente
+    const missedDate = new Date(result.rows[0].login_date);
+    const lastClaimResult = await query(
+      `SELECT MAX(login_date) as last_claim FROM daily_logins WHERE twitch_user_id = $1`,
+      [userId]
+    );
+    const lastClaim = lastClaimResult.rows[0]?.last_claim;
+    if (!lastClaim || missedDate > new Date(lastClaim)) {
       return 0;
     }
-    // Se c'era, la streak regge — basta controllare fino alla prima live mancata
-    break;
   }
 
   return currentStreak;
@@ -86,8 +70,11 @@ async function calculateStreak(userId: string, currentStreak: number): Promise<n
 export async function getDailyLoginStatus(userId: string): Promise<DailyLoginStatus> {
   await ensureColumns();
 
+  // Usa CURRENT_DATE di PostgreSQL per evitare problemi di timezone
   const userResult = await query(
-    `SELECT login_streak, best_streak, last_login_date FROM users WHERE twitch_user_id = $1`,
+    `SELECT login_streak, best_streak, last_login_date,
+       (last_login_date = CURRENT_DATE) as claimed_today
+     FROM users WHERE twitch_user_id = $1`,
     [userId]
   );
 
@@ -96,12 +83,7 @@ export async function getDailyLoginStatus(userId: string): Promise<DailyLoginSta
   }
 
   const user = userResult.rows[0];
-  const today = new Date().toISOString().split('T')[0];
-  const lastLogin = user.last_login_date
-    ? new Date(user.last_login_date).toISOString().split('T')[0]
-    : null;
-
-  const claimedToday = lastLogin === today;
+  const claimedToday = user.claimed_today === true;
 
   // Calcola streak tenendo conto solo dei giorni di live
   let currentStreak = user.login_streak || 0;
@@ -149,19 +131,18 @@ export async function claimDailyLogin(userId: string): Promise<ClaimResult> {
   const streakDay = (status.currentStreak % 7) + 1;
   const reward = DAILY_REWARDS[streakDay - 1];
   const bestStreak = Math.max(status.bestStreak, newStreak);
-  const today = new Date().toISOString().split('T')[0];
 
-  // Aggiorna utente: streak, gold, energia
+  // Aggiorna utente: streak, gold, energia — usa CURRENT_DATE di Postgres
   await query(
     `UPDATE users SET
        login_streak = $1,
        best_streak = $2,
-       last_login_date = $3,
-       gold = gold + $4,
-       energy = LEAST(max_energy, energy + $5),
+       last_login_date = CURRENT_DATE,
+       gold = gold + $3,
+       energy = LEAST(max_energy, energy + $4),
        updated_at = NOW()
-     WHERE twitch_user_id = $6`,
-    [newStreak, bestStreak, today, reward.gold, reward.energy, userId]
+     WHERE twitch_user_id = $5`,
+    [newStreak, bestStreak, reward.gold, reward.energy, userId]
   );
 
   // Essenze (se > 0)
@@ -183,9 +164,9 @@ export async function claimDailyLogin(userId: string): Promise<ClaimResult> {
   // Log nel diario
   await query(
     `INSERT INTO daily_logins (twitch_user_id, login_date, streak_day, reward_gold, reward_energy, reward_essences)
-     VALUES ($1, $2, $3, $4, $5, $6)
+     VALUES ($1, CURRENT_DATE, $2, $3, $4, $5)
      ON CONFLICT (twitch_user_id, login_date) DO NOTHING`,
-    [userId, today, streakDay, reward.gold, reward.energy, reward.essences]
+    [userId, streakDay, reward.gold, reward.energy, reward.essences]
   );
 
   return {

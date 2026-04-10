@@ -16,7 +16,11 @@
       "Bash(rm -f panel.html HeroesCollector.zip Her.zip)",
       "Bash(cp index.html panel.html)",
       "Bash(rm -f panel.html HeroesCollector.zip)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(rm -f ../twitch-extension.zip)",
+      "Bash(powershell -Command \"Compress-Archive -Path './*' -DestinationPath '../twitch-extension.zip' -Force\")"
     ]
   }
 }
