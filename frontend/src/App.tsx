@@ -32,6 +32,7 @@ export default function App() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [hero, setHero] = useState<Hero | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authed, setAuthed] = useState(false);
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -54,6 +55,7 @@ export default function App() {
 
       window.Twitch.ext.onAuthorized((auth) => {
         clearTimeout(authTimeout);
+        setAuthed(true);
         api.setAuthToken(auth.token);
         loadProfile();
       });
@@ -107,8 +109,9 @@ export default function App() {
   }
 
   if (!joined) {
-    // Se non c'e auth token (timeout o identita non condivisa su mobile)
-    const noAuth = !loading && !profile && !joinError;
+    // Mostra messaggio identita solo se l'auth Twitch non e' partita
+    // o se il backend ha risposto IDENTITY_NOT_SHARED
+    const noAuth = !loading && !authed;
 
     return (
       <div className="app">
