@@ -20,6 +20,44 @@ export interface BattleFighter {
   cooldowns: Map<string, number>;
   statusEffects: ActiveStatus[];
   isAlive: boolean;
+  threat: number; // aggro accumulato
+}
+
+// Ruoli per classe — scalabile, basta aggiungere nuove classi qui
+type ClassRole = 'tank' | 'melee_dps' | 'ranged_dps' | 'healer' | 'support' | 'assassin' | 'utility';
+
+const CLASS_ROLES: Record<string, ClassRole> = {
+  guardiano: 'tank',
+  dragoon: 'tank',
+  lama: 'melee_dps',
+  samurai: 'melee_dps',
+  arcano: 'ranged_dps',
+  necromante: 'ranged_dps',
+  custode: 'healer',
+  alchimista: 'support',
+  ombra: 'assassin',
+  ranger: 'ranged_dps',
+  sciamano: 'support',
+  crono: 'utility',
+};
+
+// Threat base per ruolo — i tank generano piu' aggro
+const ROLE_THREAT_MULTIPLIER: Record<ClassRole, number> = {
+  tank: 2.5,
+  melee_dps: 1.2,
+  ranged_dps: 0.8,
+  healer: 0.5,
+  support: 0.6,
+  assassin: 1.0,
+  utility: 0.7,
+};
+
+function getClassRole(heroClass: string): ClassRole {
+  return CLASS_ROLES[heroClass] || 'melee_dps';
+}
+
+function getThreatMultiplier(heroClass: string): number {
+  return ROLE_THREAT_MULTIPLIER[getClassRole(heroClass)] || 1.0;
 }
 
 interface ActiveStatus {
@@ -127,12 +165,12 @@ export function runBattle(
   while (turn < MAX_TURNS) {
     turn++;
 
-    // Ordine turni per SPD con varianza
+    // Ordine turni per SPD con varianza ridotta (SPD conta di piu)
     const turnOrder = allFighters
       .filter(f => f.isAlive)
       .sort((a, b) => {
-        const spdA = getEffectiveStat(a, 'spd') + Math.random() * 10;
-        const spdB = getEffectiveStat(b, 'spd') + Math.random() * 10;
+        const spdA = getEffectiveStat(a, 'spd') + Math.random() * 5;
+        const spdB = getEffectiveStat(b, 'spd') + Math.random() * 5;
         return spdB - spdA;
       });
 
@@ -236,6 +274,9 @@ export function runBattle(
           target.currentHp = Math.max(0, target.currentHp - damage);
           totalDamageDealt += damage;
 
+          // Genera threat: chi fa danno attira aggro proporzionale
+          fighter.threat += Math.floor(damage * getThreatMultiplier(fighter.heroClass) * 0.5);
+
           const killed = target.currentHp <= 0;
           if (killed) {
             target.isAlive = false;
@@ -254,6 +295,9 @@ export function runBattle(
             target.currentHp = Math.min(target.maxHp, target.currentHp + healAmount);
             const actualHeal = target.currentHp - prevHp;
 
+            // Healer genera threat curando (meno di un attacco)
+            fighter.threat += Math.floor(actualHeal * 0.3);
+
             log.push({
               turn, actor: fighter.name, actorId: fighter.id, action: abilityDef.name,
               target: target.name, targetId: target.id, heal: actualHeal,
@@ -262,6 +306,9 @@ export function runBattle(
           }
 
         } else if (abilityDef.type === AbilityType.DIFESA) {
+          // Abilita difensive generano threat extra per i tank
+          fighter.threat += Math.floor(10 * getThreatMultiplier(fighter.heroClass));
+
           log.push({
             turn, actor: fighter.name, actorId: fighter.id, action: abilityDef.name,
             target: target.name, targetId: target.id,
@@ -366,11 +413,33 @@ function chooseAbility(
     return availableAbilities.find(id => ABILITY_MAP.get(id)?.type === AbilityType.ATTACCO) || 'atk_colpo_base';
   }
 
-  const allyLowHp = allies.some(a => a.isAlive && a.currentHp / a.maxHp < 0.4);
-  const enemyLowHp = enemies.some(e => e.isAlive && e.currentHp / e.maxHp < 0.3);
+  const role = getClassRole(fighter.heroClass);
+  const allyLowHp = allies.filter(a => a.isAlive && a.currentHp / a.maxHp < 0.4);
+  const enemyLowHp = enemies.some(e => e.isAlive && e.currentHp / e.maxHp < 0.25);
+  const selfLowHp = fighter.currentHp / fighter.maxHp < 0.5;
+  const hasShield = hasStatus(fighter, StatusEffect.SCUDO);
 
-  // Cura se alleati in pericolo
-  if (allyLowHp) {
+  // Tank senza scudo: priorita' difesa
+  if ((role === 'tank') && !hasShield && selfLowHp) {
+    const defAbility = availableAbilities.find(id => {
+      const a = ABILITY_MAP.get(id);
+      return a?.type === AbilityType.DIFESA;
+    });
+    if (defAbility) return defAbility;
+  }
+
+  // Healer/Support: cura se alleati in pericolo (soglia piu' alta)
+  if ((role === 'healer' || role === 'support') && allyLowHp.length > 0) {
+    const healAbility = availableAbilities.find(id => {
+      const a = ABILITY_MAP.get(id);
+      return a?.type === AbilityType.SUPPORTO && a.power > 0;
+    });
+    if (healAbility) return healAbility;
+  }
+
+  // Qualsiasi classe: cura se alleati in pericolo critico (<25%)
+  const allyCritical = allies.some(a => a.isAlive && a.currentHp / a.maxHp < 0.25);
+  if (allyCritical) {
     const healAbility = availableAbilities.find(id => {
       const a = ABILITY_MAP.get(id);
       return a?.type === AbilityType.SUPPORTO && a.power > 0;
@@ -389,14 +458,15 @@ function chooseAbility(
     if (attacks.length > 0) return attacks[0];
   }
 
-  // Scelta pesata
+  // Scelta pesata basata su ruolo
   const weighted = availableAbilities.map(id => {
     const a = ABILITY_MAP.get(id);
     let weight = 1;
     if (a?.type === AbilityType.ULTIMATE) weight = 3;
     else if (a?.type === AbilityType.ATTACCO && a.power > 1.5) weight = 2;
-    else if (a?.type === AbilityType.DEBUFF) weight = 1.5;
-    else if (a?.type === AbilityType.DIFESA) weight = 0.8;
+    else if (a?.type === AbilityType.DEBUFF) weight = (role === 'support' || role === 'utility') ? 2 : 1.2;
+    else if (a?.type === AbilityType.DIFESA) weight = (role === 'tank') ? 2 : 0.5;
+    else if (a?.type === AbilityType.SUPPORTO) weight = (role === 'healer' || role === 'support') ? 1.8 : 0.5;
     return { id, weight };
   });
 
@@ -426,7 +496,7 @@ function selectTargets(
   switch (targetType) {
     case TargetType.SINGOLO_NEMICO:
       if (aliveEnemies.length === 0) return [];
-      return [aliveEnemies.sort((a, b) => a.currentHp - b.currentHp)[0]];
+      return [selectEnemyTarget(fighter, aliveEnemies)];
 
     case TargetType.TUTTI_NEMICI:
       return aliveEnemies;
@@ -436,7 +506,7 @@ function selectTargets(
 
     case TargetType.SINGOLO_ALLEATO:
       if (aliveAllies.length === 0) return [];
-      return [aliveAllies.sort((a, b) => (a.currentHp / a.maxHp) - (b.currentHp / b.maxHp))[0]];
+      return [selectAllyTarget(fighter, aliveAllies)];
 
     case TargetType.TUTTI_ALLEATI:
       return aliveAllies;
@@ -448,6 +518,66 @@ function selectTargets(
     default:
       return aliveEnemies.length > 0 ? [aliveEnemies[0]] : [];
   }
+}
+
+/**
+ * Targeting nemico basato su ruolo e threat:
+ * - Assassini puntano healer/support (backline)
+ * - Tutti gli altri tendono ad attaccare chi ha piu' threat (tank)
+ * - Finisher: se un nemico e' sotto 20% HP, priorita' per finirlo
+ */
+function selectEnemyTarget(attacker: BattleFighter, enemies: BattleFighter[]): BattleFighter {
+  const role = getClassRole(attacker.heroClass);
+
+  // Finisher: se qualcuno e' sotto 20% HP, finiscilo
+  const lowHpEnemy = enemies.find(e => e.currentHp / e.maxHp < 0.2);
+  if (lowHpEnemy && Math.random() < 0.6) return lowHpEnemy;
+
+  // Assassini preferiscono backline (healer > support > ranged_dps)
+  if (role === 'assassin') {
+    const backline = enemies
+      .filter(e => {
+        const r = getClassRole(e.heroClass);
+        return r === 'healer' || r === 'support' || r === 'ranged_dps';
+      })
+      .sort((a, b) => (a.currentHp / a.maxHp) - (b.currentHp / b.maxHp));
+    if (backline.length > 0 && Math.random() < 0.7) return backline[0];
+  }
+
+  // Targeting pesato per threat: chi ha piu' threat viene attaccato piu' spesso
+  // I tank hanno threat base alto anche a 0 per il moltiplicatore del ruolo
+  const weighted = enemies.map(e => {
+    const baseThreat = getThreatMultiplier(e.heroClass) * 10;
+    const totalThreat = baseThreat + e.threat;
+    return { fighter: e, weight: Math.max(totalThreat, 1) };
+  });
+
+  const totalWeight = weighted.reduce((sum, w) => sum + w.weight, 0);
+  let rand = Math.random() * totalWeight;
+  for (const w of weighted) {
+    rand -= w.weight;
+    if (rand <= 0) return w.fighter;
+  }
+  return enemies[0];
+}
+
+/**
+ * Targeting alleato per cure/buff:
+ * - Cura l'alleato con meno %HP
+ * - A parita', preferisce i tank (piu' importanti da tenere in vita)
+ */
+function selectAllyTarget(healer: BattleFighter, allies: BattleFighter[]): BattleFighter {
+  return allies.sort((a, b) => {
+    const hpPctA = a.currentHp / a.maxHp;
+    const hpPctB = b.currentHp / b.maxHp;
+    // Prima chi ha meno %HP
+    if (Math.abs(hpPctA - hpPctB) > 0.1) return hpPctA - hpPctB;
+    // A parita', preferisci tank
+    const roleA = getClassRole(a.heroClass);
+    const roleB = getClassRole(b.heroClass);
+    const tankPriority = (r: ClassRole) => r === 'tank' ? 0 : r === 'melee_dps' ? 1 : 2;
+    return tankPriority(roleA) - tankPriority(roleB);
+  })[0];
 }
 
 // ============================================
@@ -581,6 +711,7 @@ export function createFighter(
     cooldowns: new Map(),
     statusEffects: [],
     isAlive: (heroData.currentHp ?? hp) > 0,
+    threat: 0,
   };
 }
 
