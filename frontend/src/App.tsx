@@ -40,31 +40,67 @@ export default function App() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [revealHero, setRevealHero] = useState<Hero | null>(null);
 
-  useEffect(() => { initAuth(); }, []);
+  useEffect(() => {
+    let resolved = false;
 
-  function initAuth() {
-    if (window.Twitch?.ext) {
-      // Timeout di sicurezza: se onAuthorized non risponde entro 5s
-      // (es. mobile senza identita condivisa), sblocca comunque il loading
-      const authTimeout = setTimeout(() => {
-        if (loading) {
-          console.warn('Twitch auth timeout — sblocco UI');
-          setLoading(false);
-        }
-      }, 5000);
-
-      window.Twitch.ext.onAuthorized((auth) => {
-        clearTimeout(authTimeout);
-        setAuthed(true);
-        api.setAuthToken(auth.token);
-        loadProfile();
-      });
-    } else {
-      // Modalita sviluppo senza Twitch
-      api.setAuthToken('dev:test-user:viewer');
+    function onAuth(auth: { token: string; userId: string; channelId: string }) {
+      if (resolved) return;
+      resolved = true;
+      setAuthed(true);
+      api.setAuthToken(auth.token);
       loadProfile();
     }
-  }
+
+    function fallback() {
+      if (resolved) return;
+      resolved = true;
+      console.warn('Twitch auth non disponibile — sblocco UI');
+      setLoading(false);
+    }
+
+    // Timeout di sicurezza: se entro 4s non arriva auth, sblocca comunque
+    const timeout = setTimeout(fallback, 4000);
+
+    if (window.Twitch?.ext) {
+      try {
+        window.Twitch.ext.onAuthorized((auth) => {
+          clearTimeout(timeout);
+          onAuth(auth);
+        });
+      } catch (err) {
+        console.error('Errore Twitch ext:', err);
+        clearTimeout(timeout);
+        fallback();
+      }
+    } else {
+      // Twitch helper non caricato: potrebbe essere dev o mobile con problemi
+      clearTimeout(timeout);
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        // Dev locale
+        api.setAuthToken('dev:test-user:viewer');
+        loadProfile();
+      } else {
+        // Produzione senza helper — prova a caricare dopo che lo script e' pronto
+        const retryInterval = setInterval(() => {
+          if (window.Twitch?.ext) {
+            clearInterval(retryInterval);
+            try {
+              window.Twitch.ext.onAuthorized((auth) => {
+                onAuth(auth);
+              });
+            } catch { fallback(); }
+          }
+        }, 500);
+        // Max 6 secondi di retry
+        setTimeout(() => {
+          clearInterval(retryInterval);
+          fallback();
+        }, 6000);
+      }
+    }
+
+    return () => { clearTimeout(timeout); };
+  }, []);
 
   async function loadProfile() {
     try {
