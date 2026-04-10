@@ -20,7 +20,8 @@
       "Bash(git add:*)",
       "Bash(git commit -m ':*)",
       "Bash(rm -f ../twitch-extension.zip)",
-      "Bash(powershell -Command \"Compress-Archive -Path './*' -DestinationPath '../twitch-extension.zip' -Force\")"
+      "Bash(powershell -Command \"Compress-Archive -Path './*' -DestinationPath '../twitch-extension.zip' -Force\")",
+      "Bash(cp panel.html mobile.html)"
     ]
   }
 }

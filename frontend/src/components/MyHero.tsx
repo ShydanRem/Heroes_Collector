@@ -5,6 +5,7 @@ import { HintBanner } from './Tooltip';
 import { Missions } from './Missions';
 import { Achievements } from './Achievements';
 import { DailyLogin } from './DailyLogin';
+import { TalentTree } from './TalentTree';
 import * as api from '../services/api';
 
 interface MyHeroProps {
@@ -204,6 +205,9 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
           </div>
         </div>
       </div>
+
+      {/* Talenti */}
+      <TalentTree />
 
       {/* Daily Login */}
       <DailyLogin onClaim={() => onProfileRefresh?.()} />

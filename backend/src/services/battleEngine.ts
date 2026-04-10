@@ -716,6 +716,23 @@ export function createFighter(
 }
 
 /**
+ * Applica i bonus talenti alle stats di un fighter (bonus percentuali).
+ */
+export function applyTalentBonuses(fighter: BattleFighter, bonuses: Record<string, number>): void {
+  for (const [stat, pct] of Object.entries(bonuses)) {
+    if (stat === 'hp') {
+      const bonus = Math.floor(fighter.maxHp * pct / 100);
+      fighter.maxHp += bonus;
+      fighter.currentHp += bonus;
+      fighter.stats.hp += bonus;
+    } else if (stat in fighter.stats) {
+      const key = stat as keyof typeof fighter.stats;
+      fighter.stats[key] += Math.floor(fighter.stats[key] * pct / 100);
+    }
+  }
+}
+
+/**
  * Calcola e applica le sinergie di party ai fighter.
  * Restituisce le sinergie attive per mostrare al frontend.
  */

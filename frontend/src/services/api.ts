@@ -481,6 +481,53 @@ export async function getMyWeeklyScore(): Promise<{ score: any | null }> {
   return request('/weekly/me');
 }
 
+// ============ TALENTS ============
+
+export interface TalentNode {
+  id: string;
+  name: string;
+  description: string;
+  branch: string;
+  tier: number;
+  statBonus?: Record<string, number>;
+  specialEffect?: string;
+}
+
+export interface TalentBranch {
+  name: string;
+  emoji: string;
+  description: string;
+  nodes: TalentNode[];
+}
+
+export interface TalentTree {
+  heroClass: string;
+  branches: TalentBranch[];
+}
+
+export interface TalentStatus {
+  tree: TalentTree | null;
+  unlocked: string[];
+  pointsTotal: number;
+  pointsSpent: number;
+  pointsAvailable: number;
+}
+
+export async function getTalentStatus(): Promise<TalentStatus> {
+  return request('/talents');
+}
+
+export async function unlockTalent(talentId: string): Promise<TalentStatus & { message: string }> {
+  return request('/talents/unlock', {
+    method: 'POST',
+    body: JSON.stringify({ talentId }),
+  });
+}
+
+export async function resetTalents(): Promise<{ message: string }> {
+  return request('/talents/reset', { method: 'POST' });
+}
+
 // ============ ACHIEVEMENTS ============
 
 export interface Achievement {

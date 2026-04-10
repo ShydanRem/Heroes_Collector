@@ -25,7 +25,11 @@ userRoutes.get('/me', async (req: Request, res: Response) => {
       }
     }
 
-    // Prendi anche il suo eroe
+    // Ricalcola rarita in base all'activity score aggiornato
+    // (la rarita sale man mano che l'utente partecipa alla live)
+    try { await heroService.refreshHeroRarity(twitchUser.user_id); } catch { /* */ }
+
+    // Prendi anche il suo eroe (con rarita aggiornata)
     const hero = await heroService.getHeroByUserId(twitchUser.user_id);
 
     res.json({ profile, hero });
