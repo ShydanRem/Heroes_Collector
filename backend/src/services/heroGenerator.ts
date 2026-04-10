@@ -76,6 +76,7 @@ export function scoreToRarity(score: number): Rarity {
 const CLASS_OVERRIDES: Record<string, HeroClass> = {
   'hollow90x': HeroClass.CRONO,
   'shydanrem': HeroClass.OMBRA,
+  'nokutisu_': HeroClass.DRAGOON,
 };
 
 /**
