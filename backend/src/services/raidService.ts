@@ -200,10 +200,33 @@ export async function getRaidWithContribution(userId: string): Promise<RaidInfo 
 /**
  * Attacca il raid boss con il party attivo.
  */
+const MAX_RAID_ATTEMPTS_PER_DAY = 5;
+
 export async function attackRaid(userId: string): Promise<RaidAttackResult> {
   const raid = await getCurrentRaid();
   if (!raid) throw new Error('Nessun raid boss attivo questa settimana!');
   if (raid.defeated) throw new Error('Il raid boss e gia stato sconfitto! Aspetta la prossima settimana.');
+
+  // Limite tentativi giornalieri
+  try {
+    await query('ALTER TABLE raid_contributions ADD COLUMN IF NOT EXISTS daily_attempts INTEGER DEFAULT 0');
+    await query('ALTER TABLE raid_contributions ADD COLUMN IF NOT EXISTS last_attempt_date DATE');
+  } catch { /* */ }
+
+  const contribCheck = await query(
+    `SELECT daily_attempts, last_attempt_date FROM raid_contributions
+     WHERE raid_id = $1 AND user_id = $2`,
+    [raid.id, userId]
+  );
+  if (contribCheck.rows.length > 0) {
+    const c = contribCheck.rows[0];
+    const isToday = c.last_attempt_date &&
+      new Date(c.last_attempt_date).toISOString().split('T')[0] ===
+      new Date().toISOString().split('T')[0];
+    if (isToday && (c.daily_attempts || 0) >= MAX_RAID_ATTEMPTS_PER_DAY) {
+      throw new Error(`Hai raggiunto il limite di ${MAX_RAID_ATTEMPTS_PER_DAY} tentativi raid oggi! Riprova domani.`);
+    }
+  }
 
   // Party attivo
   const party = await getActiveParty(userId);
@@ -269,14 +292,20 @@ export async function attackRaid(userId: string): Promise<RaidAttackResult> {
 
   // Aggiorna contribuzione
   await query(
-    `INSERT INTO raid_contributions (raid_id, user_id, damage_dealt, attempts, best_damage, last_attempt)
-     VALUES ($1, $2, $3, 1, $3, NOW())
+    `INSERT INTO raid_contributions (raid_id, user_id, damage_dealt, attempts, best_damage, last_attempt, daily_attempts, last_attempt_date)
+     VALUES ($1, $2, $3, 1, $3, NOW(), 1, CURRENT_DATE)
      ON CONFLICT (raid_id, user_id)
      DO UPDATE SET
        damage_dealt = raid_contributions.damage_dealt + $3,
        attempts = raid_contributions.attempts + 1,
        best_damage = GREATEST(raid_contributions.best_damage, $3),
-       last_attempt = NOW()`,
+       last_attempt = NOW(),
+       daily_attempts = CASE
+         WHEN raid_contributions.last_attempt_date = CURRENT_DATE
+         THEN COALESCE(raid_contributions.daily_attempts, 0) + 1
+         ELSE 1
+       END,
+       last_attempt_date = CURRENT_DATE`,
     [raid.id, userId, damageDealt]
   );
 

@@ -147,8 +147,8 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
                 borderLeft: `3px solid ${RARITY_COLORS[item.rarity as keyof typeof RARITY_COLORS] || '#555'}`,
               }}>
                 <div>
+                  <span style={{ marginRight: 4 }}>{item.slot === 'arma' ? '⚔️' : item.slot === 'armatura' ? '🛡️' : '💍'}</span>
                   <span style={{ fontWeight: 700 }}>{item.name}</span>
-                  <span style={{ color: '#737380', fontSize: 9, marginLeft: 4 }}>{item.slot}</span>
                 </div>
                 <div style={{ fontSize: 9, color: '#22c55e' }}>
                   {item.statBonuses && Object.entries(item.statBonuses).map(([s, v]) =>

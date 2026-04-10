@@ -168,10 +168,10 @@ export async function captureHero(
     return { success: false, message: `Energia insufficiente! Servono ${energyCost} energia.` };
   }
 
-  // Aggiungi al roster con la rarità di cattura
+  // Aggiungi al roster con la rarità e livello di cattura
   await query(
-    'INSERT INTO roster (owner_user_id, hero_id, capture_rarity) VALUES ($1, $2, $3)',
-    [captorUserId, heroId, chosenRarity]
+    'INSERT INTO roster (owner_user_id, hero_id, capture_rarity, capture_level) VALUES ($1, $2, $3, $4)',
+    [captorUserId, heroId, chosenRarity, hero.level]
   );
 
   // Punti classifica settimanale + missioni giornaliere
@@ -193,20 +193,27 @@ export async function captureHero(
  * e ricalcola le stats di conseguenza.
  */
 export async function getRoster(userId: string): Promise<Hero[]> {
+  // Ensure capture_level column exists
+  try { await query('ALTER TABLE roster ADD COLUMN IF NOT EXISTS capture_level INTEGER DEFAULT 1'); } catch { /* */ }
+
   const result = await query(
-    `SELECT h.*, r.capture_rarity, r.id as roster_id FROM heroes h
+    `SELECT h.*, r.capture_rarity, r.capture_level, r.id as roster_id FROM heroes h
      JOIN roster r ON r.hero_id = h.id
      WHERE r.owner_user_id = $1
-     ORDER BY r.capture_rarity DESC, h.level DESC`,
+     ORDER BY r.capture_rarity DESC, COALESCE(r.capture_level, h.level) DESC`,
     [userId]
   );
   return result.rows.map((row) => {
     const hero = rowToHero(row);
-    // Sovrascrivi rarità e stats con la capture_rarity
-    if (row.capture_rarity && row.capture_rarity !== row.rarity) {
+    // Usa livello di cattura (fisso) al posto del livello corrente dell'originale
+    const captureLevel = row.capture_level || hero.level;
+    hero.level = captureLevel;
+    // Sovrascrivi rarità con la capture_rarity
+    if (row.capture_rarity) {
       hero.rarity = row.capture_rarity;
-      hero.stats = calculateStats(hero.heroClass, hero.rarity, hero.level);
     }
+    // Ricalcola stats con livello e rarità di cattura
+    hero.stats = calculateStats(hero.heroClass, hero.rarity, hero.level);
     return hero;
   });
 }

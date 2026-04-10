@@ -9,6 +9,42 @@ const SLOT_LABELS: Record<string, string> = {
   accessorio: 'Accessorio',
 };
 
+const SLOT_ICONS: Record<string, string> = {
+  arma: '⚔️',
+  armatura: '🛡️',
+  accessorio: '💍',
+};
+
+function getItemIcon(name: string, slot: string): string {
+  const n = name.toLowerCase();
+  // Armi
+  if (n.includes('spada') || n.includes('lama')) return '🗡️';
+  if (n.includes('arco')) return '🏹';
+  if (n.includes('bastone') || n.includes('scettro') || n.includes('tomo')) return '🪄';
+  if (n.includes('pugnale') || n.includes('falcetto')) return '🔪';
+  if (n.includes('martello') || n.includes('mazza')) return '🔨';
+  if (n.includes('ascia')) return '🪓';
+  if (n.includes('lancia') || n.includes('tridente')) return '🔱';
+  if (n.includes('frusta')) return '⛓️';
+  if (n.includes('katana')) return '⚔️';
+  if (n.includes('falce')) return '💀';
+  if (n.includes('arpa')) return '🎵';
+  // Armature
+  if (n.includes('corazza') || n.includes('armatura') || n.includes('piastre')) return '🛡️';
+  if (n.includes('veste') || n.includes('tunica') || n.includes('manto')) return '👘';
+  if (n.includes('cotta') || n.includes('brigantina')) return '🧥';
+  if (n.includes('elmo') || n.includes('corona')) return '👑';
+  // Accessori
+  if (n.includes('anello')) return '💍';
+  if (n.includes('amuleto') || n.includes('talismano') || n.includes('ciondolo')) return '📿';
+  if (n.includes('stivali') || n.includes('calzari')) return '👢';
+  if (n.includes('mantello') || n.includes('cappa')) return '🧣';
+  if (n.includes('occhio') || n.includes('sfera')) return '🔮';
+  if (n.includes('cintura')) return '🎗️';
+  // Fallback per slot
+  return SLOT_ICONS[slot] || '📦';
+}
+
 const STAT_LABELS: Record<string, string> = {
   hp: 'HP', atk: 'ATK', def: 'DEF', spd: 'SPD', crit: 'CRIT', critDmg: 'C.DMG',
 };
@@ -247,12 +283,17 @@ export function Inventory() {
                 borderLeft: `3px solid ${rarityColor}`,
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               }}>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700 }}>{item.name}</div>
-                <div style={{ fontSize: 9, display: 'flex', gap: 6, color: '#adadb8', marginTop: 1 }}>
-                  <span style={{ color: rarityColor }}>{RARITY_LABELS[item.rarity as keyof typeof RARITY_LABELS]}</span>
-                  <span>{SLOT_LABELS[item.slot]}</span>
-                  {item.quantity > 1 && <span>x{item.quantity}</span>}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontSize: 18, width: 24, textAlign: 'center' }}>
+                  {getItemIcon(item.name, item.slot)}
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700 }}>{item.name}</div>
+                  <div style={{ fontSize: 9, display: 'flex', gap: 6, color: '#adadb8', marginTop: 1 }}>
+                    <span style={{ color: rarityColor }}>{RARITY_LABELS[item.rarity as keyof typeof RARITY_LABELS]}</span>
+                    <span>{SLOT_ICONS[item.slot] || ''} {SLOT_LABELS[item.slot]}</span>
+                    {item.quantity > 1 && <span>x{item.quantity}</span>}
+                  </div>
                 </div>
               </div>
               <div style={{ textAlign: 'right', fontSize: 10 }}>
