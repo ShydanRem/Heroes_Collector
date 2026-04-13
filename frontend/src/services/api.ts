@@ -296,6 +296,7 @@ export interface InventoryItem {
   statBonuses: Record<string, number>;
   quantity: number;
   equippedOn: string | null;
+  allowedClasses?: string[];
 }
 
 export async function getInventory(): Promise<{ inventory: InventoryItem[] }> {

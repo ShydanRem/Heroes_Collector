@@ -13,11 +13,15 @@ const TYPE_COLORS: Record<string, string> = {
   reroll: '#9c27b0', equipment: '#ff9800',
 };
 
-export function Shop() {
+interface ShopProps {
+  onGoToInventory?: () => void;
+}
+
+export function Shop({ onGoToInventory }: ShopProps) {
   const [listings, setListings] = useState<ShopListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error'; isEquipment?: boolean } | null>(null);
   const [gold, setGold] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +29,7 @@ export function Shop() {
 
   useEffect(() => {
     if (message) {
-      const timer = setTimeout(() => setMessage(null), 3000);
+      const timer = setTimeout(() => setMessage(null), 5000);
       return () => clearTimeout(timer);
     }
   }, [message]);
@@ -47,12 +51,16 @@ export function Shop() {
     }
   }
 
-  async function handleBuy(itemId: string) {
-    setBuying(itemId);
+  async function handleBuy(item: ShopListing) {
+    setBuying(item.id);
     try {
-      const result = await api.buyFromShop(itemId);
-      setMessage({ text: result.message, type: 'success' });
-      await loadShop(); // Ricarica per aggiornare gold e stock
+      const result = await api.buyFromShop(item.id);
+      setMessage({
+        text: result.message,
+        type: 'success',
+        isEquipment: item.itemType === 'equipment',
+      });
+      await loadShop();
     } catch (err: any) {
       setMessage({ text: err.message, type: 'error' });
     } finally {
@@ -96,7 +104,9 @@ export function Shop() {
       </div>
 
       {/* Consumabili */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#adadb8', marginBottom: 4 }}>Consumabili</div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#adadb8', marginBottom: 4 }}>
+        Consumabili <span style={{ fontSize: 9, color: '#666', fontWeight: 400 }}>— effetto immediato</span>
+      </div>
       {consumables.map(item => (
         <div key={item.id} style={{
           background: '#18181b', borderRadius: 6, padding: '8px 10px',
@@ -112,7 +122,7 @@ export function Shop() {
           </div>
           <button
             className="btn btn-primary"
-            onClick={() => handleBuy(item.id)}
+            onClick={() => handleBuy(item)}
             disabled={buying === item.id || gold < item.priceGold}
             style={{
               fontSize: 10, padding: '4px 10px', marginLeft: 8,
@@ -127,7 +137,9 @@ export function Shop() {
       {/* Equipment */}
       {equipment.length > 0 && (
         <>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#adadb8', marginTop: 10, marginBottom: 4 }}>Equipment</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#adadb8', marginTop: 10, marginBottom: 4 }}>
+            Equipaggiamento <span style={{ fontSize: 9, color: '#666', fontWeight: 400 }}>— va nello Zaino</span>
+          </div>
           {equipment.map(item => {
             const rarityColor = RARITY_COLORS[(item as any).rarity as keyof typeof RARITY_COLORS] || '#ff9800';
 
@@ -149,7 +161,7 @@ export function Shop() {
                 </div>
                 <button
                   className="btn btn-primary"
-                  onClick={() => handleBuy(item.id)}
+                  onClick={() => handleBuy(item)}
                   disabled={buying === item.id || gold < item.priceGold || item.stock === 0}
                   style={{
                     fontSize: 10, padding: '4px 10px', marginLeft: 8,
@@ -164,7 +176,32 @@ export function Shop() {
         </>
       )}
 
-      {message && <div className={`toast ${message.type}`}>{message.text}</div>}
+      {/* Toast messaggio con pulsante Zaino per equipment */}
+      {message && (
+        <div style={{
+          position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)',
+          background: message.type === 'success' ? 'rgba(34, 197, 94, 0.95)' : 'rgba(239, 68, 68, 0.95)',
+          color: '#fff', padding: '10px 16px', borderRadius: 8,
+          fontSize: 12, fontWeight: 700, zIndex: 100,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          maxWidth: '90%', textAlign: 'center',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+        }}>
+          <span>{message.text}</span>
+          {message.isEquipment && onGoToInventory && (
+            <button
+              onClick={() => { setMessage(null); onGoToInventory(); }}
+              style={{
+                background: 'rgba(255,255,255,0.25)', border: 'none', color: '#fff',
+                padding: '4px 12px', borderRadius: 4, cursor: 'pointer',
+                fontSize: 11, fontWeight: 700,
+              }}
+            >
+              🎒 Vai allo Zaino
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

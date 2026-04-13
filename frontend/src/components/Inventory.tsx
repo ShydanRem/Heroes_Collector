@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Hero, RARITY_COLORS, RARITY_LABELS, CLASS_EMOJIS } from '../types';
+import { Hero, RARITY_COLORS, RARITY_LABELS, CLASS_EMOJIS, CLASS_LABELS, HeroClass } from '../types';
 import * as api from '../services/api';
 import { InventoryItem } from '../services/api';
 
@@ -19,8 +19,8 @@ function getItemIcon(name: string, slot: string): string {
   const n = name.toLowerCase();
   // Armi
   if (n.includes('spada') || n.includes('lama')) return '🗡️';
-  if (n.includes('arco')) return '🏹';
-  if (n.includes('bastone') || n.includes('scettro') || n.includes('tomo')) return '🪄';
+  if (n.includes('arco') || n.includes('balestra')) return '🏹';
+  if (n.includes('bastone') || n.includes('scettro') || n.includes('tomo') || n.includes('sfera')) return '🪄';
   if (n.includes('pugnale') || n.includes('falcetto')) return '🔪';
   if (n.includes('martello') || n.includes('mazza')) return '🔨';
   if (n.includes('ascia')) return '🪓';
@@ -30,17 +30,25 @@ function getItemIcon(name: string, slot: string): string {
   if (n.includes('falce')) return '💀';
   if (n.includes('arpa')) return '🎵';
   // Armature
-  if (n.includes('corazza') || n.includes('armatura') || n.includes('piastre')) return '🛡️';
-  if (n.includes('veste') || n.includes('tunica') || n.includes('manto')) return '👘';
+  if (n.includes('corazza') || n.includes('armatura') || n.includes('piastre') || n.includes('egida')) return '🛡️';
+  if (n.includes('veste') || n.includes('tunica') || n.includes('manto') || n.includes('toga')) return '👘';
   if (n.includes('cotta') || n.includes('brigantina')) return '🧥';
   if (n.includes('elmo') || n.includes('corona')) return '👑';
+  if (n.includes('mantello')) return '🧣';
+  if (n.includes('pelle') || n.includes('gilet')) return '🦺';
   // Accessori
   if (n.includes('anello')) return '💍';
-  if (n.includes('amuleto') || n.includes('talismano') || n.includes('ciondolo')) return '📿';
+  if (n.includes('amuleto') || n.includes('talismano') || n.includes('ciondolo') || n.includes('pendente') || n.includes('sigillo')) return '📿';
   if (n.includes('stivali') || n.includes('calzari')) return '👢';
-  if (n.includes('mantello') || n.includes('cappa')) return '🧣';
-  if (n.includes('occhio') || n.includes('sfera')) return '🔮';
+  if (n.includes('occhio') || n.includes('sfera') || n.includes('gemma') || n.includes('frammento')) return '🔮';
   if (n.includes('cintura')) return '🎗️';
+  if (n.includes('guanti')) return '🧤';
+  if (n.includes('ali')) return '🪽';
+  if (n.includes('teschio')) return '💀';
+  if (n.includes('cuore')) return '❤️';
+  if (n.includes('occhiali')) return '👓';
+  if (n.includes('orecchino')) return '✨';
+  if (n.includes('fascia') || n.includes('bracciale')) return '💪';
   // Fallback per slot
   return SLOT_ICONS[slot] || '📦';
 }
@@ -48,6 +56,11 @@ function getItemIcon(name: string, slot: string): string {
 const STAT_LABELS: Record<string, string> = {
   hp: 'HP', atk: 'ATK', def: 'DEF', spd: 'SPD', crit: 'CRIT', critDmg: 'C.DMG',
 };
+
+function canHeroEquip(hero: Hero, item: InventoryItem): boolean {
+  if (!item.allowedClasses || item.allowedClasses.length === 0) return true;
+  return item.allowedClasses.includes(hero.heroClass);
+}
 
 export function Inventory() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -156,6 +169,9 @@ export function Inventory() {
     const equippedHero = selectedItem.equippedOn
       ? allHeroes.find(h => h.id === selectedItem.equippedOn)
       : null;
+    const hasClassRestriction = selectedItem.allowedClasses && selectedItem.allowedClasses.length > 0;
+    const compatibleHeroes = allHeroes.filter(h => canHeroEquip(h, selectedItem));
+    const incompatibleHeroes = allHeroes.filter(h => !canHeroEquip(h, selectedItem));
 
     return (
       <div>
@@ -167,7 +183,10 @@ export function Inventory() {
           background: '#18181b', borderRadius: 8, padding: 14,
           border: `2px solid ${rarityColor}`, marginBottom: 8,
         }}>
-          <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 2 }}>{selectedItem.name}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+            <span style={{ fontSize: 20 }}>{getItemIcon(selectedItem.name, selectedItem.slot)}</span>
+            <div style={{ fontSize: 16, fontWeight: 800 }}>{selectedItem.name}</div>
+          </div>
           <div style={{ fontSize: 10, color: rarityColor, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 }}>
             {RARITY_LABELS[selectedItem.rarity as keyof typeof RARITY_LABELS]} — {SLOT_LABELS[selectedItem.slot] || selectedItem.slot}
           </div>
@@ -188,6 +207,23 @@ export function Inventory() {
               </div>
             ))}
           </div>
+
+          {/* Restrizioni classe */}
+          {hasClassRestriction && (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#ff9800', marginBottom: 3 }}>Classi permesse:</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                {selectedItem.allowedClasses!.map(cls => (
+                  <span key={cls} style={{
+                    background: '#0e0e10', borderRadius: 4, padding: '2px 6px',
+                    fontSize: 10, color: '#efeff1', border: '1px solid #333',
+                  }}>
+                    {CLASS_EMOJIS[cls as HeroClass] || ''} {CLASS_LABELS[cls as HeroClass] || cls}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Stato equip */}
           {equippedHero && (
@@ -223,7 +259,12 @@ export function Inventory() {
         {equipTarget === 'choose' && (
           <div style={{ marginTop: 6, background: '#0e0e10', borderRadius: 6, padding: 6 }}>
             <div style={{ fontSize: 10, color: '#adadb8', marginBottom: 4 }}>Scegli un eroe:</div>
-            {allHeroes.map(hero => (
+            {compatibleHeroes.length === 0 && (
+              <div style={{ fontSize: 10, color: '#f44336', padding: 8, textAlign: 'center' }}>
+                Nessun eroe compatibile con questo oggetto!
+              </div>
+            )}
+            {compatibleHeroes.map(hero => (
               <div key={hero.id}
                 onClick={() => handleEquip(selectedItem.id, hero.id)}
                 style={{
@@ -235,6 +276,22 @@ export function Inventory() {
                 <span style={{ fontSize: 9, color: RARITY_COLORS[hero.rarity] }}>Lv.{hero.level}</span>
               </div>
             ))}
+            {incompatibleHeroes.length > 0 && (
+              <>
+                <div style={{ fontSize: 9, color: '#555', marginTop: 4, marginBottom: 2 }}>Classe incompatibile:</div>
+                {incompatibleHeroes.map(hero => (
+                  <div key={hero.id}
+                    style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '5px 6px', borderRadius: 4,
+                      marginBottom: 2, background: '#18181b', opacity: 0.35,
+                    }}>
+                    <span style={{ fontSize: 11 }}>{CLASS_EMOJIS[hero.heroClass]} {hero.displayName}</span>
+                    <span style={{ fontSize: 9, color: '#f44336' }}>🚫</span>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         )}
 
@@ -266,13 +323,14 @@ export function Inventory() {
 
       {filteredInventory.length === 0 ? (
         <div className="empty-state">
-          <p>🎒 Il tuo zaino è vuoto!</p>
-          <p>Completa dungeon per ottenere oggetti.</p>
+          <p>🎒 Il tuo zaino e vuoto!</p>
+          <p>Completa dungeon o compra dallo shop per ottenere oggetti.</p>
         </div>
       ) : (
         filteredInventory.map(item => {
           const rarityColor = RARITY_COLORS[item.rarity as keyof typeof RARITY_COLORS] || '#9e9e9e';
           const equippedHero = item.equippedOn ? allHeroes.find(h => h.id === item.equippedOn) : null;
+          const hasRestriction = item.allowedClasses && item.allowedClasses.length > 0;
 
           return (
             <div key={item.id}
@@ -294,6 +352,11 @@ export function Inventory() {
                     <span>{SLOT_ICONS[item.slot] || ''} {SLOT_LABELS[item.slot]}</span>
                     {item.quantity > 1 && <span>x{item.quantity}</span>}
                   </div>
+                  {hasRestriction && (
+                    <div style={{ fontSize: 8, color: '#ff9800', marginTop: 1 }}>
+                      {item.allowedClasses!.map(c => CLASS_EMOJIS[c as HeroClass] || '').join('')}
+                    </div>
+                  )}
                 </div>
               </div>
               <div style={{ textAlign: 'right', fontSize: 10 }}>

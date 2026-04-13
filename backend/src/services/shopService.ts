@@ -27,7 +27,7 @@ const PERMANENT_SHOP: Omit<ShopListing, 'id' | 'isActive'>[] = [
   // Consumabili
   {
     itemId: null, itemType: 'energy',
-    name: 'Pozione di Energia', description: 'Recupera 20 energia.',
+    name: 'Pozione di Energia', description: 'Recupera 40 energia.',
     priceGold: 50, priceChannelPoints: 0, stock: -1,
   },
   {
@@ -155,13 +155,16 @@ export async function purchaseItem(
     [listing.priceGold, userId]
   );
 
-  // Applica effetto in base al tipo
+  // Applica effetto in base al tipo e genera messaggio descrittivo
+  let resultMessage = '';
+
   switch (listing.itemType) {
     case 'energy':
       await query(
         'UPDATE users SET energy = LEAST(max_energy, energy + 40) WHERE twitch_user_id = $1',
         [userId]
       );
+      resultMessage = `+40 energia recuperata!`;
       break;
 
     case 'energy_full':
@@ -169,22 +172,24 @@ export async function purchaseItem(
         'UPDATE users SET energy = max_energy WHERE twitch_user_id = $1',
         [userId]
       );
+      resultMessage = `Energia ripristinata al massimo!`;
       break;
 
     case 'exp_potion':
-      // L'utente dovra scegliere l'eroe - per ora da al proprio
       const heroResult = await query(
-        'SELECT id FROM heroes WHERE twitch_user_id = $1 LIMIT 1',
+        'SELECT id, display_name FROM heroes WHERE twitch_user_id = $1 LIMIT 1',
         [userId]
       );
       if (heroResult.rows.length > 0) {
         const { addExpToHero } = await import('./heroService');
         await addExpToHero(heroResult.rows[0].id, 200);
+        resultMessage = `+200 EXP a ${heroResult.rows[0].display_name}!`;
+      } else {
+        resultMessage = `Pergamena usata, ma nessun eroe trovato.`;
       }
       break;
 
     case 'reroll':
-      // Rirolla abilita dell'eroe personale
       const myHero = await query(
         'SELECT * FROM heroes WHERE twitch_user_id = $1',
         [userId]
@@ -194,18 +199,22 @@ export async function purchaseItem(
         const { selectAbilities } = await import('./heroGenerator');
         const newAbilities = selectAbilities(
           hero.hero_class, hero.rarity, hero.level,
-          userId + Date.now().toString() // seed diverso per risultato diverso
+          userId + Date.now().toString()
         );
         await query(
           'UPDATE heroes SET ability_ids = $1, updated_at = NOW() WHERE twitch_user_id = $2',
           [newAbilities, userId]
         );
+        resultMessage = `Abilita di ${hero.display_name} rirollate! Controlla il tuo eroe.`;
+      } else {
+        resultMessage = `Cristallo usato, ma nessun eroe trovato.`;
       }
       break;
 
     case 'equipment':
       if (listing.itemId) {
         await giveItem(userId, listing.itemId);
+        resultMessage = `${listing.name} aggiunto allo Zaino! Vai nello Zaino per equipaggiarlo.`;
       }
       break;
   }
@@ -224,7 +233,7 @@ export async function purchaseItem(
     await progressMission(userId, 'shop');
   } catch { /* */ }
 
-  return { success: true, message: `Acquistato: ${listing.name}!` };
+  return { success: true, message: resultMessage || `Acquistato: ${listing.name}!` };
 }
 
 /**

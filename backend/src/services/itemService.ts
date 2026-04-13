@@ -1,5 +1,6 @@
 import { query } from '../config/database';
 import { ITEM_MAP, ItemDefinition } from '../data/items';
+import { HeroClass } from '../types';
 
 // ============================================
 // GESTIONE INVENTARIO E EQUIPMENT
@@ -15,6 +16,7 @@ export interface InventoryItem {
   statBonuses: Record<string, number>;
   quantity: number;
   equippedOn: string | null; // hero ID
+  allowedClasses?: string[]; // classi che possono equipaggiare
 }
 
 /**
@@ -65,17 +67,21 @@ export async function getInventory(userId: string): Promise<InventoryItem[]> {
     [userId]
   );
 
-  return result.rows.map(row => ({
-    id: row.id,
-    itemId: row.item_id,
-    name: row.name,
-    description: row.description,
-    slot: row.slot,
-    rarity: row.rarity,
-    statBonuses: row.stat_bonuses || {},
-    quantity: row.quantity,
-    equippedOn: row.equipped_on,
-  }));
+  return result.rows.map(row => {
+    const def = ITEM_MAP.get(row.item_id);
+    return {
+      id: row.id,
+      itemId: row.item_id,
+      name: row.name,
+      description: row.description,
+      slot: row.slot,
+      rarity: row.rarity,
+      statBonuses: row.stat_bonuses || {},
+      quantity: row.quantity,
+      equippedOn: row.equipped_on,
+      allowedClasses: def?.allowedClasses || undefined,
+    };
+  });
 }
 
 /**
@@ -101,15 +107,31 @@ export async function equipItem(
 
   const item = itemResult.rows[0];
 
-  // Verifica che l'eroe sia nel roster o sia il proprio
+  // Verifica che l'eroe sia nel roster o sia il proprio e ottieni la classe
   const heroCheck = await query(
-    `SELECT 1 FROM roster WHERE owner_user_id = $1 AND hero_id = $2
+    `SELECT h.hero_class FROM roster r
+     JOIN heroes h ON h.id = r.hero_id
+     WHERE r.owner_user_id = $1 AND r.hero_id = $2
      UNION
-     SELECT 1 FROM heroes WHERE id = $2 AND twitch_user_id = $1`,
+     SELECT h.hero_class FROM heroes h
+     WHERE h.id = $2 AND h.twitch_user_id = $1`,
     [userId, heroId]
   );
   if (heroCheck.rows.length === 0) {
     return { success: false, message: 'Questo eroe non e nel tuo roster' };
+  }
+
+  // Verifica restrizioni di classe
+  const heroClass = heroCheck.rows[0].hero_class as HeroClass;
+  const itemDef = ITEM_MAP.get(item.item_id);
+  if (itemDef?.allowedClasses && !itemDef.allowedClasses.includes(heroClass)) {
+    const classNames: Record<string, string> = {
+      guardiano: 'Guardiano', lama: 'Berserker', arcano: 'Stregone', custode: 'Sacerdote',
+      ombra: 'Assassino', ranger: 'Ranger', sciamano: 'Sciamano', crono: 'Cronomante',
+      dragoon: 'Dragoon', samurai: 'Samurai', necromante: 'Necromante', alchimista: 'Alchimista',
+    };
+    const allowedNames = itemDef.allowedClasses.map(c => classNames[c] || c).join(', ');
+    return { success: false, message: `Questo oggetto puo essere usato solo da: ${allowedNames}` };
   }
 
   // Rimuovi oggetto gia equipaggiato nello stesso slot su questo eroe

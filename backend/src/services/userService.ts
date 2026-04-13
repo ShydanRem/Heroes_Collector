@@ -90,23 +90,40 @@ export async function addActivity(
 
 /**
  * Aggiorna l'activity score di un utente e restituisce il nuovo punteggio.
+ * Calcola automaticamente follow_age dalla data di creazione e
+ * stima watch_time dai messaggi chat (chi chatta sta guardando).
  */
 export async function refreshActivityScore(twitchUserId: string): Promise<number> {
   const { calculateActivityScore } = await import('./heroGenerator');
 
   const result = await query(
-    'SELECT chat_messages, watch_time_min, sub_months, follow_age_days FROM users WHERE twitch_user_id = $1',
+    'SELECT chat_messages, watch_time_min, sub_months, follow_age_days, created_at FROM users WHERE twitch_user_id = $1',
     [twitchUserId]
   );
 
   if (result.rows.length === 0) return 0;
 
   const row = result.rows[0];
+
+  // Calcola follow age dalla data di registrazione (giorni da quando si e iscritto)
+  const createdAt = new Date(row.created_at);
+  const followAgeDays = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+
+  // Stima watch time: almeno 5 minuti per ogni messaggio chat
+  // (chi chatta sta guardando), piu il watch_time_min tracciato direttamente
+  const estimatedWatchMin = Math.max(row.watch_time_min, row.chat_messages * 5);
+
+  // Aggiorna i campi calcolati nel DB
+  await query(
+    'UPDATE users SET follow_age_days = $1, watch_time_min = $2 WHERE twitch_user_id = $3',
+    [followAgeDays, estimatedWatchMin, twitchUserId]
+  );
+
   const score = calculateActivityScore({
     chatMessages: row.chat_messages,
-    watchTimeMinutes: row.watch_time_min,
+    watchTimeMinutes: estimatedWatchMin,
     subMonths: row.sub_months,
-    followAgeDays: row.follow_age_days,
+    followAgeDays,
   });
 
   await query(

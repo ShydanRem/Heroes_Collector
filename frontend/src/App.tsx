@@ -245,7 +245,7 @@ export default function App() {
         {tab === 'heroes' && <HeroList />}
         {tab === 'roster' && <Roster />}
         {tab === 'items' && <Inventory />}
-        {tab === 'shop' && <Shop />}
+        {tab === 'shop' && <Shop onGoToInventory={() => setTab('items')} />}
         {tab === 'party' && <PartyManager onStartBattle={() => setTab('dungeon')} />}
         {tab === 'dungeon' && <BattleView />}
         {tab === 'pvp' && <PvpArena />}

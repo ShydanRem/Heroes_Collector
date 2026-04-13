@@ -380,6 +380,7 @@ const REROLL_COST = 500;
 const ALL_CLASSES: HeroClass[] = [
   HeroClass.GUARDIANO, HeroClass.LAMA, HeroClass.ARCANO, HeroClass.CUSTODE,
   HeroClass.OMBRA, HeroClass.RANGER, HeroClass.SCIAMANO, HeroClass.CRONO,
+  HeroClass.DRAGOON, HeroClass.SAMURAI, HeroClass.NECROMANTE, HeroClass.ALCHIMISTA,
 ];
 
 /**
