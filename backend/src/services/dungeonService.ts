@@ -125,19 +125,30 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
     for (const f of partyFighters) {
       applyTalentBonuses(f, talentBonuses);
     }
-    // Party aura: +3% DEF/HP a tutti gli alleati
-    if (talentEffects.has('party_def')) {
-      for (const f of partyFighters) {
-        const bonus = Math.floor(f.stats.def * 0.03);
-        f.stats.def += bonus;
+    // Party aura: bonus a tutti gli alleati
+    const auras: [string, keyof typeof partyFighters[0]['stats']][] = [
+      ['party_def', 'def'], ['party_hp', 'hp'], ['party_atk', 'atk'], ['party_spd', 'spd'],
+    ];
+    for (const [effect, stat] of auras) {
+      if (talentEffects.has(effect)) {
+        for (const f of partyFighters) {
+          if (stat === 'hp') {
+            const bonus = Math.floor(f.maxHp * 0.03);
+            f.maxHp += bonus; f.currentHp += bonus; f.stats.hp += bonus;
+          } else {
+            f.stats[stat] += Math.floor(f.stats[stat] * 0.03);
+          }
+        }
       }
     }
-    if (talentEffects.has('party_hp')) {
+    // party_all: +3% a tutte le stats
+    if (talentEffects.has('party_all')) {
       for (const f of partyFighters) {
-        const bonus = Math.floor(f.maxHp * 0.03);
-        f.maxHp += bonus;
-        f.currentHp += bonus;
-        f.stats.hp += bonus;
+        for (const stat of ['atk', 'def', 'spd', 'crit', 'critDmg'] as const) {
+          f.stats[stat] += Math.floor(f.stats[stat] * 0.03);
+        }
+        const hpBonus = Math.floor(f.maxHp * 0.03);
+        f.maxHp += hpBonus; f.currentHp += hpBonus; f.stats.hp += hpBonus;
       }
     }
   } catch { /* talenti non ancora disponibili */ }
