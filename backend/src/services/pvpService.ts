@@ -54,14 +54,19 @@ function calculateEloChange(playerElo: number, opponentElo: number, won: boolean
  * Trova un avversario con ELO simile e combatti.
  */
 const PVP_COOLDOWN_MS = 3 * 60 * 1000; // 3 minuti tra fight
-const pvpLastFight = new Map<string, number>();
 
 export async function findAndFight(userId: string): Promise<PvpResult> {
-  // Cooldown anti-spam
-  const lastFight = pvpLastFight.get(userId) || 0;
-  if (Date.now() - lastFight < PVP_COOLDOWN_MS) {
-    const remaining = Math.ceil((PVP_COOLDOWN_MS - (Date.now() - lastFight)) / 1000);
-    throw new Error(`Devi aspettare ${remaining} secondi prima del prossimo PVP!`);
+  // Cooldown anti-spam (persistente nel DB, non si resetta al restart)
+  const lastFightResult = await query(
+    "SELECT completed_at FROM battles WHERE attacker_user_id = $1 AND battle_type = 'pvp' ORDER BY completed_at DESC LIMIT 1",
+    [userId]
+  );
+  if (lastFightResult.rows.length > 0 && lastFightResult.rows[0].completed_at) {
+    const lastFightTime = new Date(lastFightResult.rows[0].completed_at).getTime();
+    if (Date.now() - lastFightTime < PVP_COOLDOWN_MS) {
+      const remaining = Math.ceil((PVP_COOLDOWN_MS - (Date.now() - lastFightTime)) / 1000);
+      throw new Error(`Devi aspettare ${remaining} secondi prima del prossimo PVP!`);
+    }
   }
 
   // Verifica party attivo
@@ -150,17 +155,17 @@ export async function findAndFight(userId: string): Promise<PvpResult> {
     );
   }
 
-  // Rewards (bilanciati)
-  const expReward = outcome.won ? 25 : 5;
-  const goldReward = outcome.won ? 15 : 2;
+  // Rewards
+  const expReward = outcome.won ? 40 : 8;
+  const goldReward = outcome.won ? 50 : 10;
 
   for (const hero of myHeroes) {
     await addExpToHero(hero.id, expReward);
   }
   await addGold(userId, goldReward);
 
-  // Essenze: 1-2 per vittoria PVP
-  const essenceReward = outcome.won ? Math.floor(1 + Math.random() * 2) : 0;
+  // Essenze: 2-3 per vittoria PVP
+  const essenceReward = outcome.won ? Math.floor(2 + Math.random() * 2) : 0;
   if (essenceReward > 0) {
     await addEssences(userId, essenceReward);
   }
@@ -171,6 +176,7 @@ export async function findAndFight(userId: string): Promise<PvpResult> {
   } catch { /* */ }
   if (outcome.won) {
     try { const { progressMission } = await import('./missionService'); await progressMission(userId, 'pvp'); } catch { /* */ }
+    try { const { checkProgressAchievements } = await import('./achievementService'); await checkProgressAchievements(userId); } catch { /* */ }
   }
 
   // Salva battaglia
@@ -191,7 +197,7 @@ export async function findAndFight(userId: string): Promise<PvpResult> {
   );
 
   // Segna timestamp cooldown
-  pvpLastFight.set(userId, Date.now());
+  // Cooldown gestito dal DB (completed_at della battle salvata sotto)
 
   return {
     battleId: battleResult.rows[0].id,

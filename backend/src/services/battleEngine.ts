@@ -138,7 +138,7 @@ function buildOutcome(
 export function runBattle(
   attackers: BattleFighter[],
   defenders: BattleFighter[],
-  options?: { resetHp?: boolean }
+  options?: { resetHp?: boolean; vampirismo?: boolean }
 ): BattleOutcome {
   const log: BattleLogEntry[] = [];
   const allFighters = [...attackers, ...defenders];
@@ -274,6 +274,12 @@ export function runBattle(
           target.currentHp = Math.max(0, target.currentHp - damage);
           totalDamageDealt += damage;
 
+          // Vampirismo: cura l'attaccante del 15% del danno inflitto (solo attaccanti)
+          if (options?.vampirismo && attackers.includes(fighter) && damage > 0) {
+            const healAmount = Math.floor(damage * 0.15);
+            fighter.currentHp = Math.min(fighter.maxHp, fighter.currentHp + healAmount);
+          }
+
           // Genera threat: chi fa danno attira aggro proporzionale
           fighter.threat += Math.floor(damage * getThreatMultiplier(fighter.heroClass) * 0.5);
 
@@ -290,7 +296,10 @@ export function runBattle(
 
         } else if (abilityDef.type === AbilityType.SUPPORTO) {
           if (abilityDef.power > 0) {
-            const healAmount = Math.floor(getEffectiveStat(fighter, 'atk') * abilityDef.power * 0.8);
+            // Cure scalano da HP max del bersaglio + ATK del curante (healer efficaci anche con ATK basso)
+            const hpBasedHeal = Math.floor(target.maxHp * 0.12 * abilityDef.power);
+            const atkBasedHeal = Math.floor(getEffectiveStat(fighter, 'atk') * abilityDef.power * 0.4);
+            const healAmount = hpBasedHeal + atkBasedHeal;
             const prevHp = target.currentHp;
             target.currentHp = Math.min(target.maxHp, target.currentHp + healAmount);
             const actualHeal = target.currentHp - prevHp;

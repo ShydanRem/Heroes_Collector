@@ -179,7 +179,7 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
     const outcome = runBattle(
       partyFighters,
       monsterFighters,
-      { resetHp: false }
+      { resetHp: false, vampirismo: modifier?.id === 'vampirismo' }
     );
 
     waveResults.push({
@@ -237,8 +237,8 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
 
   // Farm mode: riduzione reward se zona gia completata
   if (isReplay) {
-    totalExpReward = Math.floor(totalExpReward * 0.6);
-    totalGoldReward = Math.floor(totalGoldReward * 0.6);
+    totalExpReward = Math.floor(totalExpReward * 0.8);
+    totalGoldReward = Math.floor(totalGoldReward * 0.8);
   }
 
   // Applica moltiplicatori del modificatore ai reward
@@ -257,10 +257,17 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
     await addEssences(userId, essenceReward);
   }
 
-  // Punti classifica settimanale + missioni giornaliere
+  // Punti classifica settimanale + missioni giornaliere + achievement
   if (won) {
     try { await addWeeklyPoints(userId, POINTS.DUNGEON_CLEAR, 'dungeons_cleared'); } catch { /* */ }
     try { const { progressMission } = await import('./missionService'); await progressMission(userId, 'dungeon'); } catch { /* */ }
+    try {
+      const { checkProgressAchievements, checkAndUnlock } = await import('./achievementService');
+      await checkProgressAchievements(userId);
+      // Impeccabile: nessun eroe morto durante tutto il dungeon
+      const allSurvived = waveResults.every(w => w.heroHpStart?.every((h: any) => h.currentHp > 0) !== false);
+      if (allSurvived) await checkAndUnlock(userId, 'flawless');
+    } catch { /* */ }
   }
 
   // Gestisci progressi zona
@@ -368,8 +375,8 @@ function calculateWaveExp(wave: number, avgLevel: number): number {
  * Gold per ondata.
  */
 function calculateWaveGold(wave: number, avgLevel: number): number {
-  const baseGold = 7 + avgLevel * 1.4; // nerfato da 10 + lvl*2
-  const waveMultiplier = 1 + (wave - 1) * 0.2; // nerfato da 0.3
+  const baseGold = 10 + avgLevel * 2;
+  const waveMultiplier = 1 + (wave - 1) * 0.25;
   return Math.floor(baseGold * waveMultiplier);
 }
 

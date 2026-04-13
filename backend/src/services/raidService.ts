@@ -240,33 +240,28 @@ export async function attackRaid(userId: string): Promise<RaidAttackResult> {
   // Crea fighter del party
   const partyFighters = heroRows.map((h: any) => createFighter(h, 'attacker'));
 
-  // Crea fighter del boss (usa HP rimanenti)
+  // Carica stats del boss dal DB
+  const bossRow = await query('SELECT * FROM raid_boss WHERE id = $1', [raid.id]);
+  const b = bossRow.rows[0];
+
+  // Cap HP dinamico: 10% del max_hp del boss, min 3000, max 10000
+  const bossMaxHp = b ? parseInt(b.max_hp, 10) : 50000;
+  const hpCap = Math.max(3000, Math.min(10000, Math.floor(bossMaxHp * 0.1)));
+  const combatHp = Math.min(raid.currentHp, hpCap);
+
+  // Crea fighter del boss con stats corrette dal DB
   const bossFighter = createFighter({
     id: `raid_boss_${raid.id}`,
     display_name: `${raid.emoji} ${raid.name}`,
     hero_class: 'arcano',
-    hp: Math.min(raid.currentHp, 5000), // Cap combattimento a 5000 HP per volta
-    atk: getBossStatFromDb(raid.id, 'atk'),
-    def: getBossStatFromDb(raid.id, 'def'),
-    spd: getBossStatFromDb(raid.id, 'spd'),
-    crit: 15,
-    crit_dmg: 170,
-    ability_ids: ['atk_tempesta_arcana', 'atk_nube_tossica', 'deb_aoe_curse'],
+    hp: combatHp,
+    atk: b?.atk || 50,
+    def: b?.def || 50,
+    spd: b?.spd || 30,
+    crit: b?.crit || 15,
+    crit_dmg: b?.crit_dmg || 170,
+    ability_ids: b?.ability_ids || ['atk_tempesta_arcana', 'atk_nube_tossica', 'deb_aoe_curse'],
   }, 'defender');
-
-  // Carica stats del boss dal DB
-  const bossRow = await query('SELECT * FROM raid_boss WHERE id = $1', [raid.id]);
-  if (bossRow.rows.length > 0) {
-    const b = bossRow.rows[0];
-    bossFighter.stats.atk = b.atk;
-    bossFighter.stats.def = b.def;
-    bossFighter.stats.spd = b.spd;
-    bossFighter.stats.crit = b.crit;
-    bossFighter.stats.critDmg = b.crit_dmg;
-    bossFighter.abilities = b.ability_ids || ['atk_tempesta_arcana'];
-    bossFighter.maxHp = Math.min(parseInt(b.current_hp, 10), 5000);
-    bossFighter.currentHp = bossFighter.maxHp;
-  }
 
   // Applica sinergie party
   applySynergies(partyFighters);
@@ -326,6 +321,11 @@ export async function attackRaid(userId: string): Promise<RaidAttackResult> {
   // Punti classifica settimanale + missioni giornaliere
   try { await addWeeklyPoints(userId, POINTS.RAID_ATTACK, 'raid_damage'); } catch { /* */ }
   try { const { progressMission } = await import('./missionService'); await progressMission(userId, 'raid'); } catch { /* */ }
+  try {
+    const { checkProgressAchievements, checkAndUnlock } = await import('./achievementService');
+    await checkProgressAchievements(userId);
+    if (bossDefeated) await checkAndUnlock(userId, 'raid_slayer');
+  } catch { /* */ }
 
   // Loot bonus se il boss e stato sconfitto
   if (bossDefeated) {
@@ -396,10 +396,6 @@ function getWeekNumber(): number {
   const start = new Date(now.getFullYear(), 0, 1);
   const diff = now.getTime() - start.getTime();
   return Math.ceil(diff / (7 * 24 * 60 * 60 * 1000));
-}
-
-function getBossStatFromDb(_raidId: string, _stat: string): number {
-  return 50; // fallback, sovrascritto dopo query
 }
 
 /**

@@ -227,10 +227,14 @@ export async function purchaseItem(
     );
   }
 
-  // Progresso missioni giornaliere
+  // Progresso missioni giornaliere + achievement
   try {
     const { progressMission } = await import('./missionService');
     await progressMission(userId, 'shop');
+  } catch { /* */ }
+  try {
+    const { checkProgressAchievements } = await import('./achievementService');
+    await checkProgressAchievements(userId);
   } catch { /* */ }
 
   return { success: true, message: resultMessage || `Acquistato: ${listing.name}!` };

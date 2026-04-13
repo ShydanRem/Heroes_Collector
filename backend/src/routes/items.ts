@@ -29,10 +29,14 @@ itemRoutes.post('/equip', async (req: Request, res: Response) => {
     if (!result.success) {
       return res.status(400).json({ error: result.message });
     }
-    // Progresso missioni giornaliere
+    // Progresso missioni giornaliere + achievement
     try {
       const { progressMission } = await import('../services/missionService');
       await progressMission(userId, 'equip');
+    } catch { /* */ }
+    try {
+      const { checkProgressAchievements } = await import('../services/achievementService');
+      await checkProgressAchievements(userId);
     } catch { /* */ }
     res.json({ message: result.message });
   } catch (err) {

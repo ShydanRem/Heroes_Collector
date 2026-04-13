@@ -183,6 +183,15 @@ export async function captureHero(
     const { progressMission } = await import('./missionService');
     await progressMission(captorUserId, 'capture');
   } catch { /* */ }
+  try {
+    const { checkProgressAchievements, checkAndUnlock } = await import('./achievementService');
+    await checkProgressAchievements(captorUserId);
+    // Pesca Leggendaria: cattura un eroe Leggendario+
+    const rarityIdx = RARITY_ORDER.indexOf(chosenRarity);
+    if (rarityIdx >= RARITY_ORDER.indexOf(Rarity.LEGGENDARIO)) {
+      await checkAndUnlock(captorUserId, 'legendary_catch');
+    }
+  } catch { /* */ }
 
   return { success: true, message: `Hai catturato ${hero.displayName}!` };
 }

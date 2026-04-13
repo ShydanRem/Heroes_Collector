@@ -15,7 +15,7 @@ export const CLASS_BASE_STATS: Record<HeroClass, HeroStats> = {
     hp: 170, atk: 25, def: 40, spd: 30, crit: 5, critDmg: 130,
   },
   [HeroClass.OMBRA]: {
-    hp: 120, atk: 55, def: 20, spd: 55, crit: 30, critDmg: 180,
+    hp: 120, atk: 55, def: 20, spd: 55, crit: 23, critDmg: 168,
   },
   [HeroClass.RANGER]: {
     hp: 140, atk: 50, def: 28, spd: 50, crit: 25, critDmg: 155,
@@ -55,7 +55,7 @@ export const CLASS_GROWTH: Record<HeroClass, HeroStats> = {
     hp: 20, atk: 2.5, def: 4, spd: 2, crit: 0.1, critDmg: 0.3,
   },
   [HeroClass.OMBRA]: {
-    hp: 12, atk: 6, def: 1, spd: 4, crit: 0.8, critDmg: 1.5,
+    hp: 12, atk: 6, def: 1, spd: 4, crit: 0.5, critDmg: 1.2,
   },
   [HeroClass.RANGER]: {
     hp: 15, atk: 5.5, def: 2, spd: 3.5, crit: 0.6, critDmg: 0.8,
@@ -228,7 +228,7 @@ export const SYNERGIES: Synergy[] = [
       HeroClass.DRAGOON, HeroClass.SAMURAI, HeroClass.NECROMANTE, HeroClass.ALCHIMISTA,
     ],
     minCount: 4,
-    effect: { bonus: 10, description: '+10% a tutte le stats' },
+    effect: { bonus: 15, description: '+15% a tutte le stats' },
   },
   {
     name: 'Assalto dal Cielo',
@@ -257,5 +257,26 @@ export const SYNERGIES: Synergy[] = [
     requiredClasses: [HeroClass.ALCHIMISTA, HeroClass.CUSTODE],
     minCount: 2,
     effect: { stat: 'hp', bonus: 25, description: '+25% HP al party' },
+  },
+  {
+    name: 'Cavalieri del Cielo',
+    description: '+15% SPD se nel party ci sono Dragoon + Ranger',
+    requiredClasses: [HeroClass.DRAGOON, HeroClass.RANGER],
+    minCount: 2,
+    effect: { stat: 'spd', bonus: 15, description: '+15% SPD al party' },
+  },
+  {
+    name: 'Laboratorio Oscuro',
+    description: '+20% ATK se nel party ci sono Alchimista + Necromante',
+    requiredClasses: [HeroClass.ALCHIMISTA, HeroClass.NECROMANTE],
+    minCount: 2,
+    effect: { stat: 'atk', bonus: 20, description: '+20% ATK al party' },
+  },
+  {
+    name: 'Scaglie Temporali',
+    description: '+20% DEF se nel party ci sono Dragoon + Cronomante',
+    requiredClasses: [HeroClass.DRAGOON, HeroClass.CRONO],
+    minCount: 2,
+    effect: { stat: 'def', bonus: 20, description: '+20% DEF al party' },
   },
 ];
