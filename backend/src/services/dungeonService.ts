@@ -1,5 +1,5 @@
 import { query } from '../config/database';
-import { runBattle, createFighter, BattleLogEntry, BattleOutcome, applySynergies, ActiveSynergy } from './battleEngine';
+import { runBattle, createFighter, BattleLogEntry, BattleOutcome, applySynergies, applyTalentBonuses, ActiveSynergy } from './battleEngine';
 import { generateWaveMonsters } from '../data/monsters';
 import { getPartyHeroes, getActiveParty } from './partyService';
 import { addExpToHero } from './heroService';
@@ -8,6 +8,7 @@ import { addWeeklyPoints, POINTS } from './weeklyService';
 import { rollLoot, ITEM_MAP } from '../data/items';
 import { giveItem } from './itemService';
 import { rollModifier, DungeonModifier } from '../data/dungeonModifiers';
+import { getTalentStatBonuses, getTalentSpecialEffects } from './talentService';
 import { ZONE_MAP, ZONES, isZoneUnlocked } from '../data/zones';
 
 // ============================================
@@ -116,6 +117,31 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
   // Crea i fighter (persistono tra le ondate)
   const partyFighters = heroRows.map((h: any) => createFighter(h, 'attacker'));
 
+  // Applica bonus talenti (stat % bonus)
+  let talentEffects = new Set<string>();
+  try {
+    const talentBonuses = await getTalentStatBonuses(userId);
+    talentEffects = await getTalentSpecialEffects(userId);
+    for (const f of partyFighters) {
+      applyTalentBonuses(f, talentBonuses);
+    }
+    // Party aura: +3% DEF/HP a tutti gli alleati
+    if (talentEffects.has('party_def')) {
+      for (const f of partyFighters) {
+        const bonus = Math.floor(f.stats.def * 0.03);
+        f.stats.def += bonus;
+      }
+    }
+    if (talentEffects.has('party_hp')) {
+      for (const f of partyFighters) {
+        const bonus = Math.floor(f.maxHp * 0.03);
+        f.maxHp += bonus;
+        f.currentHp += bonus;
+        f.stats.hp += bonus;
+      }
+    }
+  } catch { /* talenti non ancora disponibili */ }
+
   // Rolla un modificatore per questa run
   const modifier = rollModifier();
 
@@ -179,7 +205,7 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
     const outcome = runBattle(
       partyFighters,
       monsterFighters,
-      { resetHp: false, vampirismo: modifier?.id === 'vampirismo' }
+      { resetHp: false, vampirismo: modifier?.id === 'vampirismo', talentEffects }
     );
 
     waveResults.push({

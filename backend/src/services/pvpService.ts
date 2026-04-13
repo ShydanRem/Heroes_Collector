@@ -1,9 +1,10 @@
 import { query } from '../config/database';
-import { runBattle, createFighter, BattleLogEntry, applySynergies } from './battleEngine';
+import { runBattle, createFighter, BattleLogEntry, applySynergies, applyTalentBonuses } from './battleEngine';
 import { getActiveParty, getPartyHeroes } from './partyService';
 import { addExpToHero } from './heroService';
 import { addGold, addEssences } from './userService';
 import { addWeeklyPoints, POINTS } from './weeklyService';
+import { getTalentStatBonuses, getTalentSpecialEffects } from './talentService';
 
 // ============================================
 // RISULTATO PVP
@@ -120,12 +121,23 @@ export async function findAndFight(userId: string): Promise<PvpResult> {
   const myFighters = myHeroes.map((h: any) => createFighter(h, 'attacker'));
   const opponentFighters = opponentHeroes.map((h: any) => createFighter(h, 'defender'));
 
+  // Applica talenti del giocatore
+  let talentEffects = new Set<string>();
+  try {
+    const talentBonuses = await getTalentStatBonuses(userId);
+    talentEffects = await getTalentSpecialEffects(userId);
+    for (const f of myFighters) applyTalentBonuses(f, talentBonuses);
+    // Applica anche talenti avversario
+    const oppBonuses = await getTalentStatBonuses(opponent.user_id);
+    for (const f of opponentFighters) applyTalentBonuses(f, oppBonuses);
+  } catch { /* */ }
+
   // Applica sinergie a entrambi i party
   applySynergies(myFighters);
   applySynergies(opponentFighters);
 
   // Combatti!
-  const outcome = runBattle(myFighters, opponentFighters);
+  const outcome = runBattle(myFighters, opponentFighters, { talentEffects });
 
   // Calcola cambio ELO
   const eloChange = calculateEloChange(myElo, opponent.elo_rating, outcome.won);

@@ -138,7 +138,7 @@ function buildOutcome(
 export function runBattle(
   attackers: BattleFighter[],
   defenders: BattleFighter[],
-  options?: { resetHp?: boolean; vampirismo?: boolean }
+  options?: { resetHp?: boolean; vampirismo?: boolean; talentEffects?: Set<string> }
 ): BattleOutcome {
   const log: BattleLogEntry[] = [];
   const allFighters = [...attackers, ...defenders];
@@ -279,6 +279,13 @@ export function runBattle(
             isCrit = true;
           }
 
+          // Execute talent: +25% danno vs nemici sotto 25% HP
+          if (options?.talentEffects?.has('execute') && attackers.includes(fighter)) {
+            if (target.currentHp / target.maxHp < 0.25) {
+              damage = Math.floor(damage * 1.25);
+            }
+          }
+
           // Maledizione
           if (hasStatus(target, StatusEffect.MALEDIZIONE)) {
             damage = Math.floor(damage * 1.3);
@@ -300,10 +307,16 @@ export function runBattle(
           target.currentHp = Math.max(0, target.currentHp - damage);
           totalDamageDealt += damage;
 
-          // Vampirismo: cura l'attaccante del 15% del danno inflitto (solo attaccanti)
+          // Vampirismo modificatore: cura l'attaccante del 15% del danno inflitto
           if (options?.vampirismo && attackers.includes(fighter) && damage > 0) {
             const healAmount = Math.floor(damage * 0.15);
             fighter.currentHp = Math.min(fighter.maxHp, fighter.currentHp + healAmount);
+          }
+
+          // Lifesteal talent: cura l'attaccante del 10% del danno inflitto
+          if (options?.talentEffects?.has('lifesteal') && attackers.includes(fighter) && damage > 0) {
+            const drainAmount = Math.floor(damage * 0.10);
+            fighter.currentHp = Math.min(fighter.maxHp, fighter.currentHp + drainAmount);
           }
 
           // Genera threat: chi fa danno attira aggro proporzionale
@@ -787,18 +800,17 @@ export function applySynergies(fighters: BattleFighter[]): ActiveSynergy[] {
   const classes = fighters.filter(f => f.isAlive).map(f => f.heroClass as HeroClass);
   const activeSynergies: ActiveSynergy[] = [];
 
+  // Fase 1: calcola tutti i bonus additivamente
+  const totalBonuses: Record<string, number> = {};
+
   for (const synergy of SYNERGIES) {
-    // Conta quanti eroi matchano le classi richieste
     let matchCount: number;
 
     if (synergy.requiredClasses.length === 1) {
-      // Sinergia singola classe: conta quanti ne hai
       matchCount = classes.filter(c => c === synergy.requiredClasses[0]).length;
     } else if (synergy.name === 'Armata Completa') {
-      // Caso speciale: conta classi DIVERSE
       matchCount = new Set(classes).size;
     } else {
-      // Multi-classe: servono tutte le classi richieste presenti
       const hasAll = synergy.requiredClasses.every(rc => classes.includes(rc));
       matchCount = hasAll ? synergy.requiredClasses.length : 0;
     }
@@ -810,25 +822,31 @@ export function applySynergies(fighters: BattleFighter[]): ActiveSynergy[] {
         effectDescription: synergy.effect.description,
       });
 
-      // Applica bonus stats
-      const bonus = synergy.effect.bonus / 100;
-      for (const f of fighters) {
-        if (!f.isAlive) continue;
-        if (synergy.effect.stat) {
-          f.stats[synergy.effect.stat] = Math.floor(f.stats[synergy.effect.stat] * (1 + bonus));
-          // Aggiorna maxHp/currentHp se il bonus e su hp
-          if (synergy.effect.stat === 'hp') {
-            f.maxHp = Math.floor(f.maxHp * (1 + bonus));
-            f.currentHp = Math.floor(f.currentHp * (1 + bonus));
-          }
-        } else {
-          // Bonus a tutte le stats (Armata Completa)
-          for (const stat of ['hp', 'atk', 'def', 'spd', 'crit', 'critDmg'] as (keyof HeroStats)[]) {
-            f.stats[stat] = Math.floor(f.stats[stat] * (1 + bonus));
-          }
-          f.maxHp = Math.floor(f.maxHp * (1 + bonus));
-          f.currentHp = Math.floor(f.currentHp * (1 + bonus));
+      const bonus = synergy.effect.bonus;
+      if (synergy.effect.stat) {
+        totalBonuses[synergy.effect.stat] = (totalBonuses[synergy.effect.stat] || 0) + bonus;
+      } else {
+        // Bonus a tutte le stats (Armata Completa)
+        for (const stat of ['hp', 'atk', 'def', 'spd', 'crit', 'critDmg']) {
+          totalBonuses[stat] = (totalBonuses[stat] || 0) + bonus;
         }
+      }
+    }
+  }
+
+  // Fase 2: applica i bonus sommati una volta sola (additivo, non moltiplicativo)
+  for (const f of fighters) {
+    if (!f.isAlive) continue;
+    for (const [stat, pct] of Object.entries(totalBonuses)) {
+      const multiplier = pct / 100;
+      if (stat === 'hp') {
+        const bonus = Math.floor(f.maxHp * multiplier);
+        f.maxHp += bonus;
+        f.currentHp += bonus;
+        f.stats.hp += bonus;
+      } else if (stat in f.stats) {
+        const key = stat as keyof HeroStats;
+        f.stats[key] += Math.floor(f.stats[key] * multiplier);
       }
     }
   }

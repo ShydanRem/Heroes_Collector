@@ -45,6 +45,13 @@ overlayRoutes.get('/', async (_req: Request, res: Response) => {
       }
     } catch { /* tabella potrebbe non esistere */ }
 
+    // Campione settimanale
+    let weeklyChampion = null;
+    try {
+      const { getLastChampion } = await import('../services/weeklyService');
+      weeklyChampion = await getLastChampion();
+    } catch { /* */ }
+
     // Stats generali
     const stats = await query(
       `SELECT
@@ -91,6 +98,7 @@ overlayRoutes.get('/', async (_req: Request, res: Response) => {
         losses: r.losses,
       })),
       raidBoss,
+      weeklyChampion,
       lastCapture,
       recentCaptures,
       // Drop rari: catture leggendario+ negli ultimi 5 minuti

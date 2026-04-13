@@ -1,5 +1,5 @@
 import { query } from '../config/database';
-import { runBattle, createFighter, BattleLogEntry, applySynergies } from './battleEngine';
+import { runBattle, createFighter, BattleLogEntry, applySynergies, applyTalentBonuses } from './battleEngine';
 import { getActiveParty, getPartyHeroes } from './partyService';
 import { addExpToHero } from './heroService';
 import { addGold, addEssences } from './userService';
@@ -7,6 +7,7 @@ import { addWeeklyPoints, POINTS } from './weeklyService';
 import { giveItem } from './itemService';
 import { ITEMS } from '../data/items';
 import { Rarity } from '../types';
+import { getTalentStatBonuses, getTalentSpecialEffects } from './talentService';
 
 // ============================================
 // RAID BOSS TEMPLATES
@@ -240,6 +241,14 @@ export async function attackRaid(userId: string): Promise<RaidAttackResult> {
   // Crea fighter del party
   const partyFighters = heroRows.map((h: any) => createFighter(h, 'attacker'));
 
+  // Applica talenti
+  let talentEffects = new Set<string>();
+  try {
+    const talentBonuses = await getTalentStatBonuses(userId);
+    talentEffects = await getTalentSpecialEffects(userId);
+    for (const f of partyFighters) applyTalentBonuses(f, talentBonuses);
+  } catch { /* */ }
+
   // Carica stats del boss dal DB
   const bossRow = await query('SELECT * FROM raid_boss WHERE id = $1', [raid.id]);
   const b = bossRow.rows[0];
@@ -267,7 +276,7 @@ export async function attackRaid(userId: string): Promise<RaidAttackResult> {
   applySynergies(partyFighters);
 
   // Combatti
-  const outcome = runBattle(partyFighters, [bossFighter]);
+  const outcome = runBattle(partyFighters, [bossFighter], { talentEffects });
 
   // Calcola danno inflitto al boss
   const damageDealt = bossFighter.maxHp - Math.max(0, bossFighter.currentHp);

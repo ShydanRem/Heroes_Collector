@@ -137,3 +137,21 @@ export async function getTalentStatBonuses(userId: string): Promise<Record<strin
 
   return bonuses;
 }
+
+/**
+ * Ottieni gli effetti speciali attivi dai talenti sbloccati.
+ * Ritorna un Set di stringhe tipo 'party_def', 'party_hp', 'lifesteal', 'execute'.
+ */
+export async function getTalentSpecialEffects(userId: string): Promise<Set<string>> {
+  const unlocked = await getUnlockedTalents(userId);
+  const effects = new Set<string>();
+
+  for (const talentId of unlocked) {
+    const node = getTalentNode(talentId);
+    if (node?.specialEffect) {
+      effects.add(node.specialEffect);
+    }
+  }
+
+  return effects;
+}
