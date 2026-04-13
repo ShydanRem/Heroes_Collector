@@ -403,6 +403,7 @@ export interface DailyMission {
   progress: number;
   rewardGold: number;
   rewardExp: number;
+  rewardEssences: number;
   claimed: boolean;
   completed: boolean;
 }

@@ -210,6 +210,32 @@ export function runBattle(
       // Bersagli
       const enemies = fighter.team === 'attacker' ? defenders : attackers;
       const allies = fighter.team === 'attacker' ? attackers : defenders;
+
+      // Resurrezione: seleziona un alleato morto e riportalo in vita
+      if (ability === 'ult_custode') {
+        const deadAllies = allies.filter(a => !a.isAlive);
+        if (deadAllies.length > 0) {
+          const target = deadAllies[Math.floor(Math.random() * deadAllies.length)];
+          const restoredHp = Math.floor(target.maxHp * 0.5);
+          target.currentHp = restoredHp;
+          target.isAlive = true;
+          target.statusEffects = [];
+          log.push({
+            turn, actor: fighter.name, actorId: fighter.id, action: abilityDef.name,
+            target: target.name, targetId: target.id, heal: restoredHp,
+            message: `${fighter.name} usa Resurrezione! ${target.name} torna in vita con ${restoredHp} HP!`,
+          });
+        } else {
+          // Nessun alleato morto — usa cura base invece
+          log.push({
+            turn, actor: fighter.name, actorId: fighter.id, action: 'Preghiera',
+            target: fighter.name, targetId: fighter.id,
+            message: `${fighter.name} prega, ma nessun alleato ha bisogno di resurrezione.`,
+          });
+        }
+        continue; // Skip al prossimo fighter, l'azione è completa
+      }
+
       const targets = selectTargets(abilityDef.target, fighter, enemies, allies);
 
       for (const target of targets) {
@@ -435,6 +461,12 @@ function chooseAbility(
       return a?.type === AbilityType.DIFESA;
     });
     if (defAbility) return defAbility;
+  }
+
+  // Healer: Resurrezione se alleati morti
+  const deadAllies = allies.filter(a => !a.isAlive);
+  if ((role === 'healer') && deadAllies.length > 0) {
+    if (availableAbilities.includes('ult_custode')) return 'ult_custode';
   }
 
   // Healer/Support: cura se alleati in pericolo (soglia piu' alta)

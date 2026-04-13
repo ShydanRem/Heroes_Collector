@@ -4,6 +4,16 @@ import { DungeonResult, ZoneInfo } from '../services/api';
 import { BattleArena, ArenaFighter } from './BattleArena';
 import { HeroClass, Rarity } from '../types';
 
+const SPEED_OPTIONS = [
+  { label: '1x', value: 600 },
+  { label: '2x', value: 300 },
+  { label: '3x', value: 150 },
+];
+
+function getSavedSpeed(): number {
+  try { return parseInt(localStorage.getItem('battleSpeed') || '600', 10); } catch { return 600; }
+}
+
 export function BattleView() {
   const [state, setState] = useState<'zone_select' | 'idle' | 'loading' | 'fighting' | 'wave_complete' | 'result'>('zone_select');
   const [zones, setZones] = useState<ZoneInfo[]>([]);
@@ -12,6 +22,7 @@ export function BattleView() {
   const [currentWave, setCurrentWave] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [zonesLoading, setZonesLoading] = useState(true);
+  const [battleSpeed, setBattleSpeed] = useState(getSavedSpeed);
 
   useEffect(() => { loadZones(); }, []);
 
@@ -267,9 +278,25 @@ export function BattleView() {
           {dungeonResult.zoneEmoji} {dungeonResult.zoneName} — Ondata {wave.wave}/{dungeonResult.totalWaves}
         </div>
 
+        {/* Speed control */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginBottom: 6 }}>
+          {SPEED_OPTIONS.map(opt => (
+            <button key={opt.value}
+              onClick={() => { setBattleSpeed(opt.value); localStorage.setItem('battleSpeed', opt.value.toString()); }}
+              style={{
+                background: battleSpeed === opt.value ? '#9147ff' : '#18181b',
+                color: battleSpeed === opt.value ? '#fff' : '#adadb8',
+                border: '1px solid #333', borderRadius: 4, padding: '2px 8px',
+                fontSize: 10, fontWeight: 700, cursor: 'pointer',
+              }}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
         <BattleArena
           leftTeam={left} rightTeam={right} log={wave.log}
-          speed={600} onComplete={onWaveComplete} onSkip={skipToResult}
+          speed={battleSpeed} onComplete={onWaveComplete} onSkip={skipToResult}
         />
       </div>
     );

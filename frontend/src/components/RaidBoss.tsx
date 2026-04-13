@@ -4,12 +4,23 @@ import { RaidInfo, RaidAttackResult } from '../services/api';
 import { BattleArena, ArenaFighter } from './BattleArena';
 import { HeroClass, Rarity } from '../types';
 
+const RAID_SPEED_OPTIONS = [
+  { label: '1x', value: 400 },
+  { label: '2x', value: 200 },
+  { label: '3x', value: 100 },
+];
+
+function getSavedRaidSpeed(): number {
+  try { return parseInt(localStorage.getItem('battleSpeed') || '400', 10); } catch { return 400; }
+}
+
 export function RaidBoss() {
   const [raid, setRaid] = useState<RaidInfo | null>(null);
   const [state, setState] = useState<'info' | 'fighting' | 'result'>('info');
   const [attackResult, setAttackResult] = useState<RaidAttackResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [battleSpeed, setBattleSpeed] = useState(getSavedRaidSpeed);
 
   useEffect(() => { loadRaid(); }, []);
 
@@ -191,11 +202,27 @@ export function RaidBoss() {
           {raid.emoji} {raid.name}
         </div>
 
+        {/* Speed control */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginBottom: 6 }}>
+          {RAID_SPEED_OPTIONS.map(opt => (
+            <button key={opt.value}
+              onClick={() => { setBattleSpeed(opt.value); localStorage.setItem('battleSpeed', opt.value.toString()); }}
+              style={{
+                background: battleSpeed === opt.value ? '#9147ff' : '#18181b',
+                color: battleSpeed === opt.value ? '#fff' : '#adadb8',
+                border: '1px solid #333', borderRadius: 4, padding: '2px 8px',
+                fontSize: 10, fontWeight: 700, cursor: 'pointer',
+              }}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
         <BattleArena
           leftTeam={left}
           rightTeam={right}
           log={attackResult.log}
-          speed={400}
+          speed={battleSpeed}
           onComplete={onFightComplete}
           onSkip={skipToResult}
         />

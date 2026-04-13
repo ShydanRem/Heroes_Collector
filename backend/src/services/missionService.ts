@@ -1,5 +1,5 @@
 import { query } from '../config/database';
-import { addGold } from './userService';
+import { addGold, addEssences } from './userService';
 import { addExpToHero } from './heroService';
 
 // ============================================
@@ -14,6 +14,7 @@ export interface DailyMission {
   progress: number;
   rewardGold: number;
   rewardExp: number;
+  rewardEssences: number;
   claimed: boolean;
   completed: boolean;
 }
@@ -31,6 +32,8 @@ interface MissionTemplate {
   goldMax: number;
   expMin: number;
   expMax: number;
+  essenceMin: number;
+  essenceMax: number;
 }
 
 const MISSION_POOL: MissionTemplate[] = [
@@ -40,6 +43,7 @@ const MISSION_POOL: MissionTemplate[] = [
     targetMin: 1, targetMax: 3,
     goldMin: 15, goldMax: 50,
     expMin: 20, expMax: 60,
+    essenceMin: 1, essenceMax: 3,
   },
   {
     type: 'pvp',
@@ -47,6 +51,7 @@ const MISSION_POOL: MissionTemplate[] = [
     targetMin: 1, targetMax: 2,
     goldMin: 20, goldMax: 40,
     expMin: 25, expMax: 50,
+    essenceMin: 1, essenceMax: 2,
   },
   {
     type: 'capture',
@@ -54,6 +59,7 @@ const MISSION_POOL: MissionTemplate[] = [
     targetMin: 1, targetMax: 2,
     goldMin: 15, goldMax: 35,
     expMin: 15, expMax: 40,
+    essenceMin: 1, essenceMax: 2,
   },
   {
     type: 'raid',
@@ -61,6 +67,7 @@ const MISSION_POOL: MissionTemplate[] = [
     targetMin: 1, targetMax: 2,
     goldMin: 20, goldMax: 45,
     expMin: 25, expMax: 55,
+    essenceMin: 1, essenceMax: 3,
   },
   {
     type: 'shop',
@@ -68,6 +75,7 @@ const MISSION_POOL: MissionTemplate[] = [
     targetMin: 1, targetMax: 2,
     goldMin: 10, goldMax: 25,
     expMin: 15, expMax: 30,
+    essenceMin: 0, essenceMax: 1,
   },
   {
     type: 'equip',
@@ -75,6 +83,7 @@ const MISSION_POOL: MissionTemplate[] = [
     targetMin: 1, targetMax: 2,
     goldMin: 10, goldMax: 20,
     expMin: 10, expMax: 25,
+    essenceMin: 0, essenceMax: 1,
   },
 ];
 
@@ -108,6 +117,7 @@ function rowToMission(r: any): DailyMission {
     progress: r.progress,
     rewardGold: r.reward_gold,
     rewardExp: r.reward_exp,
+    rewardEssences: r.reward_essences || 0,
     claimed: r.claimed,
     completed: r.completed_at !== null,
   };
@@ -142,13 +152,14 @@ export async function getDailyMissions(userId: string): Promise<DailyMission[]> 
     const target = randInt(tpl.targetMin, tpl.targetMax);
     const rewardGold = scaleReward(target, tpl.goldMin, tpl.goldMax, tpl.targetMin, tpl.targetMax, target);
     const rewardExp = scaleReward(target, tpl.expMin, tpl.expMax, tpl.targetMin, tpl.targetMax, target);
+    const rewardEssences = scaleReward(target, tpl.essenceMin, tpl.essenceMax, tpl.targetMin, tpl.targetMax, target);
     const description = tpl.descriptionTemplate.replace('{target}', target.toString());
 
     const result = await query(
-      `INSERT INTO daily_missions (user_id, mission_type, description, target, progress, reward_gold, reward_exp, claimed)
-       VALUES ($1, $2, $3, $4, 0, $5, $6, false)
+      `INSERT INTO daily_missions (user_id, mission_type, description, target, progress, reward_gold, reward_exp, reward_essences, claimed)
+       VALUES ($1, $2, $3, $4, 0, $5, $6, $7, false)
        RETURNING *`,
-      [userId, tpl.type, description, target, rewardGold, rewardExp]
+      [userId, tpl.type, description, target, rewardGold, rewardExp, rewardEssences]
     );
 
     missions.push(rowToMission(result.rows[0]));
@@ -204,7 +215,7 @@ export async function progressMission(userId: string, missionType: string): Prom
 export async function claimMission(
   userId: string,
   missionId: string
-): Promise<{ gold: number; exp: number }> {
+): Promise<{ gold: number; exp: number; essences: number }> {
   // Recupera la missione
   const result = await query(
     'SELECT * FROM daily_missions WHERE id = $1',
@@ -238,6 +249,12 @@ export async function claimMission(
   // Assegna gold
   await addGold(userId, mission.reward_gold);
 
+  // Assegna essenze
+  const essences = mission.reward_essences || 0;
+  if (essences > 0) {
+    await addEssences(userId, essences);
+  }
+
   // Assegna exp a tutti gli eroi dell'utente
   const heroesResult = await query(
     'SELECT id FROM heroes WHERE twitch_user_id = $1',
@@ -248,5 +265,5 @@ export async function claimMission(
     await addExpToHero(hero.id, mission.reward_exp);
   }
 
-  return { gold: mission.reward_gold, exp: mission.reward_exp };
+  return { gold: mission.reward_gold, exp: mission.reward_exp, essences };
 }

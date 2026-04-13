@@ -716,8 +716,8 @@ export const ABILITIES: Ability[] = [
     type: AbilityType.ULTIMATE,
     target: TargetType.TUTTI_NEMICI,
     heroClass: HeroClass.ARCANO,
-    power: 2.5,
-    cooldown: 6,
+    power: 1.8,
+    cooldown: 7,
     minRarity: Rarity.RARO,
   },
   {

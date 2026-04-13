@@ -162,6 +162,11 @@ function MissionCard({ mission, claiming, onClaim }: {
           <span style={{ color: '#64b5f6', fontWeight: 700 }}>
             +{mission.rewardExp} EXP
           </span>
+          {mission.rewardEssences > 0 && (
+            <span style={{ color: '#a855f7', fontWeight: 700 }}>
+              +{mission.rewardEssences} Ess
+            </span>
+          )}
         </div>
       </div>
     </div>

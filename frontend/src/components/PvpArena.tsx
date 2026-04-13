@@ -4,11 +4,22 @@ import { PvpResult } from '../services/api';
 import { BattleArena, ArenaFighter } from './BattleArena';
 import { HeroClass, Rarity } from '../types';
 
+const PVP_SPEED_OPTIONS = [
+  { label: '1x', value: 500 },
+  { label: '2x', value: 250 },
+  { label: '3x', value: 120 },
+];
+
+function getSavedPvpSpeed(): number {
+  try { return parseInt(localStorage.getItem('battleSpeed') || '500', 10); } catch { return 500; }
+}
+
 export function PvpArena() {
   const [state, setState] = useState<'idle' | 'searching' | 'fighting' | 'result'>('idle');
   const [result, setResult] = useState<PvpResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [myRank, setMyRank] = useState<any>(null);
+  const [battleSpeed, setBattleSpeed] = useState(getSavedPvpSpeed);
 
   useEffect(() => { loadRank(); }, []);
 
@@ -143,11 +154,27 @@ export function PvpArena() {
           VS {result.opponentName}
         </div>
 
+        {/* Speed control */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginBottom: 6 }}>
+          {PVP_SPEED_OPTIONS.map(opt => (
+            <button key={opt.value}
+              onClick={() => { setBattleSpeed(opt.value); localStorage.setItem('battleSpeed', opt.value.toString()); }}
+              style={{
+                background: battleSpeed === opt.value ? '#9147ff' : '#18181b',
+                color: battleSpeed === opt.value ? '#fff' : '#adadb8',
+                border: '1px solid #333', borderRadius: 4, padding: '2px 8px',
+                fontSize: 10, fontWeight: 700, cursor: 'pointer',
+              }}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
         <BattleArena
           leftTeam={left}
           rightTeam={right}
           log={result.log}
-          speed={500}
+          speed={battleSpeed}
           onComplete={onFightComplete}
           onSkip={skipToResult}
         />

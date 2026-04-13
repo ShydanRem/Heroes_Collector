@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS daily_missions (
   progress         INTEGER NOT NULL DEFAULT 0,
   reward_gold      INTEGER NOT NULL DEFAULT 0,
   reward_exp       INTEGER NOT NULL DEFAULT 0,
+  reward_essences  INTEGER NOT NULL DEFAULT 0,
   claimed          BOOLEAN DEFAULT FALSE,
   created_at       DATE NOT NULL DEFAULT CURRENT_DATE,
   completed_at     TIMESTAMPTZ,
