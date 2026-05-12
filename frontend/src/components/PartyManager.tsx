@@ -302,13 +302,13 @@ export function PartyManager({ onStartBattle }: PartyManagerProps) {
                       onClick={() => setEditingTacticsFor(hero.id)}
                       title="Strategia"
                       style={{
-                        position: 'absolute', top: 1, left: 1,
-                        background: 'rgba(145, 70, 255, 0.2)', border: 'none', color: '#9146ff',
-                        fontSize: 10, cursor: 'pointer', padding: '1px 3px',
-                        borderRadius: 3,
+                        marginTop: 4, width: '100%',
+                        background: 'rgba(145, 70, 255, 0.2)', border: '1px solid rgba(145, 70, 255, 0.4)', color: '#9146ff',
+                        fontSize: 9, cursor: 'pointer', padding: '2px 0',
+                        borderRadius: 3, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2
                       }}
                     >
-                      🧠
+                      <span>🧠</span> Tattiche
                     </button>
                     <button
                       onClick={() => handleRemoveHero(party.id, hero.id)}

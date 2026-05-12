@@ -21,7 +21,21 @@
       "Bash(git commit -m ':*)",
       "Bash(rm -f ../twitch-extension.zip)",
       "Bash(powershell -Command \"Compress-Archive -Path './*' -DestinationPath '../twitch-extension.zip' -Force\")",
-      "Bash(cp panel.html mobile.html)"
+      "Bash(cp panel.html mobile.html)",
+      "Bash(npx ts-node --skip-project -e ':*)",
+      "Bash(ls node_modules/.bin/tsx*)",
+      "Bash(ls node_modules/.bin/ts-node*)",
+      "Bash(ls:*)",
+      "Bash(rm -f twitch-extension.zip)",
+      "Bash(powershell.exe -Command \"Compress-Archive -Path 'dist\\\\*' -DestinationPath 'twitch-extension.zip' -Force\")",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(cp index.html mobile.html)",
+      "Bash(powershell.exe -Command \"Compress-Archive -Path 'dist\\\\panel.html','dist\\\\mobile.html','dist\\\\assets' -DestinationPath 'twitch-extension.zip' -Force\")",
+      "Bash(powershell.exe -Command \"\\(Get-Item 'twitch-extension.zip'\\).Length\")",
+      "Bash(powershell.exe:*)",
+      "Bash(DATABASE_URL=\"postgresql://heroes_collector_db_user:wbTq31d9L5rH5thbqrSE9u8uebImFHnS@dpg-d7bunmp17lss73at2qkg-a.frankfurt-postgres.render.com/heroes_collector_db\" npx ts-node src/config/migrate.ts)",
+      "Bash(DATABASE_URL=\"postgresql://heroes_collector_db_user:wbTq31d9L5rH5thbqrSE9u8uebImFHnS@dpg-d7bunmp17lss73at2qkg-a.frankfurt-postgres.render.com/heroes_collector_db?sslmode=require\" npx ts-node src/config/migrate.ts)"
     ]
   }
 }

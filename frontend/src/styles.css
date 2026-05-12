@@ -1473,7 +1473,7 @@ select:focus-visible {
 
 .profile-avatar-wrapper {
   position: absolute;
-  bottom: -40px;
+  top: 40px;
   left: 20px;
   padding: 4px;
   background: var(--bg-card);
@@ -1743,4 +1743,17 @@ select:focus-visible {
 @keyframes glowPulse {
   0%, 100% { filter: drop-shadow(0 0 2px var(--accent)); opacity: 0.6; }
   50% { filter: drop-shadow(0 0 8px var(--accent)); opacity: 1; }
+}
+
+/* ============ TACTICS OVERLAY ============ */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
 }
