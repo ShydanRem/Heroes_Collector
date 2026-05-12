@@ -152,15 +152,29 @@ export async function deleteParty(userId: string, partyId: string): Promise<bool
  */
 export async function getPartyHeroes(partyId: string): Promise<any[]> {
   const result = await query(
-    `SELECT h.*, r.capture_rarity, r.capture_level, r.exp as roster_exp, r.ability_ids as roster_abilities, r.id as roster_id FROM heroes h
+    `SELECT h.*, 
+            r.capture_rarity, r.capture_level, r.exp as roster_exp, r.ability_ids as roster_abilities, r.id as roster_id, r.tactics_json as roster_tactics,
+            u.tactics_json as user_tactics
+     FROM heroes h
      JOIN parties p ON h.id = ANY(p.hero_ids)
      LEFT JOIN roster r ON r.hero_id = h.id AND r.owner_user_id = p.user_id
+     LEFT JOIN users u ON u.twitch_user_id = p.user_id AND h.twitch_user_id = p.user_id
      WHERE p.id = $1
      ORDER BY array_position(p.hero_ids, h.id)`,
     [partyId]
   );
   
   return result.rows.map((row: any) => {
+    // Gestione tattiche (Gambit)
+    let tacticsRaw = row.roster_id ? row.roster_tactics : row.user_tactics;
+    let tactics = [];
+    if (typeof tacticsRaw === 'string') {
+      try { tactics = JSON.parse(tacticsRaw); } catch (e) {}
+    } else if (Array.isArray(tacticsRaw)) {
+      tactics = tacticsRaw;
+    }
+    row.tactics = tactics;
+
     // Se è un eroe del roster (catturato), sovrascrivi livello, exp, rarità e abilità
     if (row.roster_id) {
       row.level = row.capture_level || 1;

@@ -1484,7 +1484,7 @@ select:focus-visible {
 }
 
 .profile-info-main {
-  padding: 45px 20px 20px;
+  padding: 45px 20px 20px 130px;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;

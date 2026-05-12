@@ -54,6 +54,7 @@ export function PartyManager({ onStartBattle }: PartyManagerProps) {
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingTacticsFor, setEditingTacticsFor] = useState<string | null>(null); // heroId
+  const [heroTactics, setHeroTactics] = useState<any[]>([]);
 
   useEffect(() => {
     loadData();
@@ -82,6 +83,16 @@ export function PartyManager({ onStartBattle }: PartyManagerProps) {
       setError('Errore nel caricamento. Controlla la connessione.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleOpenTactics(heroId: string) {
+    try {
+      const res = await api.getHeroTactics(heroId);
+      setHeroTactics(res.rules || []);
+      setEditingTacticsFor(heroId);
+    } catch (err: any) {
+      setMessage({ text: err.message, type: 'error' });
     }
   }
 
@@ -299,7 +310,7 @@ export function PartyManager({ onStartBattle }: PartyManagerProps) {
                       Lv.{hero.level} <span style={{ color: '#ff4081' }}>❤️{(hero as any).bondLevel || 1}</span>
                     </div>
                     <button
-                      onClick={() => setEditingTacticsFor(hero.id)}
+                      onClick={() => handleOpenTactics(hero.id)}
                       title="Strategia"
                       style={{
                         marginTop: 4, width: '100%',
@@ -403,6 +414,7 @@ export function PartyManager({ onStartBattle }: PartyManagerProps) {
           <div className="modal-overlay">
             <TacticsEditor 
               hero={hero} 
+              initialRules={heroTactics}
               onSave={(rules) => handleSaveTactics(hero.id, rules)}
               onClose={() => setEditingTacticsFor(null)}
             />
