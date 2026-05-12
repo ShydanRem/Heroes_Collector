@@ -117,6 +117,17 @@ export function BattleView() {
     return { left, right };
   }
 
+  function getZoneTheme(zone: ZoneInfo): string {
+    const name = zone.name.toLowerCase();
+    const emoji = zone.emoji;
+    if (name.includes('foresta') || emoji === '🌲' || emoji === '🌳') return 'forest';
+    if (name.includes('vulcano') || name.includes('fuoco') || emoji === '🌋' || emoji === '🔥') return 'volcano';
+    if (name.includes('ghiaccio') || name.includes('neve') || emoji === '❄️' || emoji === '🏔️') return 'ice';
+    if (name.includes('deserto') || name.includes('sabbia') || emoji === '🏜️' || emoji === '🌵') return 'sand';
+    if (name.includes('oscuro') || name.includes('morte') || emoji === '💀' || emoji === '🌑') return 'dark';
+    return '';
+  }
+
   // ===== ZONE SELECT =====
   if (state === 'zone_select') {
     if (zonesLoading) {
@@ -124,65 +135,68 @@ export function BattleView() {
     }
 
     return (
-      <div>
-        <div style={{
-          background: 'linear-gradient(135deg, #1a0a2e 0%, #18181b 100%)',
-          borderRadius: 8, padding: 12, textAlign: 'center', marginBottom: 8,
-          border: '1px solid #333',
+      <div className="zone-selection-container">
+        <header style={{
+          background: 'linear-gradient(135deg, #1a0a2e, #18181b)',
+          borderRadius: 16, padding: '16px 20px', textAlign: 'center', marginBottom: 16,
+          border: '1px solid #333', boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
         }}>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#9147ff', marginBottom: 2 }}>
-            Campagna Dungeon
-          </div>
-          <div style={{ fontSize: 10, color: '#adadb8' }}>
-            Completa ogni zona per sbloccare la successiva
-          </div>
+          <h1 style={{ fontSize: 20, fontWeight: 900, color: '#9147ff', margin: 0, letterSpacing: 1 }}>CAMPAGNA</h1>
+          <p style={{ fontSize: 10, color: '#adadb8', marginTop: 4, textTransform: 'uppercase', letterSpacing: 2 }}>Esplora i Dungeon di Shydan</p>
+        </header>
+
+        <div className="zone-list">
+          {zones.map((zone) => {
+            const isLocked = !zone.unlocked;
+            const theme = getZoneTheme(zone);
+            const progress = (zone.bestWaves / zone.totalWaves) * 100;
+
+            return (
+              <div key={zone.id}
+                className={`zone-card ${isLocked ? 'locked' : ''} ${theme}`}
+                onClick={() => selectZone(zone)}
+              >
+                <div className="zone-card-bg" />
+                
+                <div className="zone-emoji-container">
+                  {isLocked ? '🔒' : zone.emoji}
+                </div>
+
+                <div className="zone-content">
+                  <div className="zone-header">
+                    <span className="zone-title">{zone.name}</span>
+                    {!isLocked && zone.cleared && <span style={{ color: '#22c55e', fontSize: 14 }}>✅</span>}
+                  </div>
+
+                  <div className="zone-pills">
+                    <span className="zone-pill level">Lv. {zone.recommendedLevel}</span>
+                    <span className="zone-pill">{zone.totalWaves} Onde</span>
+                    {zone.totalClears > 0 && <span className="zone-pill cleared">{zone.totalClears} Clears</span>}
+                  </div>
+
+                  {!isLocked && (
+                    <div className="zone-mini-progress">
+                      <div className="zone-progress-fill" style={{ width: `${progress}%` }} />
+                    </div>
+                  )}
+                  
+                  {!isLocked && (
+                    <div style={{ fontSize: 8, color: '#adadb8', marginTop: 2, display: 'flex', justifyContent: 'space-between' }}>
+                      <span>PROGRESSO</span>
+                      <span>{zone.bestWaves}/{zone.totalWaves}</span>
+                    </div>
+                  )}
+                </div>
+
+                {!isLocked && (
+                  <div style={{ marginLeft: 'auto', fontSize: 20, color: '#9147ff', opacity: 0.5 }}>
+                    ➜
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-
-        {zones.map((zone) => {
-          const isLocked = !zone.unlocked;
-          const statusIcon = isLocked ? '🔒' : zone.cleared ? '✅' : '▶';
-          const statusColor = isLocked ? '#555' : zone.cleared ? '#22c55e' : '#9147ff';
-
-          return (
-            <div key={zone.id}
-              onClick={() => selectZone(zone)}
-              style={{
-                background: isLocked ? '#111' : '#18181b',
-                borderRadius: 8, padding: '10px 12px', marginBottom: 4,
-                border: `1px solid ${isLocked ? '#222' : '#333'}`,
-                cursor: isLocked ? 'not-allowed' : 'pointer',
-                opacity: isLocked ? 0.5 : 1,
-                transition: 'all 0.15s',
-                display: 'flex', alignItems: 'center', gap: 10,
-              }}
-            >
-              {/* Emoji zona */}
-              <div style={{ fontSize: 24, width: 36, textAlign: 'center', flexShrink: 0 }}>
-                {zone.emoji}
-              </div>
-
-              {/* Info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 800, fontSize: 13, color: isLocked ? '#555' : '#efeff1' }}>
-                    {zone.name}
-                  </span>
-                  <span style={{ fontSize: 14 }}>{statusIcon}</span>
-                </div>
-                <div style={{ display: 'flex', gap: 8, fontSize: 10, color: '#737380', marginTop: 2 }}>
-                  <span>{zone.totalWaves} onde</span>
-                  <span>Lv.{zone.recommendedLevel}</span>
-                  {zone.cleared && zone.totalClears > 0 && (
-                    <span style={{ color: '#22c55e' }}>{zone.totalClears}x completata</span>
-                  )}
-                  {!zone.cleared && zone.bestWaves > 0 && (
-                    <span style={{ color: '#f59e0b' }}>Best: {zone.bestWaves}/{zone.totalWaves}</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
       </div>
     );
   }

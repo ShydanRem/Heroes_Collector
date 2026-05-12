@@ -1,13 +1,15 @@
-import { Hero, UserProfile, Ability, ClassInfo } from '../types';
+import { Hero, UserProfile, Ability, ClassInfo, Blessing, ActiveBuff } from '../types';
 
 // In dev: il proxy Vite gestisce /api -> localhost:3001
 // In prod: VITE_API_URL punta al backend su Render (es. https://tuosito.onrender.com/api)
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 let authToken: string | null = null;
+let currentChannelId: string | null = null;
 
-export function setAuthToken(token: string) {
+export function setAuthToken(token: string, channelId?: string) {
   authToken = token;
+  if (channelId) currentChannelId = channelId;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -18,6 +20,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (authToken) {
     headers['Authorization'] = `Bearer ${authToken}`;
+  }
+
+  if (currentChannelId) {
+    headers['x-twitch-channel-id'] = currentChannelId;
   }
 
   const url = `${API_BASE}${path}`;
@@ -544,4 +550,24 @@ export interface Achievement {
 
 export async function getAchievements(): Promise<{ achievements: Achievement[]; unlockedCount: number; totalCount: number }> {
   return request('/achievements');
+}
+
+// ============ BITS & BLESSINGS ============
+
+export const MOCK_BLESSINGS: Blessing[] = [
+  { id: 'luck_1', name: 'Benedizione della Fortuna', description: '+10% Gold dai mostri.', bitCost: 10, durationMinutes: 15, type: 'gold_boost', emoji: '💰' },
+  { id: 'regen_1', name: 'Incenso dell\'Eroe', description: 'Recupero Energia raddoppiato.', bitCost: 25, durationMinutes: 30, type: 'energy_regen', emoji: '🔥' },
+  { id: 'feast_1', name: 'Festa della Taverna', description: 'Cura tutti i giocatori online (Social).', bitCost: 100, durationMinutes: 0, type: 'social_heal', emoji: '🍗' },
+  { id: 'shout_1', name: 'Grido di Battaglia', description: 'Fumetto dorato personalizzato.', bitCost: 5, durationMinutes: 60, type: 'chat_bubble', emoji: '📣' },
+];
+
+export async function getBlessings(): Promise<{ blessings: Blessing[] }> {
+  return { blessings: MOCK_BLESSINGS };
+}
+
+export async function useBitsForBlessing(blessingId: string): Promise<{ message: string; buff?: ActiveBuff }> {
+  return request('/bits/use-blessing', {
+    method: 'POST',
+    body: JSON.stringify({ blessingId }),
+  });
 }

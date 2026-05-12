@@ -30,6 +30,20 @@ interface FloatingText {
   type: 'damage' | 'heal' | 'status' | 'crit' | 'miss';
 }
 
+interface BattleBubble {
+  id: number;
+  fighterId: string;
+  text: string;
+}
+
+const BATTLE_QUOTES: Record<string, string[]> = {
+  lama: ["Per l'onore!", "Senti il mio acciaio!", "Troppo lento!", "Colpo letale!"],
+  arcano: ["Potere ancestrale!", "Brucia!", "Dissolviti!", "Magia pura!"],
+  ombra: ["Dalle tenebre...", "Non mi vedi nemmeno.", "Pugnalata alle spalle!", "Shh..."],
+  guardiano: ["Non passerai!", "Scudo alzato!", "Per i miei compagni!", "Infrangiti su di me!"],
+  default: ["Prendi questo!", "Hah!", "Aaaargh!", "Muori!", "Per Shydan!"]
+};
+
 interface BattleArenaProps {
   leftTeam: ArenaFighter[];
   rightTeam: ArenaFighter[];
@@ -50,9 +64,16 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
   const [activeTargetId, setActiveTargetId] = useState<string | null>(null);
   const [actionType, setActionType] = useState<'melee' | 'magic' | 'heal' | 'buff' | null>(null);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
+  const [bubbles, setBubbles] = useState<BattleBubble[]>([]);
+  const [comboCount, setComboCount] = useState(0);
   const [currentMessage, setCurrentMessage] = useState('');
+  const [isShaking, setIsShaking] = useState(false);
+  const [isFlashing, setIsFlashing] = useState(false);
+  const [isImpactActive, setIsImpactActive] = useState(false);
+  const [isCelebration, setIsCelebration] = useState(false);
   const [finished, setFinished] = useState(false);
   const floatCounter = useRef(0);
+  const bubbleCounter = useRef(0);
   const timerRef = useRef<number | null>(null);
 
   // Ref per lo stato corrente dei fighter — evita problemi di closure stale
@@ -77,12 +98,28 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
     if (finished) return;
     if (currentStep >= log.length) {
       setFinished(true);
-      setTimeout(onComplete, 600);
+      
+      // Se abbiamo vinto l'ondata, celebra!
+      const lastEntry = log[log.length - 1];
+      if (lastEntry && !lastEntry.message.toLowerCase().includes('sconfitta')) {
+        setIsCelebration(true);
+        setTimeout(onComplete, 1500);
+      } else {
+        setTimeout(onComplete, 600);
+      }
       return;
     }
 
     timerRef.current = window.setTimeout(() => {
-      processEntry(log[currentStep]);
+      const entry = log[currentStep];
+      processEntry(entry);
+      
+      // Calcola tempo prossimo turno: più lungo se c'è un critico o evento importante
+      let nextDelay = speed;
+      if (entry.isCrit) nextDelay = speed * 1.5;
+      if (entry.killed) nextDelay = speed * 1.2;
+      if (entry.message.includes('Status') || entry.message.includes('subito')) nextDelay = speed * 0.7; // Veloci per i DoT
+
       setCurrentStep(prev => prev + 1);
     }, speed);
 
@@ -97,6 +134,15 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
     }, 1200);
     return () => clearTimeout(timer);
   }, [floatingTexts]);
+
+  // Cleanup bubbles
+  useEffect(() => {
+    if (bubbles.length === 0) return;
+    const timer = setTimeout(() => {
+      setBubbles(prev => prev.slice(1));
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [bubbles]);
 
   // Risolve l'ID di actor o target dall'entry del log.
   // Usa SOLO actorId/targetId (gli ID reali dal backend).
@@ -121,6 +167,24 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
 
     setActiveActorId(actorId);
     setActiveTargetId(targetId);
+
+    // Gestione Combo e Battle Chatter
+    if (actorId) {
+      const actor = fightersRef.current.get(actorId);
+      if (actor && actor.team === 'left' && entry.damage) {
+        setComboCount(prev => prev + 1);
+      } else if (actor && actor.team === 'right' && entry.damage) {
+        setComboCount(0); // Combo interrotta se il nemico colpisce
+      }
+
+      // Battle Chatter (30% chance)
+      if (Math.random() < 0.3 && actor && actor.isAlive) {
+        const quotes = BATTLE_QUOTES[actor.heroClass || 'default'] || BATTLE_QUOTES.default;
+        const text = quotes[Math.floor(Math.random() * quotes.length)];
+        bubbleCounter.current++;
+        setBubbles(prev => [...prev, { id: bubbleCounter.current, fighterId: actorId, text }]);
+      }
+    }
 
     // Determina tipo azione dall'entry
     if (entry.heal) {
@@ -166,6 +230,17 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
         });
 
         addFloat(targetId, `-${entry.damage}`, entry.isCrit ? '#f59e0b' : '#ef4444', entry.isCrit ? 'crit' : 'damage');
+
+        if (entry.isCrit) {
+          setIsShaking(true);
+          setIsFlashing(true);
+          setIsImpactActive(true);
+          setTimeout(() => {
+            setIsShaking(false);
+            setIsFlashing(false);
+            setIsImpactActive(false);
+          }, 400);
+        }
       }
 
       // Heal
@@ -318,10 +393,12 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
 
     let animClass = '';
     if (!fighter.isAlive) animClass = 'dead';
+    else if (isCelebration && fighter.team === 'left') animClass = 'celebrate';
     else if (isActing) animClass = `acting action-${actionType || 'melee'}`;
     else if (isTargeted) animClass = 'hit';
 
     const myFloats = floatingTexts.filter(ft => ft.fighterId === fighter.id);
+    const myBubble = bubbles.find(b => b.fighterId === fighter.id);
 
     // Front row sprite leggermente piu' grande
     const spriteSize = row === 'front' ? 42 : 36;
@@ -350,6 +427,13 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
             {ft.text}
           </div>
         ))}
+
+        {/* Battle Bubble */}
+        {myBubble && (
+          <div className="battle-bubble" style={{ position: 'absolute', top: -35, left: side === 'left' ? 20 : -20 }}>
+            {myBubble.text}
+          </div>
+        )}
 
         {/* Sprite */}
         <div className={`fighter-sprite-wrapper ${isActing ? 'sprite-acting' : ''} ${isTargeted ? 'sprite-hit' : ''}`}>
@@ -395,11 +479,22 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
   const rightFighters = rightTeam.map(f => fighters.get(f.id) || f);
 
   return (
-    <div className="battle-arena">
-      <div className="arena-field">
+    <div className={`battle-arena ${isShaking ? 'screen-shake' : ''}`}>
+      <div className={`arena-field ${isFlashing ? 'impact-flash' : ''} ${(isShaking || activeTargetId) ? 'zoom-focus' : ''}`}>
         <div className="arena-bg" />
         {/* Linea orizzonte / terreno */}
         <div className="arena-ground" />
+
+        {/* Effects Layer */}
+        <div className={`screen-impact ${isImpactActive ? 'impact-active' : ''}`} />
+
+        {/* Combo Display */}
+        {comboCount >= 2 && (
+          <div className="combo-display">
+            <div className="combo-count">{comboCount}</div>
+            <div className="combo-label">COMBO</div>
+          </div>
+        )}
 
         {/* Party a sinistra: melee davanti, caster/healer dietro */}
         {getFormation(leftFighters, 'left').map(({ fighter, x, y, row }) =>

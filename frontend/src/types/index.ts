@@ -143,3 +143,21 @@ export const UPGRADE_ESSENCE_COST: Record<Rarity, number> = {
   mitico: 130,
   master: 200,
 };
+
+export interface Blessing {
+  id: string;
+  name: string;
+  description: string;
+  bitCost: number;
+  durationMinutes: number;
+  type: 'gold_boost' | 'energy_regen' | 'social_heal' | 'chat_bubble';
+  emoji: string;
+}
+
+export interface ActiveBuff {
+  id: string;
+  type: Blessing['type'];
+  endTime: number; // timestamp ms
+  name: string;
+  emoji: string;
+}

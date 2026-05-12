@@ -83,250 +83,239 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
   const expNeeded = expForLevel(hero.level);
   const expPercent = Math.min(100, Math.floor((hero.exp / expNeeded) * 100));
 
+  // Calcolo Combat Power (CP) approssimativo
+  const calculateCP = () => {
+    if (!hero) return 0;
+    const { atk, def, hp, spd, crit, critDmg } = hero.stats;
+    const bonusAtk = equipBonuses.atk || 0;
+    const bonusDef = equipBonuses.def || 0;
+    const bonusHp = equipBonuses.hp || 0;
+    
+    const baseCP = (atk + bonusAtk) * 2 + (def + bonusDef) * 1.5 + (hp + bonusHp) * 0.5 + spd * 5;
+    const critMult = 1 + (crit / 100) * (critDmg / 100);
+    return Math.floor(baseCP * critMult);
+  };
+
+  const rarityColor = RARITY_COLORS[hero.rarity];
+  const expNeeded = expForLevel(hero.level);
+  const expPercent = Math.min(100, Math.floor((hero.exp / expNeeded) * 100));
+  const combatPower = calculateCP();
+
   return (
-    <div>
-      {/* Hero Card compatta — sempre visibile */}
-      <div style={{
-        background: '#18181b', borderRadius: 8, padding: '8px 10px',
-        border: `1px solid ${rarityColor}40`, marginBottom: 6,
-        display: 'flex', gap: 10, alignItems: 'center',
-      }}>
-        <HeroSprite heroClass={hero.heroClass} rarity={hero.rarity} size={56} animate="idle" name={hero.displayName} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {hero.displayName}
-          </div>
-          <div style={{ fontSize: 10, color: '#adadb8' }}>
-            {CLASS_EMOJIS[hero.heroClass]} {CLASS_LABELS[hero.heroClass]}
-            <span style={{ color: rarityColor, marginLeft: 6, fontWeight: 700 }}>
-              {RARITY_LABELS[hero.rarity]}
-            </span>
-          </div>
-          {/* EXP bar compatta */}
-          <div style={{ marginTop: 4 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, marginBottom: 2 }}>
-              <span style={{ fontWeight: 800 }}>Lv.{hero.level}</span>
-              <span style={{ color: '#53535f' }}>{hero.exp}/{expNeeded}</span>
-            </div>
-            <div style={{ height: 4, background: '#0e0e10', borderRadius: 2, overflow: 'hidden' }}>
-              <div style={{
-                width: `${expPercent}%`, height: '100%',
-                background: 'linear-gradient(90deg, #9147ff, #c084fc)',
-                borderRadius: 2,
-              }} />
-            </div>
-          </div>
+    <div className="profile-container">
+      {/* Profile Header Premium */}
+      <div className="profile-header">
+        <div className="profile-banner" style={{ background: `linear-gradient(135deg, ${rarityColor}, #18181b)` }} />
+        <div className="profile-avatar-wrapper">
+          <HeroSprite heroClass={hero.heroClass} rarity={hero.rarity} size={80} animate="idle" name={hero.displayName} />
         </div>
-        {/* Risorse compatte */}
-        <div style={{ textAlign: 'right', fontSize: 10, flexShrink: 0 }}>
-          <div style={{ color: '#ffd700', fontWeight: 800 }}>{profile.gold}g</div>
-          <div style={{ color: '#22c55e', fontWeight: 700 }}>{Math.floor(profile.energy)}E</div>
-          <div style={{ color: '#a855f7', fontWeight: 700 }}>{profile.essences || 0}Es</div>
+        <div className="profile-info-main">
+          <div className="profile-name-section">
+            <span className="profile-rank-tag">{RARITY_LABELS[hero.rarity]}</span>
+            <h2>{hero.displayName}</h2>
+            <div style={{ fontSize: 11, color: '#adadb8', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+              {CLASS_EMOJIS[hero.heroClass]} {CLASS_LABELS[hero.heroClass]} 
+              <span style={{ color: '#555' }}>•</span>
+              <span style={{ color: '#ffd700', fontWeight: 800 }}>CP {combatPower.toLocaleString()}</span>
+            </div>
+          </div>
+          <div className="xp-ring-container">
+            <svg className="xp-ring-svg" width="44" height="44">
+              <circle className="xp-ring-bg" cx="22" cy="22" r="18" />
+              <circle 
+                className="xp-ring-fill" 
+                cx="22" cy="22" r="18" 
+                style={{ 
+                  strokeDasharray: 113, 
+                  strokeDashoffset: 113 - (113 * expPercent) / 100,
+                  stroke: rarityColor
+                }} 
+              />
+            </svg>
+            <div style={{ 
+              position: 'absolute', inset: 0, display: 'flex', 
+              alignItems: 'center', justifyContent: 'center', 
+              fontSize: 10, fontWeight: 900 
+            }}>
+              {hero.level}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Sub-tab navigation */}
-      <div style={{ display: 'flex', gap: 2, marginBottom: 8 }}>
+      {/* Resource Quick Bar */}
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+        <div className="profile-resource-pill">
+          <span style={{ color: '#ffd700' }}>💰</span> {profile.gold.toLocaleString()}
+        </div>
+        <div className="profile-resource-pill">
+          <span style={{ color: '#22c55e' }}>⚡</span> {Math.floor(profile.energy)}/{profile.maxEnergy}
+        </div>
+        <div className="profile-resource-pill">
+          <span style={{ color: '#a855f7' }}>🔮</span> {profile.essences || 0}
+        </div>
+      </div>
+
+      {/* Navigation Sub-Tabs */}
+      <div style={{ 
+        display: 'flex', background: '#18181b', padding: 4, 
+        borderRadius: 12, border: '1px solid #333', gap: 4 
+      }}>
         {SUB_TABS.map(t => (
-          <button key={t.id} onClick={() => setSubTab(t.id)} style={{
-            flex: 1, padding: '4px 2px', fontSize: 9, fontWeight: 700,
-            background: subTab === t.id ? 'rgba(145,71,255,0.15)' : '#18181b',
-            border: `1px solid ${subTab === t.id ? '#9147ff' : '#2d2d35'}`,
-            borderRadius: 5, cursor: 'pointer',
-            color: subTab === t.id ? '#c084fc' : '#737380',
-            transition: 'all 0.15s',
-          }}>
-            <div style={{ fontSize: 14 }}>{t.icon}</div>
-            <div>{t.label}</div>
+          <button 
+            key={t.id} 
+            onClick={() => setSubTab(t.id)} 
+            style={{
+              flex: 1, padding: '8px 4px', fontSize: 10, fontWeight: 800,
+              background: subTab === t.id ? '#2d2d35' : 'transparent',
+              border: 'none', borderRadius: 8, cursor: 'pointer',
+              color: subTab === t.id ? '#fff' : '#737380',
+              transition: 'all 0.2s',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2
+            }}
+          >
+            <span style={{ fontSize: 16 }}>{t.icon}</span>
+            <span style={{ fontSize: 8, textTransform: 'uppercase' }}>{t.label}</span>
           </button>
         ))}
       </div>
 
-      {/* === TAB: STATS + ABILITA === */}
-      {subTab === 'stats' && (
-        <div>
-          {/* Stats grid */}
-          <div className="stats-detail-grid">
-            {(['hp', 'atk', 'def', 'spd', 'crit', 'critDmg'] as const).map(stat => {
-              const base = hero.stats[stat];
-              const bonus = equipBonuses[stat] || 0;
-              const suffix = stat === 'crit' || stat === 'critDmg' ? '%' : '';
-              return (
-                <div key={stat} className="stat-detail-item">
-                  <span className="stat-detail-label">{STAT_LABELS[stat]}</span>
-                  <span>
-                    {base}{suffix}
-                    {bonus > 0 && <span style={{ color: '#22c55e', fontSize: 10 }}> +{bonus}</span>}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Abilita */}
-          <div style={{ marginTop: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#9147ff', marginBottom: 4 }}>
-              Abilita ({abilities.length})
+      {/* === TAB CONTENT === */}
+      <div className="profile-content-area" style={{ minHeight: 200 }}>
+        
+        {subTab === 'stats' && (
+          <div className="animate-fadeIn">
+            <div className="stat-grid-premium">
+              {(['atk', 'def', 'hp', 'spd', 'crit', 'critDmg'] as const).map(stat => {
+                const base = hero.stats[stat];
+                const bonus = equipBonuses[stat] || 0;
+                const suffix = stat === 'crit' || stat === 'critDmg' ? '%' : '';
+                return (
+                  <div key={stat} className="stat-card-premium">
+                    <span className="stat-label-premium">{STAT_LABELS[stat]}</span>
+                    <span className="stat-value-premium">
+                      {base}{suffix}
+                      {bonus > 0 && <span style={{ color: '#22c55e', fontSize: 9, marginLeft: 2 }}>+{bonus}</span>}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-            {abilities.length === 0 ? (
-              <div style={{ fontSize: 10, color: '#555', textAlign: 'center' }}>Caricamento...</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+
+            <div style={{ marginTop: 20 }}>
+              <h3 style={{ fontSize: 12, fontWeight: 900, color: '#adadb8', marginBottom: 10, textTransform: 'uppercase' }}>Abilità</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {abilities.map((ab) => (
-                  <div key={ab.id} className="ability-item" style={{ padding: '5px 8px', marginBottom: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className="ability-name" style={{ fontSize: 11 }}>{ab.name}</span>
-                      <span style={{ fontSize: 9, color: '#737380' }}>
-                        {ab.type === 'attacco' ? 'ATK' : ab.type === 'supporto' ? 'SUP' : ab.type === 'difesa' ? 'DEF' : ab.type === 'debuff' ? 'DEB' : ab.type === 'ultimate' ? 'ULT' : ab.type}
-                        {ab.cooldown > 0 && ` · ${ab.cooldown}t`}
-                      </span>
+                  <div key={ab.id} className="ability-card-premium" style={{ borderLeftColor: ab.type === 'ultimate' ? '#ffd700' : rarityColor }}>
+                    <div style={{ fontSize: 24 }}>{ab.type === 'attacco' ? '⚔️' : ab.type === 'supporto' ? '🛡️' : '✨'}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 800, fontSize: 12 }}>{ab.name}</span>
+                        <span style={{ fontSize: 8, background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 4 }}>
+                          {ab.cooldown > 0 ? `${ab.cooldown}T CD` : 'PASSIVA'}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 10, color: '#adadb8', margin: '2px 0 0' }}>{ab.description}</p>
                     </div>
-                    <div className="ability-desc" style={{ fontSize: 9 }}>{ab.description}</div>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* === TAB: EQUIP === */}
-      {subTab === 'equip' && (
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#9147ff', marginBottom: 6 }}>Equipaggiamento</div>
-          {equipment.length === 0 ? (
-            <div style={{
-              fontSize: 11, color: '#adadb8', textAlign: 'center', padding: 16,
-              background: '#18181b', borderRadius: 8, border: '1px solid #2d2d35',
-            }}>
-              Nessun oggetto equipaggiato.
-              <div style={{ fontSize: 10, color: '#555', marginTop: 4 }}>Vai nello Zaino per equipaggiare!</div>
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {equipment.map((item: any) => (
-                <div key={item.id} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  background: '#18181b', borderRadius: 6, padding: '6px 10px',
-                  borderLeft: `3px solid ${RARITY_COLORS[item.rarity as keyof typeof RARITY_COLORS] || '#555'}`,
-                }}>
-                  <div>
-                    <span style={{ marginRight: 4 }}>{item.slot === 'arma' ? '⚔️' : item.slot === 'armatura' ? '🛡️' : '💍'}</span>
-                    <span style={{ fontWeight: 700, fontSize: 11 }}>{item.name}</span>
-                    <div style={{ fontSize: 9, color: RARITY_COLORS[item.rarity as keyof typeof RARITY_COLORS] || '#555' }}>
-                      {item.rarity}
+          </div>
+        )}
+
+        {subTab === 'equip' && (
+          <div className="animate-fadeIn">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {['arma', 'armatura', 'accessorio'].map(slot => {
+                const item = equipment.find(e => e.slot === slot);
+                return (
+                  <div key={slot} style={{ 
+                    background: '#18181b', borderRadius: 12, padding: 12, 
+                    border: '1px solid #333', display: 'flex', gap: 12, alignItems: 'center'
+                  }}>
+                    <div style={{ 
+                      width: 40, height: 40, background: '#0e0e10', borderRadius: 8, 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+                      border: item ? `1px solid ${RARITY_COLORS[item.rarity]}` : '1px dashed #444'
+                    }}>
+                      {item ? (slot === 'arma' ? '⚔️' : slot === 'armatura' ? '🛡️' : '💍') : '＋'}
                     </div>
+                    <div style={{ flex: 1 }}>
+                      {item ? (
+                        <>
+                          <div style={{ fontWeight: 800, fontSize: 13 }}>{item.name}</div>
+                          <div style={{ fontSize: 9, color: RARITY_COLORS[item.rarity], textTransform: 'uppercase' }}>{item.rarity}</div>
+                        </>
+                      ) : (
+                        <div style={{ fontSize: 11, color: '#555' }}>Slot {slot} vuoto</div>
+                      )}
+                    </div>
+                    {item?.statBonuses && (
+                      <div style={{ textAlign: 'right' }}>
+                        {Object.entries(item.statBonuses).map(([s, v]) => (
+                          <div key={s} style={{ color: '#22c55e', fontSize: 10, fontWeight: 800 }}>+{v} {STAT_LABELS[s]}</div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div style={{ fontSize: 9, color: '#22c55e', textAlign: 'right' }}>
-                    {item.statBonuses && Object.entries(item.statBonuses).map(([s, v]) =>
-                      `+${v}${STAT_LABELS[s] || s}`
-                    ).join(' ')}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Bonus totali equip */}
-          {Object.keys(equipBonuses).length > 0 && (
-            <div style={{
-              marginTop: 8, background: '#18181b', borderRadius: 6,
-              padding: '6px 10px', border: '1px solid #2d2d35',
-            }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#22c55e', marginBottom: 3 }}>Bonus Totali</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, fontSize: 10 }}>
-                {Object.entries(equipBonuses).map(([stat, val]) => (
-                  <span key={stat} style={{ color: '#22c55e', fontWeight: 700 }}>
-                    +{val} {STAT_LABELS[stat] || stat}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* === TAB: TALENTI === */}
-      {subTab === 'talents' && <TalentTree />}
-
-      {/* === TAB: MISSIONI === */}
-      {subTab === 'missions' && (
-        <div>
-          <DailyLogin onClaim={() => onProfileRefresh?.()} />
-          <Missions />
-        </div>
-      )}
-
-      {/* === TAB: ALTRO (Achievements, Reroll, etc.) === */}
-      {subTab === 'more' && (
-        <div>
-          {/* Risorse dettagliate */}
-          <div style={{
-            background: '#18181b', borderRadius: 8, padding: 10,
-            marginBottom: 8, border: '1px solid #2d2d35',
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 6, color: '#9147ff' }}>Risorse</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, fontSize: 11, textAlign: 'center' }}>
-              <div style={{ background: '#0e0e10', borderRadius: 4, padding: 6 }}>
-                <div style={{ fontWeight: 800, color: '#ffd700', fontSize: 14 }}>{profile.gold}</div>
-                <div style={{ color: '#737380', fontSize: 9 }}>Gold</div>
-              </div>
-              <div style={{ background: '#0e0e10', borderRadius: 4, padding: 6 }}>
-                <div style={{ fontWeight: 800, color: '#22c55e', fontSize: 14 }}>{Math.floor(profile.energy)}</div>
-                <div style={{ color: '#737380', fontSize: 9 }}>Energia / {profile.maxEnergy}</div>
-              </div>
-              <div style={{ background: '#0e0e10', borderRadius: 4, padding: 6 }}>
-                <div style={{ fontWeight: 800, color: '#a855f7', fontSize: 14 }}>{profile.essences || 0}</div>
-                <div style={{ color: '#737380', fontSize: 9 }}>Essenze</div>
-              </div>
+                );
+              })}
             </div>
           </div>
+        )}
 
-          {/* Reroll Classe */}
-          <div style={{ marginBottom: 8 }}>
-            <button className="btn btn-secondary" onClick={() => setShowReroll(!showReroll)} style={{ width: '100%', fontSize: 11 }}>
-              Cambia Classe ({REROLL_COST} gold)
-            </button>
-            {showReroll && (
-              <div style={{ background: '#18181b', borderRadius: 8, padding: 10, marginTop: 6, border: '1px solid #333' }}>
-                <div style={{ fontSize: 10, color: '#adadb8', marginBottom: 6 }}>Scegli la nuova classe:</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3 }}>
+        {subTab === 'talents' && <TalentTree />}
+
+        {subTab === 'missions' && (
+          <div className="animate-fadeIn">
+            <DailyLogin onClaim={() => onProfileRefresh?.()} />
+            <Missions />
+          </div>
+        )}
+
+        {subTab === 'more' && (
+          <div className="animate-fadeIn">
+             {/* Reroll Classe */}
+            <div style={{ 
+              background: '#18181b', borderRadius: 12, padding: 16, 
+              border: '1px solid #333', marginBottom: 12 
+            }}>
+              <h3 style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 12 }}>GESTIONE EROE</h3>
+              <button className="btn btn-secondary" onClick={() => setShowReroll(!showReroll)} style={{ width: '100%', fontSize: 11, padding: '10px' }}>
+                Cambia Classe ({REROLL_COST} gold)
+              </button>
+              
+              {showReroll && (
+                <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
                   {ALL_CLASSES.filter(c => c !== hero.heroClass).map(cls => (
-                    <button key={cls} className="btn btn-secondary" disabled={rerolling || profile.gold < REROLL_COST}
+                    <button 
+                      key={cls} 
+                      className="btn btn-secondary" 
+                      disabled={rerolling || profile.gold < REROLL_COST}
                       onClick={async () => {
                         setRerolling(true); setRerollMsg(null);
                         try {
                           const result = await api.rerollHeroClass(cls);
-                          setRerollMsg({ text: `Ora sei un ${CLASS_LABELS[cls]}!`, type: 'success' });
+                          setRerollMsg({ text: `Classe cambiata!`, type: 'success' });
                           onHeroUpdate?.(result.hero);
                           setShowReroll(false);
                         } catch (err: any) { setRerollMsg({ text: err.message, type: 'error' }); }
                         finally { setRerolling(false); }
                       }}
-                      style={{ fontSize: 9, padding: '5px 2px', display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center' }}
+                      style={{ fontSize: 9, padding: '8px 2px', display: 'flex', flexDirection: 'column', gap: 4 }}
                     >
-                      {CLASS_EMOJIS[cls]} {CLASS_LABELS[cls]}
+                      <span style={{ fontSize: 16 }}>{CLASS_EMOJIS[cls]}</span>
+                      <span>{CLASS_LABELS[cls]}</span>
                     </button>
                   ))}
                 </div>
-                {profile.gold < REROLL_COST && (
-                  <div style={{ fontSize: 10, color: '#f59e0b', marginTop: 6, textAlign: 'center' }}>
-                    Servono {REROLL_COST} gold (hai {profile.gold})
-                  </div>
-                )}
-                {rerollMsg && (
-                  <div style={{ fontSize: 10, marginTop: 6, textAlign: 'center', color: rerollMsg.type === 'success' ? '#22c55e' : '#f44336' }}>
-                    {rerollMsg.text}
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </div>
+            <Achievements />
           </div>
-
-          {/* Achievements */}
-          <Achievements />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

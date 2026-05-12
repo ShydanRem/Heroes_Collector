@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Hero, Ability, ClassInfo, Rarity, RARITY_COLORS, RARITY_LABELS, CLASS_EMOJIS, CLASS_LABELS, RARITY_ORDER, CAPTURE_ENERGY_COST } from '../types';
+import { Hero, Ability, ClassInfo, Rarity, HeroClass, RARITY_COLORS, RARITY_LABELS, CLASS_EMOJIS, CLASS_LABELS, RARITY_ORDER, CAPTURE_ENERGY_COST } from '../types';
 import * as api from '../services/api';
+import { CaptureMinigame } from './CaptureMinigame';
 
 interface HeroDetailProps {
   heroId: string;
@@ -15,6 +16,7 @@ export function HeroDetail({ heroId, onBack, onCapture, showCaptureButton }: Her
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [capturing, setCapturing] = useState(false);
+  const [selectedCaptureRarity, setSelectedCaptureRarity] = useState<Rarity | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
@@ -34,13 +36,19 @@ export function HeroDetail({ heroId, onBack, onCapture, showCaptureButton }: Her
     }
   }
 
-  async function handleCapture(rarity: Rarity) {
-    if (!hero) return;
+  async function startCapture(rarity: Rarity) {
+    setSelectedCaptureRarity(rarity);
+  }
+
+  async function handleMinigameSuccess() {
+    if (!hero || !selectedCaptureRarity) return;
     setCapturing(true);
+    const rarity = selectedCaptureRarity;
+    setSelectedCaptureRarity(null);
     try {
       const result = await api.captureHero(hero.id, rarity);
       setMessage({ text: result.message, type: 'success' });
-      setTimeout(() => onCapture?.(), 800);
+      setTimeout(() => onCapture?.(), 1000);
     } catch (err: any) {
       setMessage({ text: err.message, type: 'error' });
     } finally {
@@ -63,7 +71,7 @@ export function HeroDetail({ heroId, onBack, onCapture, showCaptureButton }: Her
     return <div className="empty-state">Eroe non trovato</div>;
   }
 
-  const rarityColor = RARITY_COLORS[hero.rarity];
+  const rarityColor = RARITY_COLORS[hero.rarity as Rarity];
 
   return (
     <div className="hero-detail">
@@ -72,10 +80,10 @@ export function HeroDetail({ heroId, onBack, onCapture, showCaptureButton }: Her
       <div className="hero-detail-card" style={{ borderColor: rarityColor }}>
         <div className="hero-detail-name">{hero.displayName}</div>
         <div className="hero-detail-class">
-          {CLASS_EMOJIS[hero.heroClass]} {classInfo?.name || CLASS_LABELS[hero.heroClass]} — {classInfo?.role}
+          {CLASS_EMOJIS[hero.heroClass as HeroClass] || '❓'} {classInfo?.name || CLASS_LABELS[hero.heroClass as HeroClass]} — {classInfo?.role}
         </div>
         <div className="hero-detail-rarity" style={{ color: rarityColor }}>
-          {RARITY_LABELS[hero.rarity]} — Lv. {hero.level}
+          {RARITY_LABELS[hero.rarity as Rarity]} — Lv. {hero.level}
         </div>
 
         <div className="stats-detail-grid">
@@ -108,7 +116,7 @@ export function HeroDetail({ heroId, onBack, onCapture, showCaptureButton }: Her
 
       <div className="abilities-section">
         <h3>Abilita</h3>
-        {abilities.map((ability) => (
+        {abilities.map((ability: Ability) => (
           <div key={ability.id} className="ability-item">
             <div className="ability-name">{ability.name}</div>
             <div className="ability-desc">{ability.description}</div>
@@ -129,8 +137,8 @@ export function HeroDetail({ heroId, onBack, onCapture, showCaptureButton }: Her
               <button
                 key={r}
                 className="btn btn-capture"
-                onClick={() => handleCapture(r)}
-                disabled={capturing}
+                onClick={() => startCapture(r)}
+                disabled={capturing || !!selectedCaptureRarity}
                 style={{
                   borderLeft: `4px solid ${RARITY_COLORS[r]}`,
                   color: RARITY_COLORS[r],
@@ -148,6 +156,19 @@ export function HeroDetail({ heroId, onBack, onCapture, showCaptureButton }: Her
           </div>
           {capturing && <div style={{ marginTop: 6, fontSize: 11 }}>Cattura in corso...</div>}
         </div>
+      )}
+
+      {selectedCaptureRarity && hero && (
+        <CaptureMinigame 
+          hero={hero}
+          rarity={selectedCaptureRarity}
+          onSuccess={handleMinigameSuccess}
+          onFail={(err) => {
+            setMessage({ text: err, type: 'error' });
+            setSelectedCaptureRarity(null);
+          }}
+          onCancel={() => setSelectedCaptureRarity(null)}
+        />
       )}
 
       {message && (

@@ -92,112 +92,114 @@ export function Shop({ onGoToInventory }: ShopProps) {
   const equipment = listings.filter(l => l.itemType === 'equipment');
 
   return (
-    <div>
+    <div className="shop-container">
       {/* Header con gold */}
       <div style={{
-        background: '#18181b', borderRadius: 8, padding: 10,
-        marginBottom: 8, display: 'flex', justifyContent: 'space-between',
+        background: 'linear-gradient(90deg, #18181b, #1a0a2e)',
+        borderRadius: 12, padding: '12px 16px',
+        display: 'flex', justifyContent: 'space-between',
         alignItems: 'center', border: '1px solid #333',
+        boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
       }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: '#9147ff' }}>Negozio</div>
-        <div style={{ fontSize: 14, fontWeight: 800, color: '#ffd700' }}>{gold}g</div>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: '#9147ff' }}>NEGOZIO</div>
+          <div style={{ fontSize: 9, color: '#adadb8', textTransform: 'uppercase', letterSpacing: 1 }}>Articoli Disponibili</div>
+        </div>
+        <div style={{ 
+          fontSize: 18, fontWeight: 900, color: '#ffd700', 
+          display: 'flex', alignItems: 'center', gap: 6,
+          background: 'rgba(255,215,0,0.1)', padding: '4px 12px', borderRadius: 20
+        }}>
+          {gold.toLocaleString()} <span style={{ fontSize: 14 }}>g</span>
+        </div>
       </div>
 
       {/* Consumabili */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#adadb8', marginBottom: 4 }}>
-        Consumabili <span style={{ fontSize: 9, color: '#666', fontWeight: 400 }}>— effetto immediato</span>
-      </div>
-      {consumables.map(item => (
-        <div key={item.id} style={{
-          background: '#18181b', borderRadius: 6, padding: '8px 10px',
-          marginBottom: 4, border: '1px solid #333',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          borderLeft: `3px solid ${TYPE_COLORS[item.itemType] || '#555'}`,
-        }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, fontWeight: 700 }}>
-              {TYPE_ICONS[item.itemType] || '📦'} {item.name}
-            </div>
-            <div style={{ fontSize: 10, color: '#adadb8', marginTop: 1 }}>{item.description}</div>
-          </div>
-          <button
-            className="btn btn-primary"
-            onClick={() => handleBuy(item)}
-            disabled={buying === item.id || gold < item.priceGold}
-            style={{
-              fontSize: 10, padding: '4px 10px', marginLeft: 8,
-              opacity: gold < item.priceGold ? 0.4 : 1,
-            }}
-          >
-            {buying === item.id ? '...' : `${item.priceGold}g`}
-          </button>
+      <section>
+        <div style={{ fontSize: 11, fontWeight: 800, color: '#adadb8', marginBottom: 8, marginLeft: 4, textTransform: 'uppercase' }}>
+          ✨ Consumabili
         </div>
-      ))}
+        <div className="shop-grid">
+          {consumables.map(item => (
+            <div key={item.id} className={`shop-card ${gold < item.priceGold ? 'disabled' : ''}`}>
+              <div className="shop-card-icon">{TYPE_ICONS[item.itemType] || '📦'}</div>
+              <div className="shop-card-name">{item.name}</div>
+              <div className="shop-card-price">
+                {item.priceGold} <span>g</span>
+              </div>
+              <button
+                className="btn btn-primary"
+                onClick={() => handleBuy(item)}
+                disabled={buying === item.id || gold < item.priceGold}
+                style={{ width: '100%', marginTop: 10, fontSize: 10, padding: '6px' }}
+              >
+                {buying === item.id ? '...' : 'Acquista'}
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* Equipment */}
       {equipment.length > 0 && (
-        <>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#adadb8', marginTop: 10, marginBottom: 4 }}>
-            Equipaggiamento <span style={{ fontSize: 9, color: '#666', fontWeight: 400 }}>— va nello Zaino</span>
+        <section>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#adadb8', marginTop: 8, marginBottom: 8, marginLeft: 4, textTransform: 'uppercase' }}>
+            ⚔️ Equipaggiamento
           </div>
-          {equipment.map(item => {
-            const rarityColor = RARITY_COLORS[(item as any).rarity as keyof typeof RARITY_COLORS] || '#ff9800';
+          <div className="shop-grid">
+            {equipment.map(item => {
+              const rarity = (item as any).rarity?.toLowerCase() || 'comune';
+              const isLocked = gold < item.priceGold || item.stock === 0;
 
-            return (
-              <div key={item.id} style={{
-                background: '#18181b', borderRadius: 6, padding: '8px 10px',
-                marginBottom: 4, border: '1px solid #333',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                borderLeft: '3px solid #ff9800',
-              }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700 }}>⚔️ {item.name}</div>
-                  <div style={{ fontSize: 10, color: '#adadb8', marginTop: 1 }}>{item.description}</div>
+              return (
+                <div key={item.id} className={`shop-card ${rarity} ${isLocked ? 'disabled' : ''}`}>
                   {item.stock > 0 && item.stock < 10 && (
-                    <div style={{ fontSize: 9, color: '#f44336', marginTop: 1 }}>
-                      Solo {item.stock} rimasti!
-                    </div>
+                    <div className="shop-card-stock">-{item.stock}</div>
                   )}
+                  <div className="shop-card-icon">⚔️</div>
+                  <div className="shop-card-name">{item.name}</div>
+                  <div className="shop-card-price">
+                    {item.priceGold} <span>g</span>
+                  </div>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => handleBuy(item)}
+                    disabled={buying === item.id || isLocked}
+                    style={{ width: '100%', marginTop: 10, fontSize: 10, padding: '6px' }}
+                  >
+                    {item.stock === 0 ? 'Esaurito' : buying === item.id ? '...' : 'Acquista'}
+                  </button>
                 </div>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => handleBuy(item)}
-                  disabled={buying === item.id || gold < item.priceGold || item.stock === 0}
-                  style={{
-                    fontSize: 10, padding: '4px 10px', marginLeft: 8,
-                    opacity: (gold < item.priceGold || item.stock === 0) ? 0.4 : 1,
-                  }}
-                >
-                  {item.stock === 0 ? 'Esaurito' : buying === item.id ? '...' : `${item.priceGold}g`}
-                </button>
-              </div>
-            );
-          })}
-        </>
+              );
+            })}
+          </div>
+        </section>
       )}
 
-      {/* Toast messaggio con pulsante Zaino per equipment */}
+      {/* Toast messaggio */}
       {message && (
         <div style={{
-          position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)',
-          background: message.type === 'success' ? 'rgba(34, 197, 94, 0.95)' : 'rgba(239, 68, 68, 0.95)',
-          color: '#fff', padding: '10px 16px', borderRadius: 8,
-          fontSize: 12, fontWeight: 700, zIndex: 100,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-          maxWidth: '90%', textAlign: 'center',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+          position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)',
+          background: message.type === 'success' ? 'rgba(34, 197, 94, 0.98)' : 'rgba(239, 68, 68, 0.98)',
+          color: '#fff', padding: '12px 20px', borderRadius: 12,
+          fontSize: 12, fontWeight: 800, zIndex: 3000,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+          width: '85%', maxWidth: '280px', textAlign: 'center',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+          animation: 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
         }}>
+          <div style={{ fontSize: 24 }}>{message.type === 'success' ? '✅' : '❌'}</div>
           <span>{message.text}</span>
           {message.isEquipment && onGoToInventory && (
             <button
               onClick={() => { setMessage(null); onGoToInventory(); }}
               style={{
-                background: 'rgba(255,255,255,0.25)', border: 'none', color: '#fff',
-                padding: '4px 12px', borderRadius: 4, cursor: 'pointer',
-                fontSize: 11, fontWeight: 700,
+                background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', 
+                color: '#fff', padding: '6px 16px', borderRadius: 6, cursor: 'pointer',
+                fontSize: 11, fontWeight: 800, marginTop: 4, width: '100%'
               }}
             >
-              🎒 Vai allo Zaino
+              🎒 VAI ALLO ZAINO
             </button>
           )}
         </div>

@@ -8,6 +8,7 @@ interface HeroSpriteProps {
   animate?: 'idle' | 'attack' | 'hurt' | 'cast' | 'dead' | 'none';
   flip?: boolean; // specchia per i nemici
   name?: string;
+  hasBlessing?: boolean;
 }
 
 /**
@@ -22,102 +23,46 @@ function getCustomSprite(name: string | undefined, color: string, dark: string, 
 
   if (lower === 'shydanrem') {
     return (
-      <g>
-        {/* === CORPO === */}
-        {/* Maglietta verde */}
-        <rect x="24" y="26" width="16" height="18" rx="2" fill="#2e7d32" />
-        {/* Gilet marrone scuro */}
-        <path d="M24 26 L24 44 L28 44 L28 26 Z" fill="#3e2723" />
-        <path d="M36 26 L36 44 L40 44 L40 26 Z" fill="#3e2723" />
-        {/* Risvolto gilet */}
-        <path d="M28 26 L30 31 L28 31 Z" fill="#4e342e" />
-        <path d="M36 26 L34 31 L36 31 Z" fill="#4e342e" />
-        {/* Scollo */}
-        <path d="M30 26 Q32 29 34 26" fill="#1b5e20" />
-
-        {/* === TESTA — piu piccola, proporzionata === */}
-        <circle cx="32" cy="18" r="8" fill="#ffd5b4" />
-        {/* Riflesso cranio */}
-        <ellipse cx="30" cy="13" rx="4" ry="2.5" fill="#ffe8d0" opacity="0.3" />
-
-        {/* Sopracciglia */}
-        <path d="M27 16.5 Q29 15.5 31 16.5" fill="none" stroke="#4e342e" strokeWidth="1.2" strokeLinecap="round" />
-        <path d="M33 16.5 Q35 15.5 37 16.5" fill="none" stroke="#4e342e" strokeWidth="1.2" strokeLinecap="round" />
-
-        {/* Occhi */}
-        <ellipse cx="29" cy="18.5" rx="1.5" ry="1.3" fill="#fff" />
-        <ellipse cx="35" cy="18.5" rx="1.5" ry="1.3" fill="#fff" />
-        <circle cx="29.3" cy="18.5" r="0.9" fill={color}>
-          <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="35.3" cy="18.5" r="0.9" fill={color}>
-          <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite" />
-        </circle>
-
-        {/* Naso */}
-        <path d="M31.5 20 Q32 21 32.5 20" fill="none" stroke="#e0a888" strokeWidth="0.6" />
-
-        {/* === BARBA — compatta, ben definita === */}
-        {/* Baffi */}
-        <path d="M29 21.5 Q27.5 22.5 26.5 21.8" fill="none" stroke="#6d4c41" strokeWidth="1.3" strokeLinecap="round" />
-        <path d="M35 21.5 Q36.5 22.5 37.5 21.8" fill="none" stroke="#6d4c41" strokeWidth="1.3" strokeLinecap="round" />
-        {/* Barba corta e curata */}
-        <path d="M26.5 22 Q26 25 29 27 Q31 28 32 28 Q33 28 35 27 Q38 25 37.5 22" fill="#6d4c41" />
-        <path d="M27.5 22.5 Q27 24.5 29.5 26.5 Q31 27 32 27 Q33 27 34.5 26.5 Q37 24.5 36.5 22.5" fill="#795548" />
-
-        {/* === BRACCIA — attaccate al corpo === */}
-        {/* Braccio sx con mano */}
-        <rect x="16" y="28" width="8" height="5" rx="2.5" fill="#ffd5b4" />
-        <circle cx="15" cy="30.5" r="2.5" fill="#ffd5b4" />
-        {/* Braccio dx con mano */}
-        <rect x="40" y="28" width="8" height="5" rx="2.5" fill="#ffd5b4" />
-        <circle cx="49" cy="30.5" r="2.5" fill="#ffd5b4" />
-
-        {/* === SPADA SX — punta in alto, inclinata verso esterno === */}
-        <g transform="rotate(15 15 30.5)">
-          <rect x="13.5" y="30" width="3" height="5" rx="1" fill="#2c1810" />
-          <rect x="11" y="28" width="8" height="2" rx="0.8" fill={dark} />
-          <rect x="13.8" y="10" width="2.5" height="18" rx="0.5" fill={light} />
-          <rect x="14.2" y="11" width="1.7" height="16" rx="0.3" fill={color} opacity="0.4" />
-          <polygon points="15,10 13.3,10 15,6" fill={light} />
+      <g filter="url(#shadow)">
+        <g className="part-body">
+          {/* === GAMBE E PANTALONI === */}
+          <rect x="25" y="46" width="6" height="11" rx="2" fill="#a1887f" />
+          <rect x="33" y="46" width="6" height="11" rx="2" fill="#a1887f" />
+          <rect x="24" y="55" width="8" height="5" rx="2" fill="#3e2723" />
+          <rect x="32" y="55" width="8" height="5" rx="2" fill="#3e2723" />
+          
+          {/* === CORPO === */}
+          <rect x="24" y="26" width="16" height="18" rx="2" fill="#2e7d32" />
+          <path d="M24 26 L24 44 L28 44 L28 26 Z" fill="#3e2723" />
+          <path d="M36 26 L36 44 L40 44 L40 26 Z" fill="#3e2723" />
+          <rect x="23" y="43" width="18" height="3" rx="1" fill="#4e342e" />
         </g>
 
-        {/* === SPADA DX — punta in alto, inclinata verso esterno === */}
-        <g transform="rotate(-15 49 30.5)">
-          <rect x="47.5" y="30" width="3" height="5" rx="1" fill="#2c1810" />
-          <rect x="45" y="28" width="8" height="2" rx="0.8" fill={dark} />
-          <rect x="47.8" y="10" width="2.5" height="18" rx="0.5" fill={light} />
-          <rect x="48.2" y="11" width="1.7" height="16" rx="0.3" fill={color} opacity="0.4" />
-          <polygon points="49,10 50.7,10 49,6" fill={light} />
+        <g className="part-head">
+          <circle cx="32" cy="18" r="8" fill="#ffd5b4" />
+          <ellipse cx="30" cy="13" rx="4" ry="2.5" fill="#ffe8d0" opacity="0.3" />
+          {/* Occhi */}
+          <circle cx="29.3" cy="18.5" r="1.2" fill="url(#eye-glow)" />
+          <circle cx="35.3" cy="18.5" r="1.2" fill="url(#eye-glow)" />
+          {/* Barba */}
+          <path d="M26.5 22 Q26 25 29 27 Q31 28 32 28 Q33 28 35 27 Q38 25 37.5 22" fill="#6d4c41" />
         </g>
 
-        {/* Glow spade per epico+ */}
-        {(['epico', 'leggendario', 'mitico', 'master'] as const).includes(rarity as any) && (
-          <>
-            <g transform="rotate(15 15 30.5)">
-              <rect x="13" y="10" width="4" height="18" rx="1" fill={color} opacity="0.15">
-                <animate attributeName="opacity" values="0.05;0.25;0.05" dur="2s" repeatCount="indefinite" />
-              </rect>
-            </g>
-            <g transform="rotate(-15 49 30.5)">
-              <rect x="47" y="10" width="4" height="18" rx="1" fill={color} opacity="0.15">
-                <animate attributeName="opacity" values="0.05;0.25;0.05" dur="2s" repeatCount="indefinite" />
-              </rect>
-            </g>
-          </>
-        )}
+        <g className="part-arm-l">
+          <rect x="16" y="28" width="8" height="5" rx="2.5" fill="#ffd5b4" />
+          <g transform="rotate(15 15 30.5)">
+            <rect x="13.5" y="10" width="3" height="25" rx="1" fill="#ccc" />
+            <rect x="11" y="32" width="8" height="2" rx="0.5" fill={dark} />
+          </g>
+        </g>
 
-        {/* === CINTURA === */}
-        <rect x="23" y="43" width="18" height="3" rx="1" fill="#4e342e" />
-        <circle cx="32" cy="44.5" r="1.2" fill={dark} />
-
-        {/* === PANTALONI === */}
-        <rect x="25" y="46" width="6" height="11" rx="2" fill="#a1887f" />
-        <rect x="33" y="46" width="6" height="11" rx="2" fill="#a1887f" />
-
-        {/* === STIVALI === */}
-        <rect x="24" y="55" width="8" height="5" rx="2" fill="#3e2723" />
-        <rect x="32" y="55" width="8" height="5" rx="2" fill="#3e2723" />
+        <g className="part-arm-r">
+          <rect x="40" y="28" width="8" height="5" rx="2.5" fill="#ffd5b4" />
+          <g transform="rotate(-15 49 30.5)">
+            <rect x="47.5" y="10" width="3" height="25" rx="1" fill="#ccc" />
+            <rect x="45" y="32" width="8" height="2" rx="0.5" fill={dark} />
+          </g>
+        </g>
       </g>
     );
   }
@@ -125,33 +70,81 @@ function getCustomSprite(name: string | undefined, color: string, dark: string, 
   return null;
 }
 
-export function HeroSprite({ heroClass, rarity, size = 64, animate = 'idle', flip = false, name }: HeroSpriteProps) {
+export function HeroSprite({ heroClass, rarity, size = 64, animate = 'idle', flip = false, name, hasBlessing }: HeroSpriteProps) {
   const color = RARITY_COLORS[rarity] || '#9e9e9e';
   const darkColor = darken(color, 30);
   const lightColor = lighten(color, 30);
   const skinColor = '#ffd5b4';
   const animClass = `sprite-${animate}`;
 
-  // Check per sprite personalizzato
   const customSprite = getCustomSprite(name, color, darkColor, lightColor, rarity);
 
   return (
     <div
       className={`hero-sprite ${animClass}`}
       style={{
-        width: size,
-        height: size,
+        width: size, height: size,
         transform: flip ? 'scaleX(-1)' : undefined,
         position: 'relative',
       }}
-      title={name}
     >
       <svg viewBox="0 0 64 64" width={size} height={size} xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="1" />
+            <feOffset dx="0.5" dy="1" result="offsetblur" />
+            <feComponentTransfer>
+              <feFuncA type="linear" slope="0.4" />
+            </feComponentTransfer>
+            <feMerge>
+              <feMergeNode />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <linearGradient id="metal-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#f5f5f5" />
+            <stop offset="50%" stopColor="#9e9e9e" />
+            <stop offset="100%" stopColor="#424242" />
+          </linearGradient>
+          <radialGradient id="eye-glow">
+            <stop offset="0%" stopColor="#fff" />
+            <stop offset="100%" stopColor={color} />
+          </radialGradient>
+          <linearGradient id="blessing-aura" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="gold" stopOpacity="0">
+              <animate attributeName="stopOpacity" values="0;0.5;0" dur="2s" repeatCount="indefinite" />
+            </stop>
+            <stop offset="100%" stopColor="gold" stopOpacity="0.8">
+               <animate attributeName="stopOpacity" values="0.8;0.2;0.8" dur="2s" repeatCount="indefinite" />
+            </stop>
+          </linearGradient>
+        </defs>
+
+        {hasBlessing && (
+          <g className="blessing-aura-effect">
+            <circle cx="32" cy="32" r="30" fill="url(#blessing-aura)" />
+            <g transform="translate(32, 32)">
+              {[0, 72, 144, 216, 288].map(deg => (
+                <circle key={deg} r="1.5" fill="gold">
+                  <animateTransform 
+                    attributeName="transform" 
+                    type="rotate" 
+                    from={`${deg} 0 0`} 
+                    to={`${deg + 360} 0 0`} 
+                    dur="4s" 
+                    repeatCount="indefinite" 
+                  />
+                  <animate attributeName="cy" values="-28;-32;-28" dur="2s" repeatCount="indefinite" />
+                </circle>
+              ))}
+            </g>
+          </g>
+        )}
+
         {/* Aura di rarità per epico+ */}
         {(['epico', 'leggendario', 'mitico', 'master'] as Rarity[]).includes(rarity) && (
-          <circle cx="32" cy="36" r="28" fill="none" stroke={color} strokeWidth="1" opacity="0.3">
+          <circle cx="32" cy="36" r="28" fill="none" stroke={color} strokeWidth="1" opacity="0.3" className="rarity-glow">
             <animate attributeName="r" values="26;30;26" dur="2s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.2;0.5;0.2" dur="2s" repeatCount="indefinite" />
           </circle>
         )}
 
@@ -165,142 +158,142 @@ function getClassBody(heroClass: HeroClass, color: string, dark: string, light: 
   switch (heroClass) {
     case 'guardiano':
       return (
-        <g>
-          {/* Corpo corazzato */}
-          <rect x="22" y="26" width="20" height="22" rx="3" fill={color} />
-          {/* Testa */}
-          <circle cx="32" cy="20" r="10" fill={skin} />
-          {/* Elmo */}
-          <path d="M22 20 Q22 10 32 8 Q42 10 42 20" fill={dark} />
-          <rect x="24" y="17" width="16" height="3" rx="1" fill={light} opacity="0.5" />
-          {/* Visiera */}
-          <rect x="26" y="20" width="12" height="2" rx="1" fill={dark} />
-          {/* Scudo (braccio sinistro) */}
-          <rect x="12" y="28" width="12" height="16" rx="3" fill={dark} />
-          <rect x="14" y="30" width="8" height="12" rx="2" fill={color} />
-          <line x1="18" y1="31" x2="18" y2="41" stroke={light} strokeWidth="2" />
-          {/* Spada (braccio destro) */}
-          <rect x="42" y="24" width="4" height="20" rx="1" fill="#888" />
-          <rect x="40" y="23" width="8" height="3" rx="1" fill={dark} />
-          {/* Gambe */}
-          <rect x="24" y="48" width="7" height="12" rx="2" fill={dark} />
-          <rect x="33" y="48" width="7" height="12" rx="2" fill={dark} />
-          {/* Piedi */}
-          <rect x="22" y="57" width="10" height="4" rx="2" fill="#555" />
-          <rect x="32" y="57" width="10" height="4" rx="2" fill="#555" />
+        <g filter="url(#shadow)">
+          <g className="part-body">
+            {/* Gambe */}
+            <rect x="24" y="48" width="7" height="12" rx="2" fill={dark} />
+            <rect x="33" y="48" width="7" height="12" rx="2" fill={dark} />
+            {/* Piedi */}
+            <rect x="22" y="57" width="10" height="4" rx="2" fill="#333" />
+            <rect x="32" y="57" width="10" height="4" rx="2" fill="#333" />
+            {/* Corpo corazzato */}
+            <rect x="22" y="26" width="20" height="22" rx="3" fill={color} />
+            <rect x="24" y="28" width="16" height="18" rx="2" fill="url(#metal-grad)" opacity="0.2" />
+          </g>
+          <g className="part-head">
+            <circle cx="32" cy="20" r="10" fill={skin} />
+            <path d="M22 20 Q22 10 32 8 Q42 10 42 20" fill={dark} />
+            <rect x="24" y="17" width="16" height="3" rx="1" fill={light} opacity="0.5" />
+            <rect x="26" y="20" width="12" height="2" rx="1" fill={dark} />
+          </g>
+          <g className="part-arm-l">
+            <rect x="12" y="28" width="12" height="16" rx="3" fill={dark} />
+            <rect x="14" y="30" width="8" height="12" rx="2" fill={color} />
+          </g>
+          <g className="part-arm-r">
+            <rect x="42" y="24" width="4" height="20" rx="1" fill="#888" />
+            <rect x="40" y="23" width="8" height="3" rx="1" fill={dark} />
+          </g>
         </g>
       );
 
     case 'lama':
       return (
-        <g>
-          {/* Corpo */}
-          <rect x="24" y="28" width="16" height="20" rx="2" fill={color} />
-          {/* Testa */}
-          <circle cx="32" cy="20" r="9" fill={skin} />
-          {/* Capelli */}
-          <path d="M23 18 Q24 10 32 9 Q40 10 41 18" fill="#333" />
-          {/* Occhi determinati */}
-          <rect x="27" y="19" width="3" height="2" rx="1" fill="#333" />
-          <rect x="34" y="19" width="3" height="2" rx="1" fill="#333" />
-          {/* Cintura */}
-          <rect x="23" y="38" width="18" height="3" rx="1" fill={dark} />
-          {/* Spada grande (dx) */}
-          <rect x="43" y="14" width="3" height="30" rx="1" fill="#ccc" />
-          <rect x="41" y="42" width="7" height="4" rx="1" fill={dark} />
-          <polygon points="44.5,14 42,8 47,8" fill="#eee" />
-          {/* Braccio sx */}
-          <rect x="16" y="30" width="8" height="4" rx="2" fill={skin} />
-          {/* Gambe */}
-          <rect x="25" y="48" width="6" height="12" rx="2" fill="#444" />
-          <rect x="33" y="48" width="6" height="12" rx="2" fill="#444" />
-          <rect x="24" y="57" width="8" height="4" rx="2" fill="#333" />
-          <rect x="32" y="57" width="8" height="4" rx="2" fill="#333" />
+        <g filter="url(#shadow)">
+          <g className="part-body">
+            <rect x="25" y="48" width="6" height="12" rx="2" fill="#444" />
+            <rect x="33" y="48" width="6" height="12" rx="2" fill="#444" />
+            <rect x="24" y="57" width="8" height="4" rx="2" fill="#333" />
+            <rect x="32" y="57" width="8" height="4" rx="2" fill="#333" />
+            <rect x="24" y="28" width="16" height="20" rx="2" fill={color} />
+            <rect x="23" y="38" width="18" height="3" rx="1" fill={dark} />
+          </g>
+          <g className="part-head">
+            <circle cx="32" cy="20" r="9" fill={skin} />
+            <path d="M23 18 Q24 10 32 9 Q40 10 41 18" fill="#333" />
+            <circle cx="28.5" cy="19.5" r="1" fill="#fff" opacity="0.8" />
+            <circle cx="35.5" cy="19.5" r="1" fill="#fff" opacity="0.8" />
+          </g>
+          <g className="part-arm-l">
+            <rect x="16" y="30" width="8" height="4" rx="2" fill={skin} />
+          </g>
+          <g className="part-arm-r">
+            <rect x="43" y="10" width="3" height="30" rx="1" fill="#ccc" />
+            <rect x="41" y="38" width="7" height="4" rx="1" fill={dark} />
+          </g>
         </g>
       );
 
     case 'arcano':
       return (
-        <g>
-          {/* Tunica */}
-          <path d="M24 28 L20 58 L44 58 L40 28 Z" fill={color} />
-          {/* Testa */}
-          <circle cx="32" cy="20" r="9" fill={skin} />
-          {/* Cappello mago */}
-          <polygon points="32,2 22,22 42,22" fill={dark} />
-          <ellipse cx="32" cy="22" rx="12" ry="3" fill={dark} />
-          <circle cx="32" cy="8" r="2" fill={light} />
-          {/* Occhi */}
-          <circle cx="29" cy="20" r="1.5" fill={light} />
-          <circle cx="35" cy="20" r="1.5" fill={light} />
-          {/* Bastone (dx) */}
-          <rect x="44" y="12" width="3" height="46" rx="1" fill="#8B4513" />
-          <circle cx="45.5" cy="12" r="5" fill={light} opacity="0.7">
-            <animate attributeName="opacity" values="0.4;0.9;0.4" dur="1.5s" repeatCount="indefinite" />
-          </circle>
-          {/* Mano sx con magia */}
-          <circle cx="18" cy="36" r="4" fill={light} opacity="0.5">
-            <animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite" />
-          </circle>
-          {/* Piedi */}
-          <rect x="24" y="56" width="7" height="4" rx="2" fill={dark} />
-          <rect x="33" y="56" width="7" height="4" rx="2" fill={dark} />
+        <g filter="url(#shadow)">
+          <g className="part-body">
+            {/* Tunica */}
+            <path d="M24 28 L20 58 L44 58 L40 28 Z" fill={color} />
+            <path d="M24 28 L32 50 L40 28 Z" fill={dark} opacity="0.3" />
+            <rect x="24" y="56" width="7" height="4" rx="2" fill={dark} />
+            <rect x="33" y="56" width="7" height="4" rx="2" fill={dark} />
+          </g>
+          <g className="part-head">
+            <circle cx="32" cy="20" r="9" fill={skin} />
+            {/* Cappello mago */}
+            <polygon points="32,2 22,22 42,22" fill={dark} />
+            <ellipse cx="32" cy="22" rx="12" ry="3" fill={dark} />
+            <circle cx="29" cy="20" r="1.5" fill="url(#eye-glow)" />
+            <circle cx="35" cy="20" r="1.5" fill="url(#eye-glow)" />
+          </g>
+          <g className="part-arm-l">
+            <circle cx="18" cy="36" r="4" fill={light} opacity="0.5">
+              <animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite" />
+            </circle>
+          </g>
+          <g className="part-arm-r">
+            {/* Bastone magico */}
+            <rect x="44" y="12" width="3" height="46" rx="1" fill="#8B4513" />
+            <circle cx="45.5" cy="12" r="5" fill="url(#eye-glow)" className="rarity-glow" />
+          </g>
         </g>
       );
 
     case 'custode':
       return (
-        <g>
-          {/* Tunica bianca/dorata */}
-          <path d="M24 28 L22 56 L42 56 L40 28 Z" fill="#f5f5f5" />
-          <path d="M26 30 L24 54 L40 54 L38 30 Z" fill={light} opacity="0.3" />
-          {/* Testa */}
-          <circle cx="32" cy="20" r="9" fill={skin} />
-          {/* Aureola */}
-          <ellipse cx="32" cy="10" rx="8" ry="2" fill={color} opacity="0.6">
-            <animate attributeName="opacity" values="0.4;0.8;0.4" dur="2s" repeatCount="indefinite" />
-          </ellipse>
-          {/* Capelli */}
-          <path d="M23 18 Q25 12 32 11 Q39 12 41 18" fill="#f0d080" />
-          {/* Occhi gentili */}
-          <ellipse cx="29" cy="20" rx="1.5" ry="1" fill="#4a90d9" />
-          <ellipse cx="35" cy="20" rx="1.5" ry="1" fill="#4a90d9" />
-          {/* Sorriso */}
-          <path d="M29 24 Q32 26 35 24" fill="none" stroke="#c0a080" strokeWidth="0.8" />
-          {/* Bastone curativo */}
-          <rect x="44" y="16" width="3" height="40" rx="1" fill="#daa520" />
-          <circle cx="45.5" cy="14" r="4" fill={color}>
-            <animate attributeName="opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite" />
-          </circle>
-          {/* Piedi */}
-          <rect x="25" y="54" width="6" height="4" rx="2" fill="#daa520" />
-          <rect x="33" y="54" width="6" height="4" rx="2" fill="#daa520" />
+        <g filter="url(#shadow)">
+          <g className="part-body">
+            {/* Tunica bianca/dorata */}
+            <path d="M24 28 L22 56 L42 56 L40 28 Z" fill="#f5f5f5" />
+            <path d="M26 30 L24 54 L40 54 L38 30 Z" fill={light} opacity="0.3" />
+            <rect x="25" y="54" width="6" height="4" rx="2" fill="#daa520" />
+            <rect x="33" y="54" width="6" height="4" rx="2" fill="#daa520" />
+          </g>
+          <g className="part-head">
+            <circle cx="32" cy="20" r="9" fill={skin} />
+            <ellipse cx="32" cy="10" rx="8" ry="2" fill={color} opacity="0.6" className="rarity-glow" />
+            <path d="M23 18 Q25 12 32 11 Q39 12 41 18" fill="#f0d080" />
+            <ellipse cx="29" cy="20" rx="1.5" ry="1" fill="#4a90d9" />
+            <ellipse cx="35" cy="20" rx="1.5" ry="1" fill="#4a90d9" />
+          </g>
+          <g className="part-arm-l">
+            <circle cx="18" cy="32" r="3" fill={skin} />
+          </g>
+          <g className="part-arm-r">
+            <rect x="44" y="16" width="3" height="40" rx="1" fill="#daa520" />
+            <circle cx="45.5" cy="14" r="4" fill={color} className="rarity-glow" />
+          </g>
         </g>
       );
 
     case 'ombra':
       return (
-        <g>
-          {/* Mantello scuro */}
-          <path d="M22 26 L18 58 L46 58 L42 26 Z" fill="#1a1a2e" />
-          <path d="M26 28 L24 56 L40 56 L38 28 Z" fill="#16213e" />
-          {/* Testa */}
-          <circle cx="32" cy="20" r="9" fill={skin} />
-          {/* Cappuccio */}
-          <path d="M21 22 Q22 10 32 8 Q42 10 43 22" fill="#1a1a2e" />
-          {/* Occhi luminosi */}
-          <circle cx="29" cy="19" r="1.5" fill={color}>
-            <animate attributeName="opacity" values="0.6;1;0.6" dur="1.2s" repeatCount="indefinite" />
-          </circle>
-          <circle cx="35" cy="19" r="1.5" fill={color}>
-            <animate attributeName="opacity" values="0.6;1;0.6" dur="1.2s" repeatCount="indefinite" />
-          </circle>
-          {/* Pugnali */}
-          <rect x="14" y="32" width="2" height="14" rx="0.5" fill="#ccc" transform="rotate(-15 15 39)" />
-          <rect x="48" y="32" width="2" height="14" rx="0.5" fill="#ccc" transform="rotate(15 49 39)" />
-          {/* Piedi (quasi invisibili) */}
-          <rect x="26" y="56" width="5" height="3" rx="1" fill="#111" />
-          <rect x="33" y="56" width="5" height="3" rx="1" fill="#111" />
+        <g filter="url(#shadow)">
+          <g className="part-body">
+            {/* Mantello scuro */}
+            <path d="M22 26 L18 58 L46 58 L42 26 Z" fill="#1a1a2e" />
+            <path d="M26 28 L24 56 L40 56 L38 28 Z" fill="#16213e" />
+            <rect x="26" y="56" width="5" height="3" rx="1" fill="#111" />
+            <rect x="33" y="56" width="5" height="3" rx="1" fill="#111" />
+          </g>
+          <g className="part-head">
+            <circle cx="32" cy="20" r="9" fill={skin} />
+            <path d="M21 22 Q22 10 32 8 Q42 10 43 22" fill="#1a1a2e" />
+            <circle cx="29" cy="19" r="1.5" fill="url(#eye-glow)" className="rarity-glow" />
+            <circle cx="35" cy="19" r="1.5" fill="url(#eye-glow)" className="rarity-glow" />
+          </g>
+          <g className="part-arm-l">
+            <rect x="14" y="32" width="2" height="14" rx="0.5" fill="#ccc" transform="rotate(-15 15 39)" />
+          </g>
+          <g className="part-arm-r">
+            <rect x="48" y="32" width="2" height="14" rx="0.5" fill="#ccc" transform="rotate(15 49 39)" />
+          </g>
         </g>
       );
 
@@ -1361,73 +1354,56 @@ function getMonsterBody(name: string, tierColor: string): React.ReactNode {
 
     case 'Ifrit':
       return (
-        <g>
-          {/* Corpo infuocato */}
-          <path d="M20 48 Q16 36 22 28 Q28 22 32 18 Q36 22 42 28 Q48 36 44 48 Z" fill="#e65100" />
-          <path d="M24 46 Q20 38 26 32 Q30 26 32 22 Q34 26 38 32 Q44 38 40 46 Z" fill="#ff6d00" />
-          {/* Fiamme sulla testa */}
-          <path d="M26 22 Q24 12 28 8 Q30 14 32 18" fill="#ffab00" opacity="0.8">
-            <animate attributeName="d" values="M26 22 Q24 12 28 8 Q30 14 32 18;M26 22 Q22 10 26 6 Q30 12 32 18;M26 22 Q24 12 28 8 Q30 14 32 18" dur="0.8s" repeatCount="indefinite" />
-          </path>
-          <path d="M32 18 Q34 8 36 4 Q38 10 38 22" fill="#ffd600" opacity="0.7">
-            <animate attributeName="d" values="M32 18 Q34 8 36 4 Q38 10 38 22;M32 18 Q36 6 38 2 Q40 8 38 22;M32 18 Q34 8 36 4 Q38 10 38 22" dur="1s" repeatCount="indefinite" />
-          </path>
-          {/* Occhi */}
-          <circle cx="28" cy="32" r="3" fill="#fff" />
-          <circle cx="36" cy="32" r="3" fill="#fff" />
-          <circle cx="28" cy="32" r="1.5" fill="#b71c1c" />
-          <circle cx="36" cy="32" r="1.5" fill="#b71c1c" />
-          {/* Bocca con fuoco */}
-          <path d="M27 40 Q32 44 37 40" fill="#ffab00" />
-          {/* Braccia infuocate */}
-          <path d="M20 34 L10 30 L8 26" fill="none" stroke="#e65100" strokeWidth="4" strokeLinecap="round" />
-          <path d="M44 34 L54 30 L56 26" fill="none" stroke="#e65100" strokeWidth="4" strokeLinecap="round" />
-          <circle cx="8" cy="25" r="3" fill="#ff6d00" opacity="0.6">
-            <animate attributeName="r" values="2;4;2" dur="1.2s" repeatCount="indefinite" />
-          </circle>
-          <circle cx="56" cy="25" r="3" fill="#ff6d00" opacity="0.6">
-            <animate attributeName="r" values="2;4;2" dur="1.4s" repeatCount="indefinite" />
-          </circle>
+        <g filter="url(#shadow)">
+          <g className="part-body">
+            {/* Corpo infuocato */}
+            <path d="M20 48 Q16 36 22 28 Q28 22 32 18 Q36 22 42 28 Q48 36 44 48 Z" fill="#e65100" />
+            <path d="M24 46 Q20 38 26 32 Q30 26 32 22 Q34 26 38 32 Q44 38 40 46 Z" fill="#ff6d00" />
+            <path d="M27 40 Q32 44 37 40" fill="#ffab00" />
+          </g>
+          <g className="part-head">
+            <path d="M26 22 Q24 12 28 8 Q30 14 32 18" fill="#ffab00" opacity="0.8">
+              <animate attributeName="d" values="M26 22 Q24 12 28 8 Q30 14 32 18;M26 22 Q22 10 26 6 Q30 12 32 18;M26 22 Q24 12 28 8 Q30 14 32 18" dur="0.8s" repeatCount="indefinite" />
+            </path>
+            <circle cx="28" cy="32" r="3" fill="#fff" />
+            <circle cx="36" cy="32" r="3" fill="#fff" />
+            <circle cx="28" cy="32" r="1.5" fill="#b71c1c" />
+            <circle cx="36" cy="32" r="1.5" fill="#b71c1c" />
+          </g>
+          <g className="part-arm-l">
+            <path d="M20 34 L10 30 L8 26" fill="none" stroke="#e65100" strokeWidth="4" strokeLinecap="round" />
+          </g>
+          <g className="part-arm-r">
+            <path d="M44 34 L54 30 L56 26" fill="none" stroke="#e65100" strokeWidth="4" strokeLinecap="round" />
+          </g>
         </g>
       );
 
     case 'Re del Vuoto':
       return (
-        <g>
-          {/* Aura void */}
-          <circle cx="32" cy="32" r="24" fill="none" stroke="#7c4dff" strokeWidth="1" opacity="0.3">
-            <animate attributeName="r" values="22;26;22" dur="2s" repeatCount="indefinite" />
-          </circle>
-          {/* Corpo etereo */}
-          <path d="M20 48 Q16 34 24 24 Q28 18 32 14 Q36 18 40 24 Q48 34 44 48 Q38 56 32 56 Q26 56 20 48Z" fill="#311b92" opacity="0.9" />
-          <path d="M24 46 Q20 36 28 28 Q30 22 32 18 Q34 22 36 28 Q44 36 40 46 Q36 52 32 52 Q28 52 24 46Z" fill="#4527a0" />
-          {/* Corona */}
-          <polygon points="24,20 26,10 28,18 30,8 32,18 34,8 36,18 38,10 40,20" fill="#ffd600" />
-          <rect x="24" y="19" width="16" height="3" rx="1" fill="#ffab00" />
-          {/* Gemma corona */}
-          <circle cx="32" cy="20" r="2" fill="#e040fb">
-            <animate attributeName="opacity" values="0.5;1;0.5" dur="1.5s" repeatCount="indefinite" />
-          </circle>
-          {/* Occhi void */}
-          <circle cx="28" cy="32" r="3" fill="#e040fb">
-            <animate attributeName="r" values="2.5;3.5;2.5" dur="2s" repeatCount="indefinite" />
-          </circle>
-          <circle cx="36" cy="32" r="3" fill="#e040fb">
-            <animate attributeName="r" values="2.5;3.5;2.5" dur="2s" repeatCount="indefinite" />
-          </circle>
-          {/* Particelle void */}
-          <circle cx="14" cy="28" r="1.5" fill="#7c4dff" opacity="0.5">
-            <animate attributeName="cy" values="28;22;28" dur="3s" repeatCount="indefinite" />
-          </circle>
-          <circle cx="50" cy="34" r="1" fill="#b388ff" opacity="0.4">
-            <animate attributeName="cy" values="34;40;34" dur="2.5s" repeatCount="indefinite" />
-          </circle>
-          <circle cx="20" cy="48" r="1" fill="#7c4dff" opacity="0.3">
-            <animate attributeName="cx" values="20;16;20" dur="4s" repeatCount="indefinite" />
-          </circle>
-          {/* Mani eteree */}
-          <path d="M20 36 L12 40 L10 44" fill="none" stroke="#4527a0" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
-          <path d="M44 36 L52 40 L54 44" fill="none" stroke="#4527a0" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
+        <g filter="url(#shadow)">
+          <g className="part-body">
+            {/* Corpo etereo */}
+            <path d="M20 48 Q16 34 24 24 Q28 18 32 14 Q36 18 40 24 Q48 34 44 48 Q38 56 32 56 Q26 56 20 48Z" fill="#311b92" opacity="0.9" />
+            <path d="M24 46 Q20 36 28 28 Q30 22 32 18 Q34 22 36 28 Q44 36 40 46 Q36 52 32 52 Q28 52 24 46Z" fill="#4527a0" />
+          </g>
+          <g className="part-head">
+            {/* Corona */}
+            <polygon points="24,20 26,10 28,18 30,8 32,18 34,8 36,18 38,10 40,20" fill="#ffd600" />
+            {/* Occhi void */}
+            <circle cx="28" cy="32" r="3" fill="#e040fb">
+              <animate attributeName="r" values="2.5;3.5;2.5" dur="2s" repeatCount="indefinite" />
+            </circle>
+            <circle cx="36" cy="32" r="3" fill="#e040fb">
+              <animate attributeName="r" values="2.5;3.5;2.5" dur="2s" repeatCount="indefinite" />
+            </circle>
+          </g>
+          <g className="part-arm-l">
+            <path d="M20 36 L12 40 L10 44" fill="none" stroke="#4527a0" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
+          </g>
+          <g className="part-arm-r">
+            <path d="M44 36 L52 40 L54 44" fill="none" stroke="#4527a0" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
+          </g>
         </g>
       );
 

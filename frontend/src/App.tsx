@@ -10,11 +10,13 @@ import { Leaderboard } from './components/Leaderboard';
 import { Inventory } from './components/Inventory';
 import { RaidBoss } from './components/RaidBoss';
 import { Shop } from './components/Shop';
+import { BitShop } from './components/BitShop';
+import { NotificationOverlay } from './components/NotificationOverlay';
 import { HeroReveal } from './components/HeroReveal';
 import { Tutorial } from './components/Tutorial';
 import * as api from './services/api';
 
-type Tab = 'myhero' | 'heroes' | 'roster' | 'items' | 'party' | 'dungeon' | 'pvp' | 'raid' | 'shop' | 'rank';
+type Tab = 'myhero' | 'heroes' | 'roster' | 'items' | 'party' | 'dungeon' | 'pvp' | 'raid' | 'shop' | 'rank' | 'premium';
 
 declare global {
   interface Window {
@@ -22,6 +24,14 @@ declare global {
       ext: {
         onAuthorized: (callback: (auth: { token: string; userId: string; channelId: string }) => void) => void;
         onContext: (callback: (context: any) => void) => void;
+        listen: (target: string, callback: (target: string, contentType: string, message: string) => void) => void;
+        bits: {
+          useNextEntitlement: () => void;
+          onTransactionComplete: (callback: (transaction: any) => void) => void;
+          onTransactionCancelled: (callback: () => void) => void;
+          showBitsInventory: () => void;
+          getProducts: () => Promise<any[]>;
+        };
       };
     };
   }
@@ -39,6 +49,7 @@ export default function App() {
   const [showReveal, setShowReveal] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [revealHero, setRevealHero] = useState<Hero | null>(null);
+  const [activeBuffs, setActiveBuffs] = useState<any[]>([]);
 
   useEffect(() => {
     let resolved = false;
@@ -47,7 +58,7 @@ export default function App() {
       if (resolved) return;
       resolved = true;
       setAuthed(true);
-      api.setAuthToken(auth.token);
+      api.setAuthToken(auth.token, auth.channelId);
       loadProfile();
     }
 
@@ -63,7 +74,7 @@ export default function App() {
 
     if (window.Twitch?.ext) {
       try {
-        window.Twitch.ext.onAuthorized((auth) => {
+        window.Twitch.ext.onAuthorized((auth: { token: string; userId: string; channelId: string }) => {
           clearTimeout(timeout);
           onAuth(auth);
         });
@@ -85,7 +96,7 @@ export default function App() {
           if (window.Twitch?.ext) {
             clearInterval(retryInterval);
             try {
-              window.Twitch.ext.onAuthorized((auth) => {
+              window.Twitch.ext.onAuthorized((auth: { token: string; userId: string; channelId: string }) => {
                 onAuth(auth);
               });
             } catch { fallback(); }
@@ -214,11 +225,13 @@ export default function App() {
       { id: 'pvp' as Tab, label: 'PVP', icon: '🏟️' },
       { id: 'raid' as Tab, label: 'Raid', icon: '🐉' },
       { id: 'rank' as Tab, label: 'Rank', icon: '🏆' },
+      { id: 'premium' as Tab, label: 'Premium', icon: '💎' },
     ],
   ];
 
   return (
     <div className="app">
+      <NotificationOverlay />
       <div className="header">
         <h1>HEROES COLLECTOR</h1>
         {profile && (
@@ -251,6 +264,7 @@ export default function App() {
         {tab === 'pvp' && <PvpArena />}
         {tab === 'raid' && <RaidBoss />}
         {tab === 'rank' && <Leaderboard />}
+        {tab === 'premium' && <BitShop onBuffActivated={(b) => setActiveBuffs([...activeBuffs, b])} />}
       </div>
 
       {showTutorial && (
