@@ -1,4 +1,5 @@
-import { Hero, UserProfile, Ability, ClassInfo, Blessing, ActiveBuff } from '../types';
+import { Hero, UserProfile, Ability, ClassInfo, Blessing, ActiveBuff, ChannelProgress } from '../types';
+export type { ActiveBuff, ChannelProgress };
 
 // In dev: il proxy Vite gestisce /api -> localhost:3001
 // In prod: VITE_API_URL punta al backend su Render (es. https://tuosito.onrender.com/api)

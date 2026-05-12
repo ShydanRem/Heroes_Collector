@@ -46,6 +46,10 @@ export default function App() {
   const [activeBuffs, setActiveBuffs] = useState<api.ActiveBuff[]>([]);
   const [channelProgress, setChannelProgress] = useState<api.ChannelProgress | null>(null);
   const [mode, setMode] = useState<'component' | 'video_overlay'>('component');
+  
+  // Supporto per forzare l'overlay via query param (utile per test e OBS)
+  const urlParams = new URLSearchParams(window.location.search);
+  const forceOverlay = urlParams.get('mode') === 'overlay';
   const [loading, setLoading] = useState(true);
   const [authed, setAuthed] = useState(false);
   const [joined, setJoined] = useState(false);
@@ -172,7 +176,7 @@ export default function App() {
   }
 
   // Se siamo in modalità Overlay Video, mostriamo solo il widget sulla live
-  if (mode === 'video_overlay') {
+  if (mode === 'video_overlay' || forceOverlay) {
     return <StreamOverlay progress={channelProgress} />;
   }
 
