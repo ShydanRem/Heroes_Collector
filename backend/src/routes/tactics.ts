@@ -10,12 +10,18 @@ tacticsRoutes.get('/:heroId', async (req: Request, res: Response) => {
     const userId = req.twitchUser!.user_id;
 
     // Cerca l'eroe: potrebbe essere il main hero (users) o uno nel roster
-    // Controlliamo prima users
-    let result = await query('SELECT tactics_json FROM users WHERE twitch_user_id = $1 AND id = $2', [userId, heroId]);
+    // Controlliamo prima se è l'eroe principale dell'utente
+    let result = await query(
+      `SELECT u.tactics_json 
+       FROM users u 
+       JOIN heroes h ON h.twitch_user_id = u.twitch_user_id 
+       WHERE u.twitch_user_id = $1 AND h.id = $2`,
+      [userId, heroId]
+    );
     
     if (result.rowCount === 0) {
       // Se non è l'eroe principale, cerca nel roster
-      result = await query('SELECT tactics_json FROM roster WHERE user_id = $1 AND hero_id = $2', [userId, heroId]);
+      result = await query('SELECT tactics_json FROM roster WHERE owner_user_id = $1 AND hero_id = $2', [userId, heroId]);
     }
 
     if (result.rowCount === 0) {
@@ -42,14 +48,16 @@ tacticsRoutes.post('/', async (req: Request, res: Response) => {
 
     // Prova ad aggiornare l'eroe principale
     let updateResult = await query(
-      'UPDATE users SET tactics_json = $1 WHERE twitch_user_id = $2 AND id = $3 RETURNING id',
+      `UPDATE users SET tactics_json = $1 
+       WHERE twitch_user_id = $2 AND twitch_user_id = (SELECT twitch_user_id FROM heroes WHERE id = $3) 
+       RETURNING twitch_user_id`,
       [JSON.stringify(rules), userId, heroId]
     );
 
     if (updateResult.rowCount === 0) {
       // Se non era l'eroe principale, aggiorna nel roster
       updateResult = await query(
-        'UPDATE roster SET tactics_json = $1 WHERE user_id = $2 AND hero_id = $3 RETURNING hero_id',
+        'UPDATE roster SET tactics_json = $1 WHERE owner_user_id = $2 AND hero_id = $3 RETURNING hero_id',
         [JSON.stringify(rules), userId, heroId]
       );
     }
