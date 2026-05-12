@@ -3,6 +3,8 @@ import { Hero, HeroClass, RARITY_COLORS, CLASS_EMOJIS, CLASS_LABELS, RARITY_LABE
 import { HintBanner } from './Tooltip';
 import * as api from '../services/api';
 import { PartyData } from '../services/api';
+import { TacticsEditor } from './TacticsEditor';
+import { TacticalRule } from '../types';
 
 // Sinergie definite client-side per mostrare in UI
 interface SynergyDef {
@@ -51,6 +53,7 @@ export function PartyManager({ onStartBattle }: PartyManagerProps) {
   const [addingTo, setAddingTo] = useState<string | null>(null); // partyId per cui stiamo aggiungendo
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editingTacticsFor, setEditingTacticsFor] = useState<string | null>(null); // heroId
 
   useEffect(() => {
     loadData();
@@ -130,6 +133,16 @@ export function PartyManager({ onStartBattle }: PartyManagerProps) {
       await api.deleteParty(partyId);
       await loadData();
       setMessage({ text: 'Party eliminato', type: 'success' });
+    } catch (err: any) {
+      setMessage({ text: err.message, type: 'error' });
+    }
+  }
+
+  async function handleSaveTactics(heroId: string, rules: TacticalRule[]) {
+    try {
+      await api.saveHeroTactics(heroId, rules);
+      setEditingTacticsFor(null);
+      setMessage({ text: 'Tattiche salvate!', type: 'success' });
     } catch (err: any) {
       setMessage({ text: err.message, type: 'error' });
     }
@@ -283,8 +296,20 @@ export function PartyManager({ onStartBattle }: PartyManagerProps) {
                       {hero.displayName}
                     </div>
                     <div style={{ fontSize: 8, color: RARITY_COLORS[hero.rarity] }}>
-                      Lv.{hero.level}
+                      Lv.{hero.level} <span style={{ color: '#ff4081' }}>❤️{(hero as any).bondLevel || 1}</span>
                     </div>
+                    <button
+                      onClick={() => setEditingTacticsFor(hero.id)}
+                      title="Strategia"
+                      style={{
+                        position: 'absolute', top: 1, left: 1,
+                        background: 'rgba(145, 70, 255, 0.2)', border: 'none', color: '#9146ff',
+                        fontSize: 10, cursor: 'pointer', padding: '1px 3px',
+                        borderRadius: 3,
+                      }}
+                    >
+                      🧠
+                    </button>
                     <button
                       onClick={() => handleRemoveHero(party.id, hero.id)}
                       style={{
@@ -370,6 +395,20 @@ export function PartyManager({ onStartBattle }: PartyManagerProps) {
       {message && (
         <div className={`toast ${message.type}`}>{message.text}</div>
       )}
+
+      {editingTacticsFor && (() => {
+        const hero = findHero(editingTacticsFor);
+        if (!hero) return null;
+        return (
+          <div className="modal-overlay">
+            <TacticsEditor 
+              hero={hero} 
+              onSave={(rules) => handleSaveTactics(hero.id, rules)}
+              onClose={() => setEditingTacticsFor(null)}
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }

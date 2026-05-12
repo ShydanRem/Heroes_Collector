@@ -192,3 +192,324 @@
   to { transform: translateX(100px); opacity: 0; }
 }
 
+
+/* ============ TACTICS EDITOR ============ */
+
+.tactics-editor {
+  background: rgba(15, 15, 20, 0.9);
+  border-radius: 12px;
+  border: 1px solid rgba(145, 70, 255, 0.3);
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.tactics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.tactics-header h3 {
+  font-size: 16px;
+  color: #9146ff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tactic-rule-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 0.2s;
+}
+
+.tactic-rule-card:hover {
+  border-color: rgba(145, 70, 255, 0.5);
+}
+
+.rule-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.rule-label {
+  color: #aaa;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 10px;
+  min-width: 30px;
+}
+
+.rule-select {
+  background: #2a2a2a;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  flex: 1;
+  min-width: 100px;
+}
+
+.rule-select:focus {
+  border-color: #9146ff;
+  outline: none;
+}
+
+.rule-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 8px;
+}
+
+.btn-remove-rule {
+  color: #ff5252;
+  background: none;
+  border: none;
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.btn-remove-rule:hover {
+  opacity: 1;
+}
+
+.btn-add-rule {
+  width: 100%;
+  padding: 10px;
+  background: rgba(145, 70, 255, 0.1);
+  border: 1px dashed rgba(145, 70, 255, 0.5);
+  color: #9146ff;
+  border-radius: 8px;
+  margin-top: 15px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.btn-add-rule:hover {
+  background: rgba(145, 70, 255, 0.2);
+}
+
+
+/* ============ CHANNEL PROGRESS BAR ============ */
+
+.channel-progress-container {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 6px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.channel-progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.channel-objective {
+  font-size: 10px;
+  font-weight: bold;
+  color: #adadb8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.channel-level {
+  font-size: 10px;
+  color: #9146ff;
+  font-weight: bold;
+  background: rgba(145, 70, 255, 0.1);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.progress-track {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #9146ff, #bf94ff);
+  border-radius: 3px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.progress-fill::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.progress-glow {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 20px;
+  background: #fff;
+  filter: blur(5px);
+  opacity: 0.5;
+}
+
+/* ============ STREAM OVERLAY (VIDEO) ============ */
+
+.stream-overlay-container {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+  pointer-events: none; /* L’overlay non blocca i click sul player */
+  font-family: "Inter", sans-serif;
+}
+
+/* SPOTLIGHT CARD (Top Right) */
+.overlay-spotlight {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 220px;
+  background: rgba(15, 15, 15, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(145, 70, 255, 0.4);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  transform: translateX(300px);
+  transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.overlay-spotlight.visible {
+  transform: translateX(0);
+}
+
+.spotlight-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #9146ff;
+  background: #222;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.spotlight-info {
+  flex: 1;
+}
+
+.spotlight-tag {
+  font-size: 8px;
+  font-weight: bold;
+  color: #9146ff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.spotlight-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spotlight-stat {
+  font-size: 10px;
+  color: #fbbf24;
+}
+
+/* MINI PROGRESS (Bottom Center) */
+.overlay-mini-progress {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  width: 300px;
+  background: rgba(15, 15, 15, 0.7);
+  backdrop-filter: blur(5px);
+  padding: 8px 15px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.5s ease;
+}
+
+.overlay-mini-progress.visible {
+  transform: translateX(-50%) translateY(0);
+}
+
+.mini-progress-label {
+  font-size: 9px;
+  text-align: center;
+  color: #adadb8;
+  margin-bottom: 4px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+/* EVENT TOAST (Center) */
+.overlay-event-toast {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  background: linear-gradient(135deg, rgba(145, 70, 255, 0.9), rgba(64, 25, 130, 0.9));
+  padding: 15px 30px;
+  border-radius: 50px;
+  color: #fff;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 0 40px rgba(145, 70, 255, 0.4);
+  opacity: 0;
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.overlay-event-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+

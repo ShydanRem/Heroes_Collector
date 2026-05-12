@@ -571,3 +571,24 @@ export async function useBitsForBlessing(blessingId: string): Promise<{ message:
     body: JSON.stringify({ blessingId }),
   });
 }
+
+export async function saveHeroTactics(heroId: string, rules: any[]) {
+  console.log('Salvataggio tattiche per eroe ' + heroId, rules);
+  return request('/tactics', {
+    method: 'POST',
+    body: JSON.stringify({ heroId, rules }),
+  });
+}
+
+export async function getChannelProgress(): Promise<{ progress: ChannelProgress }> {
+  // Mock del progresso globale del canale
+  return { 
+    progress: {
+      currentExp: 7500,
+      maxExp: 10000,
+      level: 1,
+      objectiveName: 'Sblocca il Cancello di Ferro',
+      objectiveEmoji: '??'
+    }
+  };
+}

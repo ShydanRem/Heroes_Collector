@@ -29,6 +29,8 @@ export interface Hero {
   exp: number;
   stats: HeroStats;
   abilities: string[];
+  bondLevel: number; // Livello di legame (1-5)
+  bondExp: number;
 }
 
 export interface UserProfile {
@@ -160,4 +162,29 @@ export interface ActiveBuff {
   endTime: number; // timestamp ms
   name: string;
   emoji: string;
+}
+
+export type TacticalTarget = 'self' | 'ally_lowest_hp' | 'enemy_lowest_hp' | 'enemy_boss' | 'any_enemy';
+export type TacticalCondition = 'always' | 'hp_lt_50' | 'hp_lt_25' | 'is_stunned' | 'has_no_buff';
+export type TacticalAction = 'attack' | 'heal' | 'defend' | 'use_special';
+
+export interface TacticalRule {
+  id: string;
+  target: TacticalTarget;
+  condition: TacticalCondition;
+  action: TacticalAction;
+  enabled: boolean;
+}
+
+export interface HeroTactics {
+  heroId: string;
+  rules: TacticalRule[];
+}
+
+export interface ChannelProgress {
+  currentExp: number;
+  maxExp: number;
+  level: number;
+  objectiveName: string;
+  objectiveEmoji: string;
 }

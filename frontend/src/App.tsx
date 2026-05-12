@@ -12,6 +12,8 @@ import { RaidBoss } from './components/RaidBoss';
 import { Shop } from './components/Shop';
 import { BitShop } from './components/BitShop';
 import { NotificationOverlay } from './components/NotificationOverlay';
+import { ChannelProgressBar } from './components/ChannelProgressBar';
+import { StreamOverlay } from './components/StreamOverlay';
 import { HeroReveal } from './components/HeroReveal';
 import { Tutorial } from './components/Tutorial';
 import * as api from './services/api';
@@ -41,6 +43,9 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('myhero');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [hero, setHero] = useState<Hero | null>(null);
+  const [activeBuffs, setActiveBuffs] = useState<api.ActiveBuff[]>([]);
+  const [channelProgress, setChannelProgress] = useState<api.ChannelProgress | null>(null);
+  const [mode, setMode] = useState<'component' | 'video_overlay'>('component');
   const [loading, setLoading] = useState(true);
   const [authed, setAuthed] = useState(false);
   const [joined, setJoined] = useState(false);
@@ -49,7 +54,6 @@ export default function App() {
   const [showReveal, setShowReveal] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [revealHero, setRevealHero] = useState<Hero | null>(null);
-  const [activeBuffs, setActiveBuffs] = useState<any[]>([]);
 
   useEffect(() => {
     let resolved = false;
@@ -77,6 +81,10 @@ export default function App() {
         window.Twitch.ext.onAuthorized((auth: { token: string; userId: string; channelId: string }) => {
           clearTimeout(timeout);
           onAuth(auth);
+        });
+
+        window.Twitch.ext.onContext((context: any) => {
+          if (context.mode) setMode(context.mode);
         });
       } catch (err) {
         console.error('Errore Twitch ext:', err);
@@ -115,10 +123,14 @@ export default function App() {
 
   async function loadProfile() {
     try {
-      const data = await api.getMyProfile();
-      setProfile(data.profile);
-      setHero(data.hero);
-      setJoined(data.profile.optedIn);
+      const [profileData, progressData] = await Promise.all([
+        api.getMyProfile(),
+        api.getChannelProgress()
+      ]);
+      setProfile(profileData.profile);
+      setHero(profileData.hero);
+      setChannelProgress(progressData.progress);
+      setJoined(profileData.profile.optedIn);
     } catch (err: any) {
       // 404 = utente non registrato, mostra schermata join
       if (!err.message?.includes('404')) {
@@ -156,11 +168,12 @@ export default function App() {
   }
 
   if (loading) {
-    return (
-      <div className="app">
-        <div className="loading"><div className="spinner" /> Caricamento...</div>
-      </div>
-    );
+    return <div className="loading-screen"><div className="spinner"></div>Caricamento...</div>;
+  }
+
+  // Se siamo in modalità Overlay Video, mostriamo solo il widget sulla live
+  if (mode === 'video_overlay') {
+    return <StreamOverlay progress={channelProgress} />;
   }
 
   if (!joined) {
@@ -242,6 +255,8 @@ export default function App() {
           </div>
         )}
       </div>
+
+      <ChannelProgressBar progress={channelProgress} />
 
       {tabRows.map((row, rowIdx) => (
         <div className="tabs" key={rowIdx} style={rowIdx > 0 ? { borderTop: 'none' } : undefined}>
