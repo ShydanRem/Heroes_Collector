@@ -9,6 +9,11 @@ tacticsRoutes.get('/:heroId', async (req: Request, res: Response) => {
     const { heroId } = req.params;
     const userId = req.twitchUser!.user_id;
 
+    // Verifica che heroId sia un UUID valido per evitare errori di Postgres
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(heroId)) {
+      return res.json({ rules: [] });
+    }
+
     // Cerca l'eroe: potrebbe essere il main hero (users) o uno nel roster
     // Controlliamo prima se è l'eroe principale dell'utente
     let result = await query(
@@ -30,9 +35,9 @@ tacticsRoutes.get('/:heroId', async (req: Request, res: Response) => {
     }
 
     res.json({ rules: result.rows[0].tactics_json || [] });
-  } catch (err) {
+  } catch (err: any) {
     console.error('Errore GET /tactics/:heroId:', err);
-    res.status(500).json({ error: 'Errore interno' });
+    res.status(500).json({ error: `Errore interno: ${err.message}` });
   }
 });
 
@@ -44,6 +49,10 @@ tacticsRoutes.post('/', async (req: Request, res: Response) => {
 
     if (!heroId || !Array.isArray(rules)) {
       return res.status(400).json({ error: 'Parametri mancanti o non validi' });
+    }
+
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(heroId)) {
+      return res.status(400).json({ error: 'ID Eroe non valido' });
     }
 
     // Prova ad aggiornare l'eroe principale
@@ -67,8 +76,8 @@ tacticsRoutes.post('/', async (req: Request, res: Response) => {
     }
 
     res.json({ message: 'Tattiche salvate con successo' });
-  } catch (err) {
+  } catch (err: any) {
     console.error('Errore POST /tactics:', err);
-    res.status(500).json({ error: 'Errore interno' });
+    res.status(500).json({ error: `Errore interno: ${err.message}` });
   }
 });
