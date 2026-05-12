@@ -1,6 +1,7 @@
 import React from 'react';
 import { Hero, RARITY_COLORS, RARITY_LABELS, CLASS_LABELS } from '../types';
 import { HeroSprite } from './HeroSprite';
+import { getEffectiveStats } from '../utils/stats';
 
 interface HeroCardProps {
   hero: Hero;
@@ -10,6 +11,7 @@ interface HeroCardProps {
 
 export function HeroCard({ hero, onClick, compact }: HeroCardProps) {
   const rarityColor = RARITY_COLORS[hero.rarity];
+  const effectiveStats = getEffectiveStats(hero);
 
   return (
     <div
@@ -45,27 +47,27 @@ export function HeroCard({ hero, onClick, compact }: HeroCardProps) {
         <div className="hero-stats-grid" style={{ marginTop: 6 }}>
           <div className="stat-item">
             <span className="stat-label">HP</span>
-            <span className="stat-value">{hero.stats.hp}</span>
+            <span className="stat-value">{effectiveStats.hp}</span>
           </div>
           <div className="stat-item">
             <span className="stat-label">ATK</span>
-            <span className="stat-value">{hero.stats.atk}</span>
+            <span className="stat-value">{effectiveStats.atk}</span>
           </div>
           <div className="stat-item">
             <span className="stat-label">DEF</span>
-            <span className="stat-value">{hero.stats.def}</span>
+            <span className="stat-value">{effectiveStats.def}</span>
           </div>
           <div className="stat-item">
             <span className="stat-label">SPD</span>
-            <span className="stat-value">{hero.stats.spd}</span>
+            <span className="stat-value">{effectiveStats.spd}</span>
           </div>
           <div className="stat-item">
             <span className="stat-label">CRIT</span>
-            <span className="stat-value">{hero.stats.crit}%</span>
+            <span className="stat-value">{effectiveStats.crit}%</span>
           </div>
           <div className="stat-item">
             <span className="stat-label">C.DMG</span>
-            <span className="stat-value">{hero.stats.critDmg}%</span>
+            <span className="stat-value">{effectiveStats.critDmg}%</span>
           </div>
         </div>
       )}

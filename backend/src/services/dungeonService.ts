@@ -2,7 +2,7 @@ import { query } from '../config/database';
 import { runBattle, createFighter, BattleLogEntry, BattleOutcome, applySynergies, applyTalentBonuses, ActiveSynergy } from './battleEngine';
 import { generateWaveMonsters } from '../data/monsters';
 import { getPartyHeroes, getActiveParty } from './partyService';
-import { addExpToHero } from './heroService';
+import { addExpToHero, addExpToRosterHero } from './heroService';
 import { addGold, addEssences, consumeEnergy } from './userService';
 import { addWeeklyPoints, POINTS } from './weeklyService';
 import { rollLoot, ITEM_MAP } from '../data/items';
@@ -284,7 +284,11 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
 
   // Distribuisci reward
   for (const heroRow of heroRows) {
-    await addExpToHero(heroRow.id, totalExpReward);
+    if (heroRow.roster_id) {
+      await addExpToRosterHero(heroRow.roster_id, totalExpReward);
+    } else {
+      await addExpToHero(heroRow.id, totalExpReward);
+    }
   }
   await addGold(userId, totalGoldReward);
 
@@ -344,6 +348,7 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
     }
   } catch (err) {
     // Se le tabelle zone non esistono ancora, il dungeon funziona comunque
+    // @ts-ignore
     console.warn('Zone progress non salvato (tabella mancante?):', err);
   }
 
@@ -430,7 +435,7 @@ export async function getBattleHistory(userId: string, limit: number = 10): Prom
     [userId, limit]
   );
 
-  return result.rows.map(row => ({
+  return result.rows.map((row: any) => ({
     id: row.id,
     type: row.battle_type,
     won: row.winner_user_id === userId,

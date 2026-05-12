@@ -66,6 +66,8 @@ export enum StatusEffect {
   SILENZIO = 'silenzio',
   MALEDIZIONE = 'maledizione',
   BENEDIZIONE = 'benedizione',
+  INVULNERABILE = 'invulnerabile',
+  HASTE_ESTREMO = 'haste_estremo',
 }
 
 // ============================================
@@ -181,6 +183,22 @@ export const RARITY_MULTIPLIERS: Record<Rarity, number> = {
   [Rarity.LEGGENDARIO]: 2.3,
   [Rarity.MITICO]: 2.8,
   [Rarity.MASTER]: 3.5,
+};
+
+// Moltiplicatori stats per classe
+export const CLASS_MODIFIERS: Record<HeroClass, { hp: number; atk: number; def: number; spd: number; crit: number }> = {
+  [HeroClass.GUARDIANO]: { hp: 1.4, atk: 0.8, def: 1.3, spd: 0.7, crit: 0.8 },
+  [HeroClass.LAMA]:      { hp: 1.1, atk: 1.3, def: 0.7, spd: 0.9, crit: 1.2 },
+  [HeroClass.ARCANO]:    { hp: 0.7, atk: 1.4, def: 0.6, spd: 0.8, crit: 1.1 },
+  [HeroClass.CUSTODE]:   { hp: 0.9, atk: 0.7, def: 1.0, spd: 1.0, crit: 0.7 },
+  [HeroClass.OMBRA]:     { hp: 0.7, atk: 1.2, def: 0.6, spd: 1.4, crit: 1.5 },
+  [HeroClass.RANGER]:    { hp: 0.9, atk: 1.1, def: 0.8, spd: 1.2, crit: 1.1 },
+  [HeroClass.SCIAMANO]:  { hp: 1.0, atk: 0.9, def: 1.0, spd: 0.9, crit: 0.8 },
+  [HeroClass.CRONO]:     { hp: 0.8, atk: 0.9, def: 0.7, spd: 1.5, crit: 0.9 },
+  [HeroClass.DRAGOON]:   { hp: 1.2, atk: 1.2, def: 1.0, spd: 0.8, crit: 1.0 },
+  [HeroClass.SAMURAI]:   { hp: 1.0, atk: 1.1, def: 1.1, spd: 1.1, crit: 1.2 },
+  [HeroClass.NECROMANTE]:{ hp: 1.1, atk: 1.0, def: 0.9, spd: 0.7, crit: 0.9 },
+  [HeroClass.ALCHIMISTA]:{ hp: 1.0, atk: 1.0, def: 1.0, spd: 1.0, crit: 1.0 },
 };
 
 // Energia necessaria per catturare un eroe per rarità (il giocatore sceglie a che rarità catturare)

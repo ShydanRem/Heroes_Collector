@@ -1,5 +1,5 @@
 import {
-  HeroStats, StatusEffect, TargetType, AbilityType, HeroClass,
+  HeroStats, StatusEffect, TargetType, AbilityType, HeroClass, CLASS_MODIFIERS,
 } from '../types';
 import { ABILITY_MAP } from '../data/abilities';
 import { SYNERGIES, Synergy } from '../data/classes';
@@ -21,6 +21,7 @@ export interface BattleFighter {
   statusEffects: ActiveStatus[];
   isAlive: boolean;
   threat: number; // aggro accumulato
+  customState?: any; // per effetti speciali temporanei come il chain attack
 }
 
 // Ruoli per classe — scalabile, basta aggiungere nuove classi qui
@@ -211,7 +212,7 @@ export function runBattle(
       const enemies = fighter.team === 'attacker' ? defenders : attackers;
       const allies = fighter.team === 'attacker' ? attackers : defenders;
 
-      // Resurrezione: seleziona un alleato morto e riportalo in vita
+      // Special Ultimate Logic BEFORE Target Selection
       if (ability === 'ult_custode') {
         const deadAllies = allies.filter(a => !a.isAlive);
         if (deadAllies.length > 0) {
@@ -220,23 +221,52 @@ export function runBattle(
           target.currentHp = restoredHp;
           target.isAlive = true;
           target.statusEffects = [];
-          log.push({
-            turn, actor: fighter.name, actorId: fighter.id, action: abilityDef.name,
-            target: target.name, targetId: target.id, heal: restoredHp,
-            message: `${fighter.name} usa Resurrezione! ${target.name} torna in vita con ${restoredHp} HP!`,
-          });
+          log.push({ turn, actor: fighter.name, actorId: fighter.id, action: abilityDef.name, target: target.name, targetId: target.id, heal: restoredHp, message: `${fighter.name} usa Resurrezione! ${target.name} torna in vita con ${restoredHp} HP!` });
         } else {
-          // Nessun alleato morto — usa cura base invece
-          log.push({
-            turn, actor: fighter.name, actorId: fighter.id, action: 'Preghiera',
-            target: fighter.name, targetId: fighter.id,
-            message: `${fighter.name} prega, ma nessun alleato ha bisogno di resurrezione.`,
-          });
+          for (const ally of allies.filter(a => a.isAlive)) {
+            ally.statusEffects.push({ effect: StatusEffect.SCUDO, duration: 2, power: 1, source: fighter.id });
+          }
+          log.push({ turn, actor: fighter.name, actorId: fighter.id, action: abilityDef.name, target: 'Party', message: `${fighter.name} usa Resurrezione ma tutti sono vivi! Il party ottiene uno Scudo.` });
         }
-        continue; // Skip al prossimo fighter, l'azione è completa
+        continue;
+      }
+      
+      if (ability === 'ult_guardiano') {
+        fighter.statusEffects.push({ effect: StatusEffect.INVULNERABILE as any, duration: 2, power: 1, source: fighter.id });
+        for (const ally of allies.filter(a => a.isAlive)) {
+          const healAmount = Math.floor(ally.maxHp * 0.2);
+          ally.currentHp = Math.min(ally.maxHp, ally.currentHp + healAmount);
+          log.push({ turn, actor: fighter.name, actorId: fighter.id, action: abilityDef.name, target: ally.name, targetId: ally.id, heal: healAmount, message: `${fighter.name} usa Bastione Immortale! ${ally.name} recupera ${healAmount} HP.` });
+        }
+        log.push({ turn, actor: fighter.name, actorId: fighter.id, action: abilityDef.name, target: fighter.name, message: `${fighter.name} diventa INVULNERABILE per 2 turni!` });
+        continue;
       }
 
-      const targets = selectTargets(abilityDef.target, fighter, enemies, allies);
+      if (ability === 'ult_crono') {
+        for (const ally of allies.filter(a => a.isAlive)) {
+          ally.statusEffects.push({ effect: StatusEffect.HASTE_ESTREMO as any, duration: 1, power: 1, source: fighter.id });
+        }
+        log.push({ turn, actor: fighter.name, actorId: fighter.id, action: abilityDef.name, target: 'Party', message: `${fighter.name} infrange il tempo! Il party ottiene HASTE ESTREMO e agirà due volte!` });
+        continue;
+      }
+
+      if (ability === 'ult_sciamano') {
+        for (const ally of allies.filter(a => a.isAlive)) {
+          const healAmount = Math.floor(ally.maxHp * 0.2);
+          ally.currentHp = Math.min(ally.maxHp, ally.currentHp + healAmount);
+          log.push({ turn, actor: fighter.name, actorId: fighter.id, action: abilityDef.name, target: ally.name, targetId: ally.id, heal: healAmount, message: `${fighter.name} usa Spiriti Ancestrali: cura ${ally.name} per ${healAmount} HP.` });
+        }
+        for (const enemy of enemies.filter(e => e.isAlive)) {
+          enemy.statusEffects.push({ effect: StatusEffect.VELENO, duration: 3, power: getEffectiveStat(fighter, 'atk') * 0.2, source: fighter.id });
+          enemy.statusEffects.push({ effect: StatusEffect.MALEDIZIONE, duration: 3, power: 1, source: fighter.id });
+          log.push({ turn, actor: fighter.name, actorId: fighter.id, action: abilityDef.name, target: enemy.name, targetId: enemy.id, message: `${fighter.name} avvelena e maledice ${enemy.name} con gli Spiriti Ancestrali!` });
+        }
+        continue;
+      }
+
+
+      let targets = selectTargets(abilityDef.target, fighter, enemies, allies, ability);
+      let totalAbilityDamage = 0;
 
       for (const target of targets) {
         if (!target.isAlive) continue;
@@ -244,10 +274,12 @@ export function runBattle(
 
         if (abilityDef.type === AbilityType.ATTACCO || abilityDef.type === AbilityType.ULTIMATE) {
           const atk = getEffectiveStat(fighter, 'atk');
-          const def = getEffectiveStat(target, 'def');
+          let def = getEffectiveStat(target, 'def');
+          if (ability === 'ult_ombra') def = 0; // Ignora 100% DEF
+          else if (ability === 'ult_arcano') def = Math.floor(def / 2); // Ignora 50% DEF
 
-          // Evasione
-          if (hasStatus(target, StatusEffect.EVASIONE)) {
+          // Evasione (Ranger la ignora con la Ultimate)
+          if (hasStatus(target, StatusEffect.EVASIONE) && ability !== 'ult_ranger') {
             log.push({
               turn, actor: fighter.name, actorId: fighter.id, action: abilityDef.name,
               target: target.name, targetId: target.id,
@@ -273,7 +305,9 @@ export function runBattle(
 
           // Critico
           let isCrit = false;
-          const critChance = getEffectiveStat(fighter, 'crit');
+          let critChance = getEffectiveStat(fighter, 'crit');
+          if (ability === 'ult_lama') critChance = 100; // Garantito
+
           if (Math.random() * 100 < critChance) {
             damage = Math.floor(damage * getEffectiveStat(fighter, 'critDmg') / 100);
             isCrit = true;
@@ -291,21 +325,24 @@ export function runBattle(
             damage = Math.floor(damage * 1.3);
           }
 
-          // Riflesso
-          if (hasStatus(target, StatusEffect.RIFLESSO)) {
+          // Riflesso (Dragoon lo ignora con la Ultimate)
+          if (hasStatus(target, StatusEffect.RIFLESSO) && ability !== 'ult_dragoon') {
             const reflected = Math.floor(damage * 0.3);
             fighter.currentHp = Math.max(0, fighter.currentHp - reflected);
             if (fighter.currentHp <= 0) fighter.isAlive = false;
           }
 
-          // Scudo
-          if (hasStatus(target, StatusEffect.SCUDO)) {
-            damage = Math.floor(damage * 0.5);
+          // Scudo (INVULNERABILE annulla tutto il danno)
+          if (hasStatus(target, StatusEffect.INVULNERABILE as any)) {
+             damage = 0;
+          } else if (hasStatus(target, StatusEffect.SCUDO)) {
+             damage = Math.floor(damage * 0.5);
           }
 
           // Applica danno
           target.currentHp = Math.max(0, target.currentHp - damage);
           totalDamageDealt += damage;
+          totalAbilityDamage += damage;
 
           // Vampirismo modificatore: cura l'attaccante del 15% del danno inflitto
           if (options?.vampirismo && attackers.includes(fighter) && damage > 0) {
@@ -325,6 +362,14 @@ export function runBattle(
           const killed = target.currentHp <= 0;
           if (killed) {
             target.isAlive = false;
+            // Samurai Chain Attack
+            if (ability === 'ult_mille_lame' && fighter.customState?.chainCount < 3) {
+               const aliveEnemies = enemies.filter(e => e.isAlive && e.id !== target.id);
+               if (aliveEnemies.length > 0) {
+                 targets.push(aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)]);
+                 fighter.customState = { chainCount: (fighter.customState?.chainCount || 0) + 1 };
+               }
+            }
           }
 
           log.push({
@@ -332,6 +377,14 @@ export function runBattle(
             target: target.name, targetId: target.id, damage, isCrit, killed,
             message: `${fighter.name} usa ${abilityDef.name} su ${target.name} per ${damage} danni${isCrit ? ' (CRITICO!)' : ''}${killed ? ' - SCONFITTO!' : ''}`,
           });
+          
+          // Alchimista: debuff random se colpito con la bomba
+          if (ability === 'ult_bomba_alchemica' && !killed) {
+             const debuffs = [StatusEffect.VELENO, StatusEffect.CECITA, StatusEffect.SANGUINAMENTO, StatusEffect.RALLENTAMENTO];
+             const randomDebuff = debuffs[Math.floor(Math.random() * debuffs.length)];
+             target.statusEffects.push({ effect: randomDebuff, duration: 2, power: getEffectiveStat(fighter, 'atk') * 0.2, source: fighter.id });
+             log.push({ turn, actor: fighter.name, action: abilityDef.name, target: target.name, targetId: target.id, message: `${target.name} subisce ${randomDebuff} dalla Bomba Alchemica!` });
+          }
 
         } else if (abilityDef.type === AbilityType.SUPPORTO) {
           if (abilityDef.power > 0) {
@@ -398,6 +451,20 @@ export function runBattle(
             });
           }
         }
+      } // chiude: for (const target of targets)
+
+      // Special Post-Attack Logic per le Supreme
+      if (ability === 'ult_eclissi_anima' && totalAbilityDamage > 0) {
+        const healAmount = Math.floor(totalAbilityDamage * 0.3);
+        for (const ally of allies.filter(a => a.isAlive)) {
+          ally.currentHp = Math.min(ally.maxHp, ally.currentHp + healAmount);
+        }
+        log.push({ turn, actor: fighter.name, actorId: fighter.id, action: abilityDef.name, target: 'Party', message: `${fighter.name} drena le anime nemiche! Il party recupera ${healAmount} HP dal Vampirismo di Gruppo.` });
+      }
+
+      // Cleanup
+      if ((fighter as any).customState?.chainCount) {
+         (fighter as any).customState.chainCount = 0;
       }
 
       // === CHECK FINE DOPO OGNI FIGHTER ===
@@ -486,7 +553,7 @@ function chooseAbility(
   if ((role === 'healer' || role === 'support') && allyLowHp.length > 0) {
     const healAbility = availableAbilities.find(id => {
       const a = ABILITY_MAP.get(id);
-      return a?.type === AbilityType.SUPPORTO && a.power > 0;
+      return a && a.type === AbilityType.SUPPORTO && a.power > 0;
     });
     if (healAbility) return healAbility;
   }
@@ -496,7 +563,7 @@ function chooseAbility(
   if (allyCritical) {
     const healAbility = availableAbilities.find(id => {
       const a = ABILITY_MAP.get(id);
-      return a?.type === AbilityType.SUPPORTO && a.power > 0;
+      return a && a.type === AbilityType.SUPPORTO && a.power > 0;
     });
     if (healAbility) return healAbility;
   }
@@ -515,12 +582,14 @@ function chooseAbility(
   // Scelta pesata basata su ruolo
   const weighted = availableAbilities.map(id => {
     const a = ABILITY_MAP.get(id);
+    if (!a) return { id, weight: 0 };
+    
     let weight = 1;
-    if (a?.type === AbilityType.ULTIMATE) weight = 3;
-    else if (a?.type === AbilityType.ATTACCO && a.power > 1.5) weight = 2;
-    else if (a?.type === AbilityType.DEBUFF) weight = (role === 'support' || role === 'utility') ? 2 : 1.2;
-    else if (a?.type === AbilityType.DIFESA) weight = (role === 'tank') ? 2 : 0.5;
-    else if (a?.type === AbilityType.SUPPORTO) weight = (role === 'healer' || role === 'support') ? 1.8 : 0.5;
+    if (a.type === AbilityType.ULTIMATE) weight = 3;
+    else if (a.type === AbilityType.ATTACCO && a.power > 1.5) weight = 2;
+    else if (a.type === AbilityType.DEBUFF) weight = (role === 'support' || role === 'utility') ? 2 : 1.2;
+    else if (a.type === AbilityType.DIFESA) weight = (role === 'tank') ? 2 : 0.5;
+    else if (a.type === AbilityType.SUPPORTO) weight = (role === 'healer' || role === 'support') ? 1.8 : 0.5;
     return { id, weight };
   });
 
@@ -542,7 +611,8 @@ function selectTargets(
   targetType: TargetType,
   fighter: BattleFighter,
   enemies: BattleFighter[],
-  allies: BattleFighter[]
+  allies: BattleFighter[],
+  abilityId?: string
 ): BattleFighter[] {
   const aliveEnemies = enemies.filter(e => e.isAlive);
   const aliveAllies = allies.filter(a => a.isAlive);
@@ -567,6 +637,14 @@ function selectTargets(
 
     case TargetType.CASUALE_NEMICO:
       if (aliveEnemies.length === 0) return [];
+      if (abilityId === 'ult_lama') {
+        const hits = [];
+        for (let i = 0; i < 5; i++) {
+          const alive = enemies.filter(e => e.isAlive);
+          if (alive.length > 0) hits.push(alive[Math.floor(Math.random() * alive.length)]);
+        }
+        return hits;
+      }
       return [aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)]];
 
     default:
@@ -675,6 +753,9 @@ function getEffectiveStat(fighter: BattleFighter, stat: keyof HeroStats): number
         if (stat === 'spd') value *= 0.3;
         if (stat === 'def') value *= 1.2;
         break;
+      case StatusEffect.HASTE_ESTREMO as string: // cast needed since it's a new enum value maybe
+        if (stat === 'spd') value *= 10.0;
+        break;
     }
   }
 
@@ -745,18 +826,23 @@ export function createFighter(
   heroData: any,
   team: 'attacker' | 'defender'
 ): BattleFighter {
-  const hp = heroData.hp || 100;
+  const heroClass = (heroData.hero_class || heroData.heroClass || 'lama') as HeroClass;
+  const mod = CLASS_MODIFIERS[heroClass] || { hp: 1, atk: 1, def: 1, spd: 1, crit: 1 };
+  
+  const baseHp = heroData.hp || 100;
+  const hp = Math.floor(baseHp * mod.hp);
+
   return {
     id: heroData.id,
     name: heroData.display_name || heroData.displayName || heroData.name || 'Unknown',
     team,
-    heroClass: heroData.hero_class || heroData.heroClass || 'lama',
+    heroClass,
     stats: {
       hp,
-      atk: heroData.atk || 20,
-      def: heroData.def || 10,
-      spd: heroData.spd || 20,
-      crit: heroData.crit || 5,
+      atk: Math.floor((heroData.atk || 20) * mod.atk),
+      def: Math.floor((heroData.def || 10) * mod.def),
+      spd: Math.floor((heroData.spd || 20) * mod.spd),
+      crit: Number(((heroData.crit || 5) * mod.crit).toFixed(1)),
       critDmg: heroData.crit_dmg || heroData.critDmg || 150,
     },
     currentHp: heroData.currentHp ?? hp,

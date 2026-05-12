@@ -62,7 +62,8 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
   const [fighters, setFighters] = useState<Map<string, ArenaFighter>>(new Map());
   const [activeActorId, setActiveActorId] = useState<string | null>(null);
   const [activeTargetId, setActiveTargetId] = useState<string | null>(null);
-  const [actionType, setActionType] = useState<'melee' | 'magic' | 'heal' | 'buff' | null>(null);
+  const [actionType, setActionType] = useState<'melee' | 'magic' | 'heal' | 'buff' | 'ultimate' | null>(null);
+  const [isUltimateActive, setIsUltimateActive] = useState(false);
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
   const [bubbles, setBubbles] = useState<BattleBubble[]>([]);
   const [comboCount, setComboCount] = useState(0);
@@ -144,6 +145,14 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
     return () => clearTimeout(timer);
   }, [bubbles]);
 
+  // Audio Hook Placeholder per le Supreme
+  useEffect(() => {
+    if (isUltimateActive) {
+      console.log('[AUDIO] Riproduzione suono Suprema: BWOOOSH!');
+      // window.playBattleSound?.('ultimate_cast'); // Futura integrazione audio
+    }
+  }, [isUltimateActive]);
+
   // Risolve l'ID di actor o target dall'entry del log.
   // Usa SOLO actorId/targetId (gli ID reali dal backend).
   function resolveId(entry: BattleLogEntry, field: 'actor' | 'target'): string | null {
@@ -186,8 +195,23 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
       }
     }
 
-    // Determina tipo azione dall'entry
-    if (entry.heal) {
+    const ultimateNames = [
+      'Bastione Immortale', 'Danza della Morte', 'Apocalisse Arcana', 'Resurrezione',
+      'Eclissi Totale', 'Pioggia Infernale', 'Spiriti Ancestrali', 'Rottura Dimensionale',
+      'Pioggia di Lance', 'Mille Lame', 'Eclissi dell\'Anima', 'Bomba Alchemica'
+    ];
+
+    if (entry.action && ultimateNames.some(name => entry.action.includes(name))) {
+      setActionType('ultimate');
+      setIsUltimateActive(true);
+      setIsShaking(true);
+      setIsFlashing(true);
+      setTimeout(() => {
+        setIsUltimateActive(false);
+        setIsShaking(false);
+        setIsFlashing(false);
+      }, 1000); // 1s di freeze visivo per le supreme
+    } else if (entry.heal) {
       setActionType('heal');
     } else if (entry.statusApplied && !entry.damage) {
       setActionType('buff');
@@ -479,14 +503,15 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
   const rightFighters = rightTeam.map(f => fighters.get(f.id) || f);
 
   return (
-    <div className={`battle-arena ${isShaking ? 'screen-shake' : ''}`}>
-      <div className={`arena-field ${isFlashing ? 'impact-flash' : ''} ${(isShaking || activeTargetId) ? 'zoom-focus' : ''}`}>
+    <div className={`battle-arena ${isShaking ? 'screen-shake' : ''} ${isUltimateActive ? 'ultimate-active' : ''}`}>
+      <div className={`arena-field ${isFlashing ? 'impact-flash' : ''} ${(isShaking || activeTargetId) ? 'zoom-focus' : ''} ${isUltimateActive ? 'ultimate-dark-bg' : ''}`}>
         <div className="arena-bg" />
         {/* Linea orizzonte / terreno */}
         <div className="arena-ground" />
 
         {/* Effects Layer */}
         <div className={`screen-impact ${isImpactActive ? 'impact-active' : ''}`} />
+        <div className={`ultimate-flash ${isUltimateActive ? 'active' : ''}`} />
 
         {/* Combo Display */}
         {comboCount >= 2 && (
@@ -511,7 +536,7 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
 
       {/* Messaggio */}
       <div className="arena-message">
-        <div className="arena-message-text">{currentMessage || 'Preparazione...'}</div>
+        <div className={`arena-message-text ${isUltimateActive ? 'ultimate-message-text' : ''}`}>{currentMessage || 'Preparazione...'}</div>
         <div className="arena-progress">
           <div style={{
             width: `${(currentStep / Math.max(1, log.length)) * 100}%`,

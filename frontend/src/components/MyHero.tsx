@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Hero, HeroClass, UserProfile, Ability, RARITY_COLORS, RARITY_LABELS, CLASS_LABELS, CLASS_EMOJIS } from '../types';
+import { Hero, HeroClass, UserProfile, Ability, Rarity, RARITY_COLORS, RARITY_LABELS, CLASS_LABELS, CLASS_EMOJIS } from '../types';
 import { HeroSprite } from './HeroSprite';
+import { getEffectiveStats } from '../utils/stats';
 import { Missions } from './Missions';
 import { Achievements } from './Achievements';
 import { DailyLogin } from './DailyLogin';
@@ -82,11 +83,12 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
   const rarityColor = RARITY_COLORS[hero.rarity];
   const expNeeded = expForLevel(hero.level);
   const expPercent = Math.min(100, Math.floor((hero.exp / expNeeded) * 100));
+  const effectiveStats = getEffectiveStats(hero);
 
   // Calcolo Combat Power (CP) approssimativo
   const calculateCP = () => {
     if (!hero) return 0;
-    const { atk, def, hp, spd, crit, critDmg } = hero.stats;
+    const { atk, def, hp, spd, crit, critDmg } = effectiveStats;
     const bonusAtk = equipBonuses.atk || 0;
     const bonusDef = equipBonuses.def || 0;
     const bonusHp = equipBonuses.hp || 0;
@@ -95,10 +97,6 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
     const critMult = 1 + (crit / 100) * (critDmg / 100);
     return Math.floor(baseCP * critMult);
   };
-
-  const rarityColor = RARITY_COLORS[hero.rarity];
-  const expNeeded = expForLevel(hero.level);
-  const expPercent = Math.min(100, Math.floor((hero.exp / expNeeded) * 100));
   const combatPower = calculateCP();
 
   return (
@@ -187,7 +185,7 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
           <div className="animate-fadeIn">
             <div className="stat-grid-premium">
               {(['atk', 'def', 'hp', 'spd', 'crit', 'critDmg'] as const).map(stat => {
-                const base = hero.stats[stat];
+                const base = effectiveStats[stat];
                 const bonus = equipBonuses[stat] || 0;
                 const suffix = stat === 'crit' || stat === 'critDmg' ? '%' : '';
                 return (
@@ -206,11 +204,14 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
               <h3 style={{ fontSize: 12, fontWeight: 900, color: '#adadb8', marginBottom: 10, textTransform: 'uppercase' }}>Abilità</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {abilities.map((ab) => (
-                  <div key={ab.id} className="ability-card-premium" style={{ borderLeftColor: ab.type === 'ultimate' ? '#ffd700' : rarityColor }}>
-                    <div style={{ fontSize: 24 }}>{ab.type === 'attacco' ? '⚔️' : ab.type === 'supporto' ? '🛡️' : '✨'}</div>
+                  <div key={ab.id} className={`ability-card-premium ${ab.type === 'ultimate' ? 'supreme-card-glow' : ''}`} style={{ borderLeftColor: ab.type === 'ultimate' ? '#ffd700' : rarityColor }}>
+                    <div style={{ fontSize: 24 }}>{ab.type === 'attacco' ? '⚔️' : ab.type === 'supporto' ? '🛡️' : ab.type === 'ultimate' ? '🌟' : '✨'}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontWeight: 800, fontSize: 12 }}>{ab.name}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontWeight: 800, fontSize: 12 }}>{ab.name}</span>
+                          {ab.type === 'ultimate' && <span className="supreme-badge">Suprema</span>}
+                        </div>
                         <span style={{ fontSize: 8, background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 4 }}>
                           {ab.cooldown > 0 ? `${ab.cooldown}T CD` : 'PASSIVA'}
                         </span>
@@ -237,7 +238,7 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
                     <div style={{ 
                       width: 40, height: 40, background: '#0e0e10', borderRadius: 8, 
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
-                      border: item ? `1px solid ${RARITY_COLORS[item.rarity]}` : '1px dashed #444'
+                      border: item ? `1px solid ${RARITY_COLORS[item.rarity as Rarity]}` : '1px dashed #444'
                     }}>
                       {item ? (slot === 'arma' ? '⚔️' : slot === 'armatura' ? '🛡️' : '💍') : '＋'}
                     </div>
@@ -245,7 +246,7 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
                       {item ? (
                         <>
                           <div style={{ fontWeight: 800, fontSize: 13 }}>{item.name}</div>
-                          <div style={{ fontSize: 9, color: RARITY_COLORS[item.rarity], textTransform: 'uppercase' }}>{item.rarity}</div>
+                          <div style={{ fontSize: 9, color: RARITY_COLORS[item.rarity as Rarity], textTransform: 'uppercase' }}>{item.rarity}</div>
                         </>
                       ) : (
                         <div style={{ fontSize: 11, color: '#555' }}>Slot {slot} vuoto</div>
@@ -253,8 +254,8 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
                     </div>
                     {item?.statBonuses && (
                       <div style={{ textAlign: 'right' }}>
-                        {Object.entries(item.statBonuses).map(([s, v]) => (
-                          <div key={s} style={{ color: '#22c55e', fontSize: 10, fontWeight: 800 }}>+{v} {STAT_LABELS[s]}</div>
+                        {Object.entries(item.statBonuses as Record<string, number>).map(([s, v]) => (
+                          <div key={s} style={{ color: '#22c55e', fontSize: 10, fontWeight: 800 }}>+{v as number} {STAT_LABELS[s]}</div>
                         ))}
                       </div>
                     )}

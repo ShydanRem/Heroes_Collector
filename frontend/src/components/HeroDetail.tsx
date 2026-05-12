@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Hero, Ability, ClassInfo, Rarity, HeroClass, RARITY_COLORS, RARITY_LABELS, CLASS_EMOJIS, CLASS_LABELS, RARITY_ORDER, CAPTURE_ENERGY_COST } from '../types';
 import * as api from '../services/api';
 import { CaptureMinigame } from './CaptureMinigame';
+import { getEffectiveStats } from '../utils/stats';
 
 interface HeroDetailProps {
   heroId: string;
@@ -72,6 +73,7 @@ export function HeroDetail({ heroId, onBack, onCapture, showCaptureButton }: Her
   }
 
   const rarityColor = RARITY_COLORS[hero.rarity as Rarity];
+  const effectiveStats = getEffectiveStats(hero);
 
   return (
     <div className="hero-detail">
@@ -89,27 +91,27 @@ export function HeroDetail({ heroId, onBack, onCapture, showCaptureButton }: Her
         <div className="stats-detail-grid">
           <div className="stat-detail-item">
             <span className="stat-detail-label">HP</span>
-            <span>{hero.stats.hp}</span>
+            <span>{effectiveStats.hp}</span>
           </div>
           <div className="stat-detail-item">
             <span className="stat-detail-label">ATK</span>
-            <span>{hero.stats.atk}</span>
+            <span>{effectiveStats.atk}</span>
           </div>
           <div className="stat-detail-item">
             <span className="stat-detail-label">DEF</span>
-            <span>{hero.stats.def}</span>
+            <span>{effectiveStats.def}</span>
           </div>
           <div className="stat-detail-item">
             <span className="stat-detail-label">SPD</span>
-            <span>{hero.stats.spd}</span>
+            <span>{effectiveStats.spd}</span>
           </div>
           <div className="stat-detail-item">
             <span className="stat-detail-label">CRIT</span>
-            <span>{hero.stats.crit}%</span>
+            <span>{effectiveStats.crit}%</span>
           </div>
           <div className="stat-detail-item">
             <span className="stat-detail-label">CRIT DMG</span>
-            <span>{hero.stats.critDmg}%</span>
+            <span>{effectiveStats.critDmg}%</span>
           </div>
         </div>
       </div>

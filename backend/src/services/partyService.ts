@@ -1,5 +1,6 @@
 import { query } from '../config/database';
 import { Party, MAX_PARTY_SIZE } from '../types';
+import { calculateStats } from './heroGenerator';
 
 /**
  * Crea un nuovo party per l'utente.
@@ -151,13 +152,33 @@ export async function deleteParty(userId: string, partyId: string): Promise<bool
  */
 export async function getPartyHeroes(partyId: string): Promise<any[]> {
   const result = await query(
-    `SELECT h.* FROM heroes h
+    `SELECT h.*, r.capture_rarity, r.capture_level, r.exp as roster_exp, r.ability_ids as roster_abilities, r.id as roster_id FROM heroes h
      JOIN parties p ON h.id = ANY(p.hero_ids)
+     LEFT JOIN roster r ON r.hero_id = h.id AND r.owner_user_id = p.user_id
      WHERE p.id = $1
      ORDER BY array_position(p.hero_ids, h.id)`,
     [partyId]
   );
-  return result.rows;
+  
+  return result.rows.map((row: any) => {
+    // Se è un eroe del roster (catturato), sovrascrivi livello, exp, rarità e abilità
+    if (row.roster_id) {
+      row.level = row.capture_level || 1;
+      row.exp = row.roster_exp || 0;
+      row.rarity = row.capture_rarity || row.rarity;
+      row.ability_ids = row.roster_abilities || row.ability_ids;
+      
+      // Ricalcola le stats per il combattimento!
+      const stats = calculateStats(row.hero_class, row.rarity, row.level);
+      row.hp = stats.hp;
+      row.atk = stats.atk;
+      row.def = stats.def;
+      row.spd = stats.spd;
+      row.crit = stats.crit;
+      row.crit_dmg = stats.critDmg;
+    }
+    return row;
+  });
 }
 
 function rowToParty(row: any): Party {
