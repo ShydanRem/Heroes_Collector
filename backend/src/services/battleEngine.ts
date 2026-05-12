@@ -558,7 +558,7 @@ function chooseAbility(
       if (conditionMet) {
         // Cerca abilità corrispondente all'azione
         const actionType = rule.action; // 'attack', 'heal', 'defend', 'use_special'
-        let chosenAbilities = [];
+        let chosenAbilities: string[] = [];
         
         if (actionType === 'attack') {
           chosenAbilities = availableAbilities.filter(id => ABILITY_MAP.get(id)?.type === AbilityType.ATTACCO);

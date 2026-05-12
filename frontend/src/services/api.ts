@@ -581,6 +581,10 @@ export async function saveHeroTactics(heroId: string, rules: any[]) {
   });
 }
 
+export async function getHeroTactics(heroId: string): Promise<{ rules: any[] }> {
+  return request(`/tactics/${heroId}`);
+}
+
 export async function getChannelProgress(): Promise<{ progress: ChannelProgress }> {
   // Mock del progresso globale del canale
   return { 
