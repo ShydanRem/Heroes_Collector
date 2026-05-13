@@ -24,43 +24,134 @@ function getCustomSprite(name: string | undefined, color: string, dark: string, 
   if (lower === 'shydanrem') {
     return (
       <g filter="url(#shadow)">
+        {/* === MANTELLO DIETRO === */}
+        <g className="part-cape">
+          <path
+            d="M22 26 Q17 30 16 38 Q15 46 19 54 Q22 49 23 43 Q24 36 24 30 Z"
+            fill={dark}
+          />
+          <path
+            d="M42 26 Q47 30 48 38 Q49 46 45 54 Q42 49 41 43 Q40 36 40 30 Z"
+            fill={dark}
+          />
+          {/* Bordo mantello colore rarità */}
+          <path d="M19 54 Q22 49 23 43 L24 43 Q23 50 21 55 Z" fill={color} />
+          <path d="M45 54 Q42 49 41 43 L40 43 Q41 50 43 55 Z" fill={color} />
+        </g>
+
         <g className="part-body">
-          {/* === GAMBE E PANTALONI === */}
-          <rect x="25" y="46" width="6" height="11" rx="2" fill="#a1887f" />
-          <rect x="33" y="46" width="6" height="11" rx="2" fill="#a1887f" />
-          <rect x="24" y="55" width="8" height="5" rx="2" fill="#3e2723" />
-          <rect x="32" y="55" width="8" height="5" rx="2" fill="#3e2723" />
-          
-          {/* === CORPO === */}
-          <rect x="24" y="26" width="16" height="18" rx="2" fill="#2e7d32" />
-          <path d="M24 26 L24 44 L28 44 L28 26 Z" fill="#3e2723" />
-          <path d="M36 26 L36 44 L40 44 L40 26 Z" fill="#3e2723" />
-          <rect x="23" y="43" width="18" height="3" rx="1" fill="#4e342e" />
+          {/* === GAMBE === */}
+          <rect x="25" y="46" width="6" height="11" rx="2" fill="#3e2723" />
+          <rect x="33" y="46" width="6" height="11" rx="2" fill="#3e2723" />
+          {/* Placche metalliche ginocchia */}
+          <rect x="24.5" y="49" width="7" height="2.2" rx="1" fill="url(#metal-grad)" />
+          <rect x="32.5" y="49" width="7" height="2.2" rx="1" fill="url(#metal-grad)" />
+          {/* Stivali con trim colore rarità */}
+          <rect x="24" y="55" width="8" height="5" rx="2" fill="#1a0e0c" />
+          <rect x="32" y="55" width="8" height="5" rx="2" fill="#1a0e0c" />
+          <rect x="24" y="55" width="8" height="1" fill={color} />
+          <rect x="32" y="55" width="8" height="1" fill={color} />
+
+          {/* === TORSO === */}
+          {/* Sotto-tunica scura */}
+          <rect x="24" y="26" width="16" height="18" rx="2" fill="#1b5e20" />
+          {/* Corazza pettorale */}
+          <path d="M25 27 L32 25 L39 27 L38 39 L32 41 L26 39 Z" fill="#2e7d32" />
+          {/* Linea centrale corazza */}
+          <line x1="32" y1="26" x2="32" y2="40" stroke="#1a0e0c" strokeWidth="0.6" />
+          {/* Gemma pulsante */}
+          <circle cx="32" cy="30" r="1.5" fill={color}>
+            <animate attributeName="opacity" values="1;0.55;1" dur="2.4s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="32" cy="30" r="0.6" fill={light} />
+
+          {/* Spallacci appuntiti */}
+          <ellipse cx="22.5" cy="27" rx="4" ry="2.8" fill="url(#metal-grad)" />
+          <ellipse cx="41.5" cy="27" rx="4" ry="2.8" fill="url(#metal-grad)" />
+          <path d="M19 27 L21 23 L23 27 Z" fill={color} />
+          <path d="M41 27 L43 23 L45 27 Z" fill={color} />
+
+          {/* Cintura + fibbia */}
+          <rect x="23" y="43" width="18" height="3" rx="1" fill="#3e2723" />
+          <rect x="30" y="42.5" width="4" height="4" rx="0.5" fill="url(#metal-grad)" />
+          <circle cx="32" cy="44.5" r="1" fill={color} />
         </g>
 
         <g className="part-head">
           <circle cx="32" cy="18" r="8" fill="#ffd5b4" />
-          <ellipse cx="30" cy="13" rx="4" ry="2.5" fill="#ffe8d0" opacity="0.3" />
-          {/* Occhi */}
-          <circle cx="29.3" cy="18.5" r="1.2" fill="url(#eye-glow)" />
-          <circle cx="35.3" cy="18.5" r="1.2" fill="url(#eye-glow)" />
-          {/* Barba */}
-          <path d="M26.5 22 Q26 25 29 27 Q31 28 32 28 Q33 28 35 27 Q38 25 37.5 22" fill="#6d4c41" />
+          <ellipse cx="30" cy="13" rx="4" ry="2.5" fill="#ffe8d0" opacity="0.4" />
+          {/* Capigliatura scura */}
+          <path d="M24 14 Q24 9 32 8 Q40 9 40 14 L40 17 L24 17 Z" fill="#1a0e0c" />
+          {/* Bandana colore rarità */}
+          <rect x="24" y="14.4" width="16" height="1.8" fill={color} />
+          <rect x="24" y="14.4" width="16" height="0.4" fill={light} />
+          {/* Occhi che pulsano */}
+          <circle cx="29.3" cy="18.8" r="1.3" fill="url(#eye-glow)">
+            <animate attributeName="r" values="1.1;1.4;1.1" dur="3s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="35.3" cy="18.8" r="1.3" fill="url(#eye-glow)">
+            <animate attributeName="r" values="1.1;1.4;1.1" dur="3s" repeatCount="indefinite" />
+          </circle>
+          {/* Barba scolpita */}
+          <path d="M26.5 22 Q26 26 29 28 Q31 29 32 29 Q33 29 35 28 Q38 26 37.5 22 L36 22 Q36 24 33 25 Q31 25 28 24 Z" fill="#3e2723" />
+          <path d="M27 23 Q27 25 29.5 26.5 Q31 27 32 27 Q33 27 34.5 26.5 Q37 25 37 23" fill="#6d4c41" />
         </g>
 
+        {/* === BRACCIO SINISTRO + SPADA === */}
         <g className="part-arm-l">
-          <rect x="16" y="28" width="8" height="5" rx="2.5" fill="#ffd5b4" />
-          <g transform="rotate(15 15 30.5)">
-            <rect x="13.5" y="10" width="3" height="25" rx="1" fill="#ccc" />
-            <rect x="11" y="32" width="8" height="2" rx="0.5" fill={dark} />
+          {/* Spallaccio anteriore */}
+          <rect x="20" y="27" width="5" height="6" rx="2" fill="#2e7d32" />
+          {/* Avambraccio con bracciale */}
+          <rect x="15" y="29" width="7" height="4" rx="2" fill="#ffd5b4" />
+          <rect x="15" y="29" width="7" height="1.3" fill="url(#metal-grad)" />
+
+          {/* Spada: tip in alto-sx, V iconica */}
+          <g transform="rotate(-30 17 32)">
+            {/* Pommel + gemma */}
+            <circle cx="17" cy="38" r="1.7" fill="url(#metal-grad)" />
+            <circle cx="17" cy="38" r="0.9" fill={color} />
+            {/* Impugnatura avvolta */}
+            <rect x="16" y="32" width="2" height="6" rx="0.4" fill="#3e2723" />
+            <line x1="16.2" y1="33.5" x2="17.8" y2="33.5" stroke="#1a0e0c" strokeWidth="0.4" />
+            <line x1="16.2" y1="35.5" x2="17.8" y2="35.5" stroke="#1a0e0c" strokeWidth="0.4" />
+            {/* Crossguard appuntito */}
+            <path d="M11 32 L13 30 L21 30 L23 32 L21 33 L13 33 Z" fill="url(#metal-grad)" />
+            <path d="M11 32 L13 30 L13.5 32 Z" fill={dark} />
+            <path d="M23 32 L21 30 L20.5 32 Z" fill={dark} />
+            {/* Lama lunga */}
+            <path d="M15 30 L17 7 L19 30 Z" fill="url(#metal-grad)" />
+            {/* Fuller centrale */}
+            <line x1="17" y1="10" x2="17" y2="29" stroke="#5a5a5a" strokeWidth="0.4" />
+            {/* Edge highlight */}
+            <line x1="15.3" y1="29" x2="17" y2="9" stroke={light} strokeWidth="0.3" opacity="0.85" />
+            {/* Punta che brilla */}
+            <circle cx="17" cy="8" r="0.7" fill={color}>
+              <animate attributeName="opacity" values="0.5;1;0.5" dur="1.6s" repeatCount="indefinite" />
+            </circle>
           </g>
         </g>
 
+        {/* === BRACCIO DESTRO + SPADA === */}
         <g className="part-arm-r">
-          <rect x="40" y="28" width="8" height="5" rx="2.5" fill="#ffd5b4" />
-          <g transform="rotate(-15 49 30.5)">
-            <rect x="47.5" y="10" width="3" height="25" rx="1" fill="#ccc" />
-            <rect x="45" y="32" width="8" height="2" rx="0.5" fill={dark} />
+          <rect x="39" y="27" width="5" height="6" rx="2" fill="#2e7d32" />
+          <rect x="42" y="29" width="7" height="4" rx="2" fill="#ffd5b4" />
+          <rect x="42" y="29" width="7" height="1.3" fill="url(#metal-grad)" />
+
+          <g transform="rotate(30 47 32)">
+            <circle cx="47" cy="38" r="1.7" fill="url(#metal-grad)" />
+            <circle cx="47" cy="38" r="0.9" fill={color} />
+            <rect x="46" y="32" width="2" height="6" rx="0.4" fill="#3e2723" />
+            <line x1="46.2" y1="33.5" x2="47.8" y2="33.5" stroke="#1a0e0c" strokeWidth="0.4" />
+            <line x1="46.2" y1="35.5" x2="47.8" y2="35.5" stroke="#1a0e0c" strokeWidth="0.4" />
+            <path d="M41 32 L43 30 L51 30 L53 32 L51 33 L43 33 Z" fill="url(#metal-grad)" />
+            <path d="M41 32 L43 30 L43.5 32 Z" fill={dark} />
+            <path d="M53 32 L51 30 L50.5 32 Z" fill={dark} />
+            <path d="M45 30 L47 7 L49 30 Z" fill="url(#metal-grad)" />
+            <line x1="47" y1="10" x2="47" y2="29" stroke="#5a5a5a" strokeWidth="0.4" />
+            <line x1="48.7" y1="29" x2="47" y2="9" stroke={light} strokeWidth="0.3" opacity="0.85" />
+            <circle cx="47" cy="8" r="0.7" fill={color}>
+              <animate attributeName="opacity" values="0.5;1;0.5" dur="1.6s" repeatCount="indefinite" />
+            </circle>
           </g>
         </g>
       </g>
