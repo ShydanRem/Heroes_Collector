@@ -66,11 +66,11 @@ overlayRoutes.get('/', async (_req: Request, res: Response) => {
     let recentCaptures: any[] = [];
     try {
       const capture = await query(
-        `SELECT h.display_name, h.hero_class, h.rarity, u.display_name as captor_name, r.captured_at
+        `SELECT h.display_name, h.hero_class, h.rarity, u.display_name as captor_name, r.caught_at AS captured_at
          FROM roster r
          JOIN heroes h ON h.id = r.hero_id
-         JOIN users u ON u.twitch_user_id = r.user_id
-         ORDER BY r.captured_at DESC LIMIT 3`
+         JOIN users u ON u.twitch_user_id = r.owner_user_id
+         ORDER BY r.caught_at DESC LIMIT 3`
       );
       recentCaptures = capture.rows.map(c => ({
         heroName: c.display_name,
