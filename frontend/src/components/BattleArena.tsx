@@ -3,6 +3,11 @@ import { HeroSprite, MonsterSprite } from './HeroSprite';
 import { BattleLogEntry } from '../services/api';
 import { HeroClass, Rarity, RARITY_COLORS } from '../types';
 
+// REPRO bug velocità (pre-fix, ora corretto): set speed=150 (3x) e gira un
+// dungeon con 8+ eroi. Prima del fix: 10+ floating text sovrapposti,
+// bubbles che restano per secondi, shake/flash che persiste tra turni,
+// ultimate che dura 10× più del normale. Vedi commits del 13/05/2026.
+
 // ============================================
 // TIPI
 // ============================================
@@ -76,6 +81,11 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
   const floatCounter = useRef(0);
   const bubbleCounter = useRef(0);
   const timerRef = useRef<number | null>(null);
+  // Refs per i timer dei reset FX — evitano che fire-and-forget di un turno
+  // resetti lo stato di un turno successivo alle velocità alte.
+  const ultimateTimerRef = useRef<number | null>(null);
+  const critTimerRef = useRef<number | null>(null);
+  const animResetTimerRef = useRef<number | null>(null);
 
   // Ref per lo stato corrente dei fighter — evita problemi di closure stale
   const fightersRef = useRef<Map<string, ArenaFighter>>(new Map());
@@ -126,7 +136,8 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
       'Pioggia di Lance', 'Mille Lame', 'Eclissi dell\'Anima', 'Bomba Alchemica'
     ];
     if (entry.action && ultimateNames.some(name => entry.action!.includes(name))) {
-      nextDelay = Math.max(nextDelay, 1500);
+      // Ultimate ha sempre durata extra ma scalata sulla velocità (min 700ms)
+      nextDelay = Math.max(nextDelay, Math.max(700, speed * 2.5));
     }
 
     timerRef.current = window.setTimeout(() => {
@@ -137,23 +148,26 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [currentStep, finished, log, speed]);
 
-  // Cleanup floating text
+  // Cleanup floating text — vita scalata sulla velocità così alla 3x
+  // non si accumulano. Minimo 250ms per restare leggibili.
   useEffect(() => {
     if (floatingTexts.length === 0) return;
+    const lifeMs = Math.max(250, speed * 1.5);
     const timer = setTimeout(() => {
       setFloatingTexts(prev => prev.slice(1));
-    }, 1200);
+    }, lifeMs);
     return () => clearTimeout(timer);
-  }, [floatingTexts]);
+  }, [floatingTexts, speed]);
 
-  // Cleanup bubbles
+  // Cleanup bubbles (chatter) — vita più lunga per leggibilità ma scalata.
   useEffect(() => {
     if (bubbles.length === 0) return;
+    const lifeMs = Math.max(400, speed * 2);
     const timer = setTimeout(() => {
       setBubbles(prev => prev.slice(1));
-    }, 1500);
+    }, lifeMs);
     return () => clearTimeout(timer);
-  }, [bubbles]);
+  }, [bubbles, speed]);
 
   // Audio Hook Placeholder per le Supreme
   useEffect(() => {
@@ -216,11 +230,12 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
       setIsUltimateActive(true);
       setIsShaking(true);
       setIsFlashing(true);
-      setTimeout(() => {
+      if (ultimateTimerRef.current) clearTimeout(ultimateTimerRef.current);
+      ultimateTimerRef.current = window.setTimeout(() => {
         setIsUltimateActive(false);
         setIsShaking(false);
         setIsFlashing(false);
-      }, 1000); // 1s di freeze visivo per le supreme
+      }, Math.max(600, speed * 1.5)); // freeze ultimate scalato sulla velocità
     } else if (entry.heal) {
       setActionType('heal');
     } else if (entry.statusApplied && !entry.damage) {
@@ -269,11 +284,12 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
           setIsShaking(true);
           setIsFlashing(true);
           setIsImpactActive(true);
-          setTimeout(() => {
+          if (critTimerRef.current) clearTimeout(critTimerRef.current);
+          critTimerRef.current = window.setTimeout(() => {
             setIsShaking(false);
             setIsFlashing(false);
             setIsImpactActive(false);
-          }, 400);
+          }, Math.max(200, speed * 0.5));
         }
       }
 
@@ -314,12 +330,13 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
       }
     }
 
-    // Reset animazioni
-    setTimeout(() => {
+    // Reset animazioni — tracciato in ref per evitare reset di stati di turni successivi
+    if (animResetTimerRef.current) clearTimeout(animResetTimerRef.current);
+    animResetTimerRef.current = window.setTimeout(() => {
       setActiveActorId(null);
       setActiveTargetId(null);
       setActionType(null);
-    }, speed * 0.6);
+    }, Math.max(80, speed * 0.6));
   }
 
   function addFloat(fighterId: string, text: string, color: string, type: FloatingText['type']) {
@@ -328,6 +345,15 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
       id: floatCounter.current, fighterId, text, color, type,
     }]);
   }
+
+  // Cleanup di TUTTI i timer su unmount — evita aggiornamenti su componente smontato
+  useEffect(() => {
+    return () => {
+      [timerRef, ultimateTimerRef, critTimerRef, animResetTimerRef].forEach(ref => {
+        if (ref.current) clearTimeout(ref.current);
+      });
+    };
+  }, []);
 
   function handleSkip() {
     if (timerRef.current) clearTimeout(timerRef.current);
