@@ -1,7 +1,7 @@
 import { query } from '../config/database';
 import { runBattle, createFighter, BattleLogEntry, applySynergies, applyTalentBonuses } from './battleEngine';
 import { getActiveParty, getPartyHeroes } from './partyService';
-import { addExpToHero } from './heroService';
+import { addExpToHero, addExpToRosterHero } from './heroService';
 import { addGold, addEssences } from './userService';
 import { addWeeklyPoints, POINTS } from './weeklyService';
 import { getTalentStatBonuses, getTalentSpecialEffects } from './talentService';
@@ -172,7 +172,11 @@ export async function findAndFight(userId: string): Promise<PvpResult> {
   const goldReward = outcome.won ? 50 : 10;
 
   for (const hero of myHeroes) {
-    await addExpToHero(hero.id, expReward);
+    if (hero.roster_id) {
+      await addExpToRosterHero(hero.roster_id, expReward);
+    } else {
+      await addExpToHero(hero.id, expReward);
+    }
   }
   await addGold(userId, goldReward);
 

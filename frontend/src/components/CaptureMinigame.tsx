@@ -11,25 +11,25 @@ interface CaptureMinigameProps {
 }
 
 const SUCCESS_ZONE_WIDTHS: Record<Rarity, number> = {
-  [Rarity.COMUNE]: 60,
-  [Rarity.NON_COMUNE]: 50,
-  [Rarity.RARO]: 40,
-  [Rarity.MOLTO_RARO]: 30,
-  [Rarity.EPICO]: 25,
-  [Rarity.LEGGENDARIO]: 18,
-  [Rarity.MITICO]: 12,
-  [Rarity.MASTER]: 8,
+  comune: 60,
+  non_comune: 50,
+  raro: 40,
+  molto_raro: 30,
+  epico: 25,
+  leggendario: 18,
+  mitico: 12,
+  master: 8,
 };
 
 const CURSOR_SPEEDS: Record<Rarity, number> = {
-  [Rarity.COMUNE]: 1.5,
-  [Rarity.NON_COMUNE]: 1.8,
-  [Rarity.RARO]: 2.2,
-  [Rarity.MOLTO_RARO]: 2.5,
-  [Rarity.EPICO]: 3.0,
-  [Rarity.LEGGENDARIO]: 3.5,
-  [Rarity.MITICO]: 4.0,
-  [Rarity.MASTER]: 5.0,
+  comune: 1.5,
+  non_comune: 1.8,
+  raro: 2.2,
+  molto_raro: 2.5,
+  epico: 3.0,
+  leggendario: 3.5,
+  mitico: 4.0,
+  master: 5.0,
 };
 
 export function CaptureMinigame({ hero, rarity, onSuccess, onFail, onCancel }: CaptureMinigameProps) {

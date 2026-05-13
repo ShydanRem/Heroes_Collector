@@ -1,7 +1,7 @@
 import { query } from '../config/database';
 import { runBattle, createFighter, BattleLogEntry, applySynergies, applyTalentBonuses } from './battleEngine';
 import { getActiveParty, getPartyHeroes } from './partyService';
-import { addExpToHero } from './heroService';
+import { addExpToHero, addExpToRosterHero } from './heroService';
 import { addGold, addEssences } from './userService';
 import { addWeeklyPoints, POINTS } from './weeklyService';
 import { giveItem } from './itemService';
@@ -208,11 +208,7 @@ export async function attackRaid(userId: string): Promise<RaidAttackResult> {
   if (!raid) throw new Error('Nessun raid boss attivo questa settimana!');
   if (raid.defeated) throw new Error('Il raid boss e gia stato sconfitto! Aspetta la prossima settimana.');
 
-  // Limite tentativi giornalieri
-  try {
-    await query('ALTER TABLE raid_contributions ADD COLUMN IF NOT EXISTS daily_attempts INTEGER DEFAULT 0');
-    await query('ALTER TABLE raid_contributions ADD COLUMN IF NOT EXISTS last_attempt_date DATE');
-  } catch { /* */ }
+  // Le colonne daily_attempts, last_attempt_date sono ora nella migrazione 012_playtest_fixes.sql
 
   const contribCheck = await query(
     `SELECT daily_attempts, last_attempt_date FROM raid_contributions
@@ -319,7 +315,11 @@ export async function attackRaid(userId: string): Promise<RaidAttackResult> {
   const droppedItems: string[] = [];
 
   for (const heroRow of heroRows) {
-    await addExpToHero(heroRow.id, expReward);
+    if (heroRow.roster_id) {
+      await addExpToRosterHero(heroRow.roster_id, expReward);
+    } else {
+      await addExpToHero(heroRow.id, expReward);
+    }
   }
   await addGold(userId, goldReward);
 

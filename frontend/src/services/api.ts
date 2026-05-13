@@ -574,11 +574,12 @@ export async function useBitsForBlessing(blessingId: string): Promise<{ message:
 }
 
 export async function saveHeroTactics(heroId: string, rules: any[]) {
-  console.log('Salvataggio tattiche per eroe ' + heroId, rules);
-  return request('/tactics', {
-    method: 'POST',
-    body: JSON.stringify({ heroId, rules }),
-  });
+  // Backend per tattiche non ancora implementato — salva in localStorage come fallback
+  try {
+    const key = `heroTactics_${heroId}`;
+    localStorage.setItem(key, JSON.stringify(rules));
+  } catch { /* localStorage pieno o non disponibile */ }
+  return { success: true, message: 'Tattiche salvate localmente' };
 }
 
 export async function getChannelProgress(): Promise<{ progress: ChannelProgress }> {

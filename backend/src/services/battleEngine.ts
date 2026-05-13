@@ -827,10 +827,10 @@ export function createFighter(
   team: 'attacker' | 'defender'
 ): BattleFighter {
   const heroClass = (heroData.hero_class || heroData.heroClass || 'lama') as HeroClass;
-  const mod = CLASS_MODIFIERS[heroClass] || { hp: 1, atk: 1, def: 1, spd: 1, crit: 1 };
   
-  const baseHp = heroData.hp || 100;
-  const hp = Math.floor(baseHp * mod.hp);
+  // Le stats arrivano dal DB gia bilanciate per classe (CLASS_BASE_STATS + CLASS_GROWTH)
+  // Non applichiamo CLASS_MODIFIERS qui per evitare doppia moltiplicazione
+  const hp = heroData.hp || 100;
 
   return {
     id: heroData.id,
@@ -839,10 +839,10 @@ export function createFighter(
     heroClass,
     stats: {
       hp,
-      atk: Math.floor((heroData.atk || 20) * mod.atk),
-      def: Math.floor((heroData.def || 10) * mod.def),
-      spd: Math.floor((heroData.spd || 20) * mod.spd),
-      crit: Number(((heroData.crit || 5) * mod.crit).toFixed(1)),
+      atk: heroData.atk || 20,
+      def: heroData.def || 10,
+      spd: heroData.spd || 20,
+      crit: heroData.crit || 5,
       critDmg: heroData.crit_dmg || heroData.critDmg || 150,
     },
     currentHp: heroData.currentHp ?? hp,

@@ -29,8 +29,6 @@ export interface Hero {
   exp: number;
   stats: HeroStats;
   abilities: string[];
-  bondLevel: number; // Livello di legame (1-5)
-  bondExp: number;
 }
 
 export interface UserProfile {

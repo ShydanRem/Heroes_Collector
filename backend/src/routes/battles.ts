@@ -56,6 +56,8 @@ battleRoutes.post('/pvp', async (req: Request, res: Response) => {
       eloChange: result.eloChange,
       newElo: result.newElo,
       rewards: result.rewards,
+      myPartyHeroes: result.myPartyHeroes,
+      opponentPartyHeroes: result.opponentPartyHeroes,
     });
   } catch (err: any) {
     console.error('Errore POST /pvp:', err);

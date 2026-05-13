@@ -10,15 +10,14 @@ import { Leaderboard } from './components/Leaderboard';
 import { Inventory } from './components/Inventory';
 import { RaidBoss } from './components/RaidBoss';
 import { Shop } from './components/Shop';
-import { BitShop } from './components/BitShop';
 import { NotificationOverlay } from './components/NotificationOverlay';
-import { ChannelProgressBar } from './components/ChannelProgressBar';
+// import { ChannelProgressBar } from './components/ChannelProgressBar'; // Disabilitato — mock data
 import { StreamOverlay } from './components/StreamOverlay';
 import { HeroReveal } from './components/HeroReveal';
 import { Tutorial } from './components/Tutorial';
 import * as api from './services/api';
 
-type Tab = 'myhero' | 'heroes' | 'roster' | 'items' | 'party' | 'dungeon' | 'pvp' | 'raid' | 'shop' | 'rank' | 'premium';
+type Tab = 'myhero' | 'heroes' | 'roster' | 'items' | 'party' | 'dungeon' | 'pvp' | 'raid' | 'shop' | 'rank';
 
 declare global {
   interface Window {
@@ -43,8 +42,8 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('myhero');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [hero, setHero] = useState<Hero | null>(null);
-  const [activeBuffs, setActiveBuffs] = useState<api.ActiveBuff[]>([]);
-  const [channelProgress, setChannelProgress] = useState<api.ChannelProgress | null>(null);
+  // const [activeBuffs, setActiveBuffs] = useState<api.ActiveBuff[]>([]); // Premium disabilitato
+  // const [channelProgress, setChannelProgress] = useState<api.ChannelProgress | null>(null); // Mock disabilitato
   const [mode, setMode] = useState<'component' | 'video_overlay'>('component');
   
   // Supporto per forzare l'overlay via query param (utile per test e OBS)
@@ -127,13 +126,12 @@ export default function App() {
 
   async function loadProfile() {
     try {
-      const [profileData, progressData] = await Promise.all([
+      const [profileData] = await Promise.all([
         api.getMyProfile(),
-        api.getChannelProgress()
       ]);
       setProfile(profileData.profile);
       setHero(profileData.hero);
-      setChannelProgress(progressData.progress);
+      // setChannelProgress — mock disabilitato
       setJoined(profileData.profile.optedIn);
     } catch (err: any) {
       // 404 = utente non registrato, mostra schermata join
@@ -177,7 +175,7 @@ export default function App() {
 
   // Se siamo in modalità Overlay Video, mostriamo solo il widget sulla live
   if (mode === 'video_overlay' || forceOverlay) {
-    return <StreamOverlay progress={channelProgress} />;
+    return <StreamOverlay progress={null} />;
   }
 
   if (!joined) {
@@ -242,7 +240,6 @@ export default function App() {
       { id: 'pvp' as Tab, label: 'PVP', icon: '🏟️' },
       { id: 'raid' as Tab, label: 'Raid', icon: '🐉' },
       { id: 'rank' as Tab, label: 'Rank', icon: '🏆' },
-      { id: 'premium' as Tab, label: 'Premium', icon: '💎' },
     ],
   ];
 
@@ -260,7 +257,7 @@ export default function App() {
         )}
       </div>
 
-      <ChannelProgressBar progress={channelProgress} />
+      {/* <ChannelProgressBar progress={channelProgress} /> — mock, disabilitato */}
 
       {tabRows.map((row, rowIdx) => (
         <div className="tabs" key={rowIdx} style={rowIdx > 0 ? { borderTop: 'none' } : undefined}>
@@ -283,7 +280,7 @@ export default function App() {
         {tab === 'pvp' && <PvpArena />}
         {tab === 'raid' && <RaidBoss />}
         {tab === 'rank' && <Leaderboard />}
-        {tab === 'premium' && <BitShop onBuffActivated={(b) => setActiveBuffs([...activeBuffs, b])} />}
+        {/* Premium tab disabilitato — manca backend */}
       </div>
 
       {showTutorial && (

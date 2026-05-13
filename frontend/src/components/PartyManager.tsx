@@ -296,7 +296,7 @@ export function PartyManager({ onStartBattle }: PartyManagerProps) {
                       {hero.displayName}
                     </div>
                     <div style={{ fontSize: 8, color: RARITY_COLORS[hero.rarity] }}>
-                      Lv.{hero.level} <span style={{ color: '#ff4081' }}>❤️{(hero as any).bondLevel || 1}</span>
+                      Lv.{hero.level}
                     </div>
                     <button
                       onClick={() => setEditingTacticsFor(hero.id)}

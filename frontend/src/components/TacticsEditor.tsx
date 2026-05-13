@@ -32,8 +32,8 @@ const ACTIONS: { value: TacticalAction; label: string }[] = [
 ];
 
 export function TacticsEditor({ hero, initialRules = [], onSave, onClose }: TacticsEditorProps) {
-  const bondLevel = hero.bondLevel || 1;
-  const maxRules = Math.min(5, bondLevel);
+  // bondLevel non è implementato nel backend — permettiamo 5 slot sempre
+  const maxRules = 5;
 
   const [rules, setRules] = useState<TacticalRule[]>(
     initialRules.length > 0 ? initialRules.slice(0, maxRules) : [{ id: '1', target: 'any_enemy', condition: 'always', action: 'attack', enabled: true }]
@@ -65,7 +65,7 @@ export function TacticsEditor({ hero, initialRules = [], onSave, onClose }: Tact
         <div>
           <h3>🧠 Strategia: {hero.displayName}</h3>
           <div style={{ fontSize: 10, color: '#ff4081', marginTop: 2 }}>
-            ❤️ Legame Liv.{bondLevel} ({rules.length}/{maxRules} Slot)
+            🧠 ({rules.length}/{maxRules} Slot)
           </div>
         </div>
         <button className="btn-close" onClick={onClose}>×</button>
@@ -118,11 +118,7 @@ export function TacticsEditor({ hero, initialRules = [], onSave, onClose }: Tact
         <button className="btn-add-rule" onClick={addRule}>+ Aggiungi Regola</button>
       )}
 
-      {rules.length < 5 && bondLevel < 5 && (
-        <div style={{ fontSize: 10, textAlign: 'center', marginTop: 10, opacity: 0.6 }}>
-          Aumenta il Legame per sbloccare più slot!
-        </div>
-      )}
+
 
       <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
         <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => onSave(rules)}>Salva Tattiche</button>

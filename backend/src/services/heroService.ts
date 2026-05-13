@@ -206,9 +206,7 @@ export async function captureHero(
  */
 export async function getRoster(userId: string): Promise<Hero[]> {
   // Migrations dinamiche per il roster
-  try { await query('ALTER TABLE roster ADD COLUMN IF NOT EXISTS capture_level INTEGER DEFAULT 1'); } catch { /* */ }
-  try { await query('ALTER TABLE roster ADD COLUMN IF NOT EXISTS exp INTEGER DEFAULT 0'); } catch { /* */ }
-  try { await query('ALTER TABLE roster ADD COLUMN IF NOT EXISTS ability_ids TEXT[]'); } catch { /* */ }
+  // Le colonne capture_level, exp, ability_ids sono ora nella migrazione 012_playtest_fixes.sql
 
   const result = await query(
     `SELECT h.*, r.capture_rarity, r.capture_level, r.exp as roster_exp, r.ability_ids as roster_abilities, r.id as roster_id FROM heroes h
