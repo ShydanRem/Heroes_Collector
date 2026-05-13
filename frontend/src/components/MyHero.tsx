@@ -19,10 +19,10 @@ const ALL_CLASSES: HeroClass[] = ['guardiano', 'lama', 'arcano', 'custode', 'omb
 const REROLL_COST = 500;
 const EXP_BASE = 150;
 
-type SubTab = 'stats' | 'equip' | 'talents' | 'missions' | 'more';
+type SubTab = 'skills' | 'equip' | 'talents' | 'missions' | 'more';
 
 const SUB_TABS: { id: SubTab; label: string; icon: string }[] = [
-  { id: 'stats', label: 'Stats', icon: '📊' },
+  { id: 'skills', label: 'Abilità', icon: '✨' },
   { id: 'equip', label: 'Equip', icon: '⚔️' },
   { id: 'talents', label: 'Talenti', icon: '🌟' },
   { id: 'missions', label: 'Missioni', icon: '📋' },
@@ -37,8 +37,17 @@ const STAT_LABELS: Record<string, string> = {
   hp: 'HP', atk: 'ATK', def: 'DEF', spd: 'SPD', crit: 'CRIT', critDmg: 'C.DMG',
 };
 
+// Soft cap per normalizzare le barre stat (visual reference, non gameplay)
+const STAT_MAX: Record<string, number> = {
+  atk: 600, def: 500, hp: 6000, spd: 350, crit: 100, critDmg: 300,
+};
+
+const STAT_ICONS: Record<string, string> = {
+  atk: '⚔️', def: '🛡️', hp: '❤️', spd: '⚡', crit: '🎯', critDmg: '💥',
+};
+
 export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHeroProps) {
-  const [subTab, setSubTab] = useState<SubTab>('stats');
+  const [subTab, setSubTab] = useState<SubTab>('skills');
   const [showReroll, setShowReroll] = useState(false);
   const [rerolling, setRerolling] = useState(false);
   const [rerollMsg, setRerollMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -101,48 +110,87 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
 
   return (
     <div className="profile-container">
-      {/* Profile Header Premium */}
-      <div className="profile-header">
-        <div className="profile-banner" style={{ background: `linear-gradient(135deg, ${rarityColor}, #18181b)` }} />
-        <div className="profile-avatar-wrapper">
-          <HeroSprite heroClass={hero.heroClass} rarity={hero.rarity} size={80} animate="idle" name={hero.displayName} />
+      {/* === JRPG CHARACTER CARD === */}
+      <div className="jrpg-card" style={{ ['--rarity' as any]: rarityColor }}>
+        {/* Banner rarità sopra */}
+        <div className="jrpg-rarity-banner">
+          <span>⬢ {RARITY_LABELS[hero.rarity]} ⬢</span>
         </div>
-        <div className="profile-info-main">
-          <div className="profile-name-section">
-            <span className="profile-rank-tag">{RARITY_LABELS[hero.rarity]}</span>
-            <h2>{hero.displayName}</h2>
-            <div style={{ fontSize: 11, color: '#adadb8', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-              {CLASS_EMOJIS[hero.heroClass]} {CLASS_LABELS[hero.heroClass]} 
-              <span style={{ color: '#555' }}>•</span>
-              <span style={{ color: '#ffd700', fontWeight: 800 }}>CP {combatPower.toLocaleString()}</span>
-            </div>
+
+        {/* Cornice con portrait */}
+        <div className="jrpg-portrait-frame">
+          <div className="jrpg-corner tl" />
+          <div className="jrpg-corner tr" />
+          <div className="jrpg-corner bl" />
+          <div className="jrpg-corner br" />
+          <div className="jrpg-portrait-inner">
+            <HeroSprite
+              heroClass={hero.heroClass}
+              rarity={hero.rarity}
+              size={120}
+              animate="idle"
+              name={hero.displayName}
+            />
           </div>
-          <div className="xp-ring-container">
-            <svg className="xp-ring-svg" width="44" height="44">
-              <circle className="xp-ring-bg" cx="22" cy="22" r="18" />
-              <circle 
-                className="xp-ring-fill" 
-                cx="22" cy="22" r="18" 
-                style={{ 
-                  strokeDasharray: 113, 
-                  strokeDashoffset: 113 - (113 * expPercent) / 100,
-                  stroke: rarityColor
-                }} 
-              />
-            </svg>
-            <div style={{ 
-              position: 'absolute', inset: 0, display: 'flex', 
-              alignItems: 'center', justifyContent: 'center', 
-              fontSize: 10, fontWeight: 900 
-            }}>
-              {hero.level}
-            </div>
+        </div>
+
+        {/* Info: nome, classe, livello, CP */}
+        <div className="jrpg-info">
+          <h2>{hero.displayName}</h2>
+          <div className="jrpg-class-line">
+            <span>{CLASS_EMOJIS[hero.heroClass]} {CLASS_LABELS[hero.heroClass]}</span>
+            <span className="jrpg-dot">•</span>
+            <span>Lv <strong>{hero.level}</strong></span>
+          </div>
+          <div className="jrpg-cp-line">
+            <span className="jrpg-cp-label">COMBAT POWER</span>
+            <strong className="jrpg-cp-value">{combatPower.toLocaleString()}</strong>
+            <span className="jrpg-cp-star">⭐</span>
+          </div>
+        </div>
+
+        {/* Barra esperienza */}
+        <div className="jrpg-xp-bar">
+          <div className="jrpg-xp-fill" style={{ width: `${expPercent}%` }} />
+          <div className="jrpg-xp-text">
+            {hero.exp.toLocaleString()} / {expNeeded.toLocaleString()} XP
           </div>
         </div>
       </div>
 
-      {/* Resource Quick Bar */}
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+      {/* === STAT BARS sempre visibili === */}
+      <div className="jrpg-stats">
+        {(['atk', 'def', 'hp', 'spd', 'crit', 'critDmg'] as const).map(stat => {
+          const base = effectiveStats[stat];
+          const bonus = equipBonuses[stat] || 0;
+          const total = base + bonus;
+          const max = STAT_MAX[stat];
+          const percent = Math.min(100, Math.max(4, (total / max) * 100));
+          const suffix = stat === 'crit' || stat === 'critDmg' ? '%' : '';
+          const display = stat === 'hp' && total >= 1000
+            ? `${(total / 1000).toFixed(1)}k`
+            : `${total}${suffix}`;
+          return (
+            <div key={stat} className="jrpg-stat-row">
+              <span className="jrpg-stat-icon">{STAT_ICONS[stat]}</span>
+              <span className="jrpg-stat-name">{STAT_LABELS[stat]}</span>
+              <div className="jrpg-stat-bar-track">
+                <div
+                  className="jrpg-stat-bar-fill"
+                  style={{ width: `${percent}%`, background: rarityColor, color: rarityColor }}
+                />
+              </div>
+              <span className="jrpg-stat-value">
+                {display}
+                {bonus > 0 && <span className="jrpg-stat-bonus">+{bonus}</span>}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Resource pills */}
+      <div className="jrpg-resources">
         <div className="profile-resource-pill">
           <span style={{ color: '#ffd700' }}>💰</span> {profile.gold.toLocaleString()}
         </div>
@@ -180,47 +228,28 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
 
       {/* === TAB CONTENT === */}
       <div className="profile-content-area" style={{ minHeight: 200 }}>
-        
-        {subTab === 'stats' && (
-          <div className="animate-fadeIn">
-            <div className="stat-grid-premium">
-              {(['atk', 'def', 'hp', 'spd', 'crit', 'critDmg'] as const).map(stat => {
-                const base = effectiveStats[stat];
-                const bonus = equipBonuses[stat] || 0;
-                const suffix = stat === 'crit' || stat === 'critDmg' ? '%' : '';
-                return (
-                  <div key={stat} className="stat-card-premium">
-                    <span className="stat-label-premium">{STAT_LABELS[stat]}</span>
-                    <span className="stat-value-premium">
-                      {base}{suffix}
-                      {bonus > 0 && <span style={{ color: '#22c55e', fontSize: 9, marginLeft: 2 }}>+{bonus}</span>}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
 
-            <div style={{ marginTop: 20 }}>
-              <h3 style={{ fontSize: 12, fontWeight: 900, color: '#adadb8', marginBottom: 10, textTransform: 'uppercase' }}>Abilità</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {abilities.map((ab) => (
-                  <div key={ab.id} className={`ability-card-premium ${ab.type === 'ultimate' ? 'supreme-card-glow' : ''}`} style={{ borderLeftColor: ab.type === 'ultimate' ? '#ffd700' : rarityColor }}>
-                    <div style={{ fontSize: 24 }}>{ab.type === 'attacco' ? '⚔️' : ab.type === 'supporto' ? '🛡️' : ab.type === 'ultimate' ? '🌟' : '✨'}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontWeight: 800, fontSize: 12 }}>{ab.name}</span>
-                          {ab.type === 'ultimate' && <span className="supreme-badge">Suprema</span>}
-                        </div>
-                        <span style={{ fontSize: 8, background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 4 }}>
-                          {ab.cooldown > 0 ? `${ab.cooldown}T CD` : 'PASSIVA'}
-                        </span>
+        {subTab === 'skills' && (
+          <div className="animate-fadeIn">
+            <h3 style={{ fontSize: 12, fontWeight: 900, color: '#adadb8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Abilità Equipaggiate</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {abilities.map((ab) => (
+                <div key={ab.id} className={`ability-card-premium ${ab.type === 'ultimate' ? 'supreme-card-glow' : ''}`} style={{ borderLeftColor: ab.type === 'ultimate' ? '#ffd700' : rarityColor }}>
+                  <div style={{ fontSize: 24 }}>{ab.type === 'attacco' ? '⚔️' : ab.type === 'supporto' ? '🛡️' : ab.type === 'ultimate' ? '🌟' : '✨'}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontWeight: 800, fontSize: 12 }}>{ab.name}</span>
+                        {ab.type === 'ultimate' && <span className="supreme-badge">Suprema</span>}
                       </div>
-                      <p style={{ fontSize: 10, color: '#adadb8', margin: '2px 0 0' }}>{ab.description}</p>
+                      <span style={{ fontSize: 8, background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 4 }}>
+                        {ab.cooldown > 0 ? `${ab.cooldown}T CD` : 'PASSIVA'}
+                      </span>
                     </div>
+                    <p style={{ fontSize: 10, color: '#adadb8', margin: '2px 0 0' }}>{ab.description}</p>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

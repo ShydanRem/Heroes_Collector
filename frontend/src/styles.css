@@ -1586,6 +1586,319 @@ select:focus-visible {
   border-left: 4px solid var(--accent);
 }
 
+/* ============ JRPG CHARACTER CARD ============ */
+.jrpg-card {
+  position: relative;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 60%),
+    linear-gradient(180deg, #1a1a22 0%, #0a0a10 100%);
+  border: 2px solid var(--rarity, #9147ff);
+  border-radius: 16px;
+  padding: 18px 18px 16px;
+  box-shadow:
+    0 0 24px color-mix(in srgb, var(--rarity, #9147ff) 25%, transparent),
+    inset 0 0 24px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.jrpg-card::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 11px;
+  pointer-events: none;
+}
+
+.jrpg-card::after {
+  /* Pattern decorativo angolare */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--rarity, #9147ff) 18%, transparent), transparent 30%),
+    radial-gradient(circle at 90% 90%, color-mix(in srgb, var(--rarity, #9147ff) 12%, transparent), transparent 30%);
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.jrpg-rarity-banner {
+  position: relative;
+  text-align: center;
+  color: var(--rarity, #9147ff);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  text-shadow: 0 0 12px currentColor;
+  margin-bottom: 10px;
+  z-index: 2;
+}
+
+.jrpg-portrait-frame {
+  position: relative;
+  width: 144px;
+  height: 144px;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.jrpg-portrait-inner {
+  width: 124px;
+  height: 124px;
+  background:
+    radial-gradient(circle, #20202a 0%, #08080c 75%);
+  border: 2px solid var(--rarity, #9147ff);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 0 28px color-mix(in srgb, var(--rarity, #9147ff) 35%, transparent),
+    inset 0 0 22px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+  position: relative;
+}
+
+.jrpg-portrait-inner::before {
+  /* Light sweep continuo */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.08) 50%, transparent 65%);
+  animation: jrpg-portrait-sweep 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes jrpg-portrait-sweep {
+  0%, 100% { transform: translateX(-100%); opacity: 0; }
+  50% { opacity: 1; }
+  60% { transform: translateX(100%); opacity: 0; }
+}
+
+.jrpg-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--rarity, #9147ff);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--rarity, #9147ff) 60%, transparent));
+}
+.jrpg-corner.tl { top: 0;    left: 0;   border-right: none; border-bottom: none; border-top-left-radius: 4px; }
+.jrpg-corner.tr { top: 0;    right: 0;  border-left:  none; border-bottom: none; border-top-right-radius: 4px; }
+.jrpg-corner.bl { bottom: 0; left: 0;   border-right: none; border-top:    none; border-bottom-left-radius: 4px; }
+.jrpg-corner.br { bottom: 0; right: 0;  border-left:  none; border-top:    none; border-bottom-right-radius: 4px; }
+
+.jrpg-info {
+  position: relative;
+  text-align: center;
+  z-index: 2;
+}
+
+.jrpg-info h2 {
+  font-size: 22px;
+  font-weight: 900;
+  margin: 0;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+
+.jrpg-class-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #cfcfd9;
+  margin-top: 4px;
+  font-weight: 700;
+}
+
+.jrpg-class-line strong {
+  color: var(--rarity, #9147ff);
+  font-size: 13px;
+  margin-left: 2px;
+}
+
+.jrpg-dot {
+  color: #555;
+  font-size: 10px;
+}
+
+.jrpg-cp-line {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 4px 14px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid color-mix(in srgb, var(--rarity, #9147ff) 35%, transparent);
+  border-radius: 999px;
+}
+
+.jrpg-cp-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #adadb8;
+  text-transform: uppercase;
+}
+
+.jrpg-cp-value {
+  font-size: 18px;
+  font-weight: 900;
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.45);
+}
+
+.jrpg-cp-star {
+  color: var(--rarity, #9147ff);
+  font-size: 12px;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.jrpg-xp-bar {
+  position: relative;
+  margin-top: 12px;
+  height: 16px;
+  background: linear-gradient(180deg, #050507 0%, #0e0e14 100%);
+  border: 1px solid #2d2d35;
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.jrpg-xp-fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--rarity, #9147ff) 60%, #000) 0%,
+    var(--rarity, #9147ff) 60%,
+    color-mix(in srgb, var(--rarity, #9147ff) 60%, #fff) 100%
+  );
+  box-shadow: 0 0 12px color-mix(in srgb, var(--rarity, #9147ff) 50%, transparent);
+  transition: width 1.2s ease;
+  position: relative;
+}
+
+.jrpg-xp-fill::after {
+  /* shimmer animato sopra il fill */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%);
+  animation: jrpg-xp-shimmer 2.4s linear infinite;
+}
+
+@keyframes jrpg-xp-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.jrpg-xp-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
+}
+
+/* ============ STAT BARS (sempre visibili) ============ */
+.jrpg-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.jrpg-stat-row {
+  display: grid;
+  grid-template-columns: 20px 44px 1fr 78px;
+  gap: 10px;
+  align-items: center;
+  background: linear-gradient(180deg, #18181f 0%, #101015 100%);
+  border: 1px solid #2a2a32;
+  border-radius: 10px;
+  padding: 7px 12px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.jrpg-stat-row:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateX(2px);
+}
+
+.jrpg-stat-icon {
+  font-size: 14px;
+  text-align: center;
+  line-height: 1;
+}
+
+.jrpg-stat-name {
+  font-size: 10px;
+  font-weight: 900;
+  color: #adadb8;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.jrpg-stat-bar-track {
+  height: 8px;
+  background: linear-gradient(180deg, #050508 0%, #0c0c12 100%);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #2a2a32;
+  position: relative;
+}
+
+.jrpg-stat-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s ease;
+  box-shadow: 0 0 8px currentColor;
+  position: relative;
+}
+
+.jrpg-stat-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.35) 0%, transparent 100%);
+  border-radius: 3px 3px 0 0;
+}
+
+.jrpg-stat-value {
+  font-size: 13px;
+  font-weight: 900;
+  text-align: right;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  letter-spacing: 0.3px;
+}
+
+.jrpg-stat-bonus {
+  color: #4ade80;
+  font-size: 10px;
+  font-weight: 800;
+  margin-left: 4px;
+  text-shadow: 0 0 4px rgba(74, 222, 128, 0.6);
+}
+
+.jrpg-resources {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
 /* ============ COMBAT FLOW EFFECTS ============ */
 .combo-display {
   position: absolute;
