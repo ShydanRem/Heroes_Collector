@@ -111,19 +111,29 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
       return;
     }
 
+    const entry = log[currentStep];
+    processEntry(entry);
+    
+    // Calcola tempo prossimo turno: più lungo se c'è un critico o evento importante
+    let nextDelay = speed;
+    if (entry.isCrit) nextDelay = speed * 1.5;
+    if (entry.killed) nextDelay = speed * 1.2;
+    if (entry.message.includes('Status') || entry.message.includes('subito')) nextDelay = speed * 0.7; // Veloci per i DoT
+    
+    const ultimateNames = [
+      'Bastione Immortale', 'Danza della Morte', 'Apocalisse Arcana', 'Resurrezione',
+      'Eclissi Totale', 'Pioggia Infernale', 'Spiriti Ancestrali', 'Rottura Dimensionale',
+      'Pioggia di Lance', 'Mille Lame', 'Eclissi dell\'Anima', 'Bomba Alchemica'
+    ];
+    if (entry.action && ultimateNames.some(name => entry.action!.includes(name))) {
+      nextDelay = Math.max(nextDelay, 1500);
+    }
+
     timerRef.current = window.setTimeout(() => {
-      const entry = log[currentStep];
-      processEntry(entry);
-      
-      // Calcola tempo prossimo turno: più lungo se c'è un critico o evento importante
-      let nextDelay = speed;
-      if (entry.isCrit) nextDelay = speed * 1.5;
-      if (entry.killed) nextDelay = speed * 1.2;
-      if (entry.message.includes('Status') || entry.message.includes('subito')) nextDelay = speed * 0.7; // Veloci per i DoT
-
       setCurrentStep(prev => prev + 1);
-    }, speed);
+    }, nextDelay);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [currentStep, finished, log, speed]);
 

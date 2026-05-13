@@ -18,6 +18,7 @@ import { overlayRoutes } from './routes/overlay';
 import { dailyLoginRoutes } from './routes/dailyLogin';
 import { weeklyRoutes } from './routes/weekly';
 import { talentRoutes } from './routes/talents';
+import { tacticsRoutes } from './routes/tactics';
 import { twitchAuth } from './middleware/twitchAuth';
 
 const app = express();
@@ -53,6 +54,7 @@ app.use('/api/zones', twitchAuth, zoneRoutes);
 app.use('/api/daily-login', twitchAuth, dailyLoginRoutes);
 app.use('/api/weekly', twitchAuth, weeklyRoutes);
 app.use('/api/talents', twitchAuth, talentRoutes);
+app.use('/api/tactics', twitchAuth, tacticsRoutes);
 
 // WebSocket per aggiornamenti real-time
 io.on('connection', (socket) => {

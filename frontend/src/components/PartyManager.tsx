@@ -54,6 +54,7 @@ export function PartyManager({ onStartBattle }: PartyManagerProps) {
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingTacticsFor, setEditingTacticsFor] = useState<string | null>(null); // heroId
+  const [heroTactics, setHeroTactics] = useState<any[]>([]);
 
   useEffect(() => {
     loadData();
@@ -82,6 +83,16 @@ export function PartyManager({ onStartBattle }: PartyManagerProps) {
       setError('Errore nel caricamento. Controlla la connessione.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleOpenTactics(heroId: string) {
+    try {
+      const res = await api.getHeroTactics(heroId);
+      setHeroTactics(res.rules || []);
+      setEditingTacticsFor(heroId);
+    } catch (err: any) {
+      setMessage({ text: err.message, type: 'error' });
     }
   }
 
@@ -299,16 +310,16 @@ export function PartyManager({ onStartBattle }: PartyManagerProps) {
                       Lv.{hero.level}
                     </div>
                     <button
-                      onClick={() => setEditingTacticsFor(hero.id)}
+                      onClick={() => handleOpenTactics(hero.id)}
                       title="Strategia"
                       style={{
-                        position: 'absolute', top: 1, left: 1,
-                        background: 'rgba(145, 70, 255, 0.2)', border: 'none', color: '#9146ff',
-                        fontSize: 10, cursor: 'pointer', padding: '1px 3px',
-                        borderRadius: 3,
+                        marginTop: 4, width: '100%',
+                        background: 'rgba(145, 70, 255, 0.2)', border: '1px solid rgba(145, 70, 255, 0.4)', color: '#9146ff',
+                        fontSize: 9, cursor: 'pointer', padding: '2px 0',
+                        borderRadius: 3, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2
                       }}
                     >
-                      🧠
+                      <span>🧠</span> Tattiche
                     </button>
                     <button
                       onClick={() => handleRemoveHero(party.id, hero.id)}
@@ -403,6 +414,7 @@ export function PartyManager({ onStartBattle }: PartyManagerProps) {
           <div className="modal-overlay">
             <TacticsEditor 
               hero={hero} 
+              initialRules={heroTactics}
               onSave={(rules) => handleSaveTactics(hero.id, rules)}
               onClose={() => setEditingTacticsFor(null)}
             />

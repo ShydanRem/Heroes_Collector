@@ -22,6 +22,7 @@ export interface BattleFighter {
   isAlive: boolean;
   threat: number; // aggro accumulato
   customState?: any; // per effetti speciali temporanei come il chain attack
+  tactics?: any[]; // Regole Gambit (Tactics) per l'IA
 }
 
 // Ruoli per classe — scalabile, basta aggiungere nuove classi qui
@@ -528,6 +529,62 @@ function chooseAbility(
     return availableAbilities.find(id => ABILITY_MAP.get(id)?.type === AbilityType.ATTACCO) || 'atk_colpo_base';
   }
 
+  // === GAMBIT SYSTEM (TACTICS) ===
+  if (fighter.tactics && fighter.tactics.length > 0) {
+    for (const rule of fighter.tactics) {
+      if (rule.enabled === false) continue;
+      
+      // Valuta condizione
+      let conditionMet = false;
+      const t = rule.target;
+      const c = rule.condition;
+      
+      const targetGroup = (t === 'self') ? [fighter] : 
+                          (t.includes('ally')) ? allies.filter(a => a.isAlive) :
+                          enemies.filter(e => e.isAlive);
+                          
+      if (c === 'always') {
+        conditionMet = true;
+      } else if (c === 'hp_lt_50') {
+        conditionMet = targetGroup.some(f => f.currentHp / f.maxHp < 0.5);
+      } else if (c === 'hp_lt_25') {
+        conditionMet = targetGroup.some(f => f.currentHp / f.maxHp < 0.25);
+      } else if (c === 'is_stunned') {
+        conditionMet = targetGroup.some(f => hasStatus(f, StatusEffect.STORDIMENTO));
+      } else if (c === 'has_no_buff') {
+        conditionMet = targetGroup.some(f => f.statusEffects.length === 0);
+      }
+
+      if (conditionMet) {
+        // Cerca abilità corrispondente all'azione
+        const actionType = rule.action; // 'attack', 'heal', 'defend', 'use_special'
+        let chosenAbilities: string[] = [];
+        
+        if (actionType === 'attack') {
+          chosenAbilities = availableAbilities.filter(id => ABILITY_MAP.get(id)?.type === AbilityType.ATTACCO);
+        } else if (actionType === 'heal') {
+          chosenAbilities = availableAbilities.filter(id => ABILITY_MAP.get(id)?.type === AbilityType.SUPPORTO);
+        } else if (actionType === 'defend') {
+          chosenAbilities = availableAbilities.filter(id => ABILITY_MAP.get(id)?.type === AbilityType.DIFESA);
+        } else if (actionType === 'use_special') {
+          chosenAbilities = availableAbilities.filter(id => ABILITY_MAP.get(id)?.type === AbilityType.ULTIMATE || ABILITY_MAP.get(id)?.type === AbilityType.DEBUFF);
+        }
+
+        // Se abbiamo abilità valide per questa azione, eseguiamo!
+        if (chosenAbilities.length > 0) {
+          // Preferiamo l'abilità con power maggiore (o ultimate)
+          return chosenAbilities.sort((a, b) => {
+            const aDef = ABILITY_MAP.get(a);
+            const bDef = ABILITY_MAP.get(b);
+            const aWeight = (aDef?.type === AbilityType.ULTIMATE ? 100 : 0) + (aDef?.power || 0);
+            const bWeight = (bDef?.type === AbilityType.ULTIMATE ? 100 : 0) + (bDef?.power || 0);
+            return bWeight - aWeight;
+          })[0];
+        }
+      }
+    }
+  }
+
   const role = getClassRole(fighter.heroClass);
   const allyLowHp = allies.filter(a => a.isAlive && a.currentHp / a.maxHp < 0.4);
   const enemyLowHp = enemies.some(e => e.isAlive && e.currentHp / e.maxHp < 0.25);
@@ -852,6 +909,7 @@ export function createFighter(
     statusEffects: [],
     isAlive: (heroData.currentHp ?? hp) > 0,
     threat: 0,
+    tactics: heroData.tactics || [],
   };
 }
 
