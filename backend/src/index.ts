@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
-import { env } from './config/env';
+import { env, validateEnv } from './config/env';
 import { heroRoutes } from './routes/heroes';
 import { userRoutes } from './routes/users';
 import { battleRoutes } from './routes/battles';
@@ -21,6 +21,9 @@ import { talentRoutes } from './routes/talents';
 import { tacticsRoutes } from './routes/tactics';
 import { twitchAuth } from './middleware/twitchAuth';
 
+// Fail-fast: in produzione i segreti critici devono esistere e la backdoor dev spenta.
+validateEnv();
+
 const app = express();
 const httpServer = createServer(app);
 const io = new SocketServer(httpServer, {
@@ -29,7 +32,14 @@ const io = new SocketServer(httpServer, {
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+// Cattura i byte raw del body: servono per verificare l'HMAC di EventSub (B7).
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      (req as unknown as { rawBody?: Buffer }).rawBody = buf;
+    },
+  })
+);
 
 // Health check
 app.get('/api/health', (_req, res) => {

@@ -204,12 +204,15 @@ async function handleGiftSub(event: any): Promise<void> {
 
   const gifterUsername = event.user_login;
   const gifterDisplay = event.user_name;
-  const total = event.total || 1;
+  // Cap difensivo: il payload è esterno, niente conio illimitato di gold.
+  const MAX_GIFTS = 100;
+  const parsed = Math.floor(Number(event.total));
+  const total = Number.isFinite(parsed) ? Math.min(Math.max(parsed, 1), MAX_GIFTS) : 1;
 
   await userService.findOrCreateUser(gifterId, gifterUsername, gifterDisplay);
   await userService.addActivity(gifterId, 'sub', total);
 
-  // Bonus gold per generosità
+  // Bonus gold per generosità (capped: max 100 gift → 5000 gold).
   await userService.addGold(gifterId, total * 50);
 }
 

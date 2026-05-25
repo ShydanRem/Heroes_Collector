@@ -62,10 +62,14 @@ export default function App() {
     let resolved = false;
 
     function onAuth(auth: { token: string; userId: string; channelId: string }) {
+      // Twitch richiama onAuthorized ad ogni rotazione del JWT (~30 min):
+      // il token va aggiornato SEMPRE, altrimenti scade e tutto va in 401 (B1).
+      api.setAuthToken(auth.token, auth.channelId);
+
+      // Il resto (caricamento profilo + sblocco UI) è one-shot al primo auth.
       if (resolved) return;
       resolved = true;
       setAuthed(true);
-      api.setAuthToken(auth.token, auth.channelId);
       loadProfile();
     }
 

@@ -22,8 +22,8 @@ export function twitchAuth(req: Request, res: Response, next: NextFunction) {
   const token = authHeader.split(' ')[1];
 
   try {
-    // In sviluppo, accetta un token di test semplice
-    if (env.nodeEnv === 'development' && token.startsWith('dev:')) {
+    // Backdoor dev: SOLO se abilitata esplicitamente e mai in produzione.
+    if (env.allowDevAuth && env.nodeEnv !== 'production' && token.startsWith('dev:')) {
       const [, userId, role] = token.split(':');
       req.twitchUser = {
         channel_id: env.broadcasterId || 'dev-channel',
@@ -36,7 +36,7 @@ export function twitchAuth(req: Request, res: Response, next: NextFunction) {
 
     // In produzione, decodifica il JWT Twitch
     const secret = Buffer.from(env.twitch.extensionSecret, 'base64');
-    const decoded = jwt.verify(token, secret) as any;
+    const decoded = jwt.verify(token, secret, { algorithms: ['HS256'] }) as any;
 
     // Il JWT Twitch usa 'user_id' se l'utente ha condiviso l'identita,
     // altrimenti solo 'opaque_user_id'.
