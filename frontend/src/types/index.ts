@@ -163,7 +163,9 @@ export interface ActiveBuff {
 }
 
 export type TacticalTarget = 'self' | 'ally_lowest_hp' | 'enemy_lowest_hp' | 'enemy_boss' | 'any_enemy';
-export type TacticalCondition = 'always' | 'hp_lt_50' | 'hp_lt_25' | 'is_stunned' | 'has_no_buff';
+export type TacticalCondition =
+  | 'always' | 'hp_lt_50' | 'hp_lt_25' | 'hp_gt_80' | 'is_stunned' | 'has_no_buff'
+  | 'ultimate_ready' | 'ally_dead' | 'enemy_count_geq_3' | 'turn_geq_3';
 export type TacticalAction = 'attack' | 'heal' | 'defend' | 'use_special';
 
 export interface TacticalRule {

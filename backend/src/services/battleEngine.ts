@@ -200,7 +200,7 @@ export function runBattle(
       const silenced = hasStatus(fighter, StatusEffect.SILENZIO);
 
       // Scegli abilita
-      const ability = chooseAbility(fighter, attackers, defenders, silenced);
+      const ability = chooseAbility(fighter, attackers, defenders, silenced, turn);
       if (!ability) continue;
 
       const abilityDef = ABILITY_MAP.get(ability);
@@ -567,12 +567,29 @@ function getGambitSubjects(
   }
 }
 
+interface GambitContext {
+  turn: number;
+  allies: BattleFighter[];
+  enemies: BattleFighter[];
+}
+
+// Condizioni "specifiche": selezionano un soggetto significativo, quindi il target
+// va imposto anche con `any_enemy`. Le altre (always/globali) lasciano il targeting normale.
+const SPECIFIC_CONDITIONS = new Set([
+  'hp_lt_50', 'hp_lt_25', 'hp_gt_80', 'is_stunned', 'has_no_buff',
+]);
+
 /**
  * Valuta una condizione Gambit sui soggetti risolti e ritorna il PRIMO fighter
  * che la soddisfa (o null se nessuno). Cosi' la condizione `hp_lt_25 SU enemy_boss`
- * guarda davvero il boss, non "un nemico qualsiasi".
+ * guarda davvero il boss, non "un nemico qualsiasi". Le condizioni globali
+ * (ally_dead, enemy_count_geq_3, turn_geq_3) usano il contesto di battaglia.
  */
-function matchGambitCondition(condition: string, subjects: BattleFighter[]): BattleFighter | null {
+function matchGambitCondition(
+  condition: string,
+  subjects: BattleFighter[],
+  ctx: GambitContext
+): BattleFighter | null {
   if (subjects.length === 0) return null;
   switch (condition) {
     case 'always':
@@ -581,6 +598,8 @@ function matchGambitCondition(condition: string, subjects: BattleFighter[]): Bat
       return subjects.find(f => f.currentHp / f.maxHp < 0.5) ?? null;
     case 'hp_lt_25':
       return subjects.find(f => f.currentHp / f.maxHp < 0.25) ?? null;
+    case 'hp_gt_80':
+      return subjects.find(f => f.currentHp / f.maxHp > 0.8) ?? null;
     case 'is_stunned':
       return subjects.find(f => hasStatus(f, StatusEffect.STORDIMENTO)) ?? null;
     case 'has_no_buff':
@@ -589,6 +608,13 @@ function matchGambitCondition(condition: string, subjects: BattleFighter[]): Bat
       // soddisfatta dal soggetto se ESISTE: la disponibilita' ult e' verificata
       // a valle sul fighter stesso (vedi evaluateGambit)
       return subjects[0];
+    // --- Condizioni globali: dipendono dallo stato della battaglia, non dal soggetto ---
+    case 'ally_dead':
+      return ctx.allies.some(a => !a.isAlive) ? subjects[0] : null;
+    case 'enemy_count_geq_3':
+      return ctx.enemies.filter(e => e.isAlive).length >= 3 ? subjects[0] : null;
+    case 'turn_geq_3':
+      return ctx.turn >= 3 ? subjects[0] : null;
     default:
       return null;
   }
@@ -636,16 +662,19 @@ export function evaluateGambit(
   fighter: BattleFighter,
   allies: BattleFighter[],
   enemies: BattleFighter[],
-  availableAbilities: string[]
+  availableAbilities: string[],
+  turn = 1
 ): GambitDecision | null {
   if (!fighter.tactics || fighter.tactics.length === 0) return null;
+
+  const ctx: GambitContext = { turn, allies, enemies };
 
   for (const rule of fighter.tactics) {
     if (!rule || rule.enabled === false) continue;
     if (!rule.target || !rule.condition || !rule.action) continue;
 
     const subjects = getGambitSubjects(rule.target, fighter, allies, enemies);
-    const matched = matchGambitCondition(rule.condition, subjects);
+    const matched = matchGambitCondition(rule.condition, subjects, ctx);
     if (!matched) continue;
 
     const chosen = abilitiesForAction(rule.action, availableAbilities);
@@ -658,9 +687,10 @@ export function evaluateGambit(
     }
 
     // Target preferito: per i target singoli lo imponiamo sempre; per `any_enemy`
-    // solo se la condizione ha selezionato un nemico specifico (non `always`).
+    // solo se la condizione ha selezionato un nemico specifico.
     const isSingleTarget = rule.target !== 'any_enemy';
-    const targetId = (isSingleTarget || rule.condition !== 'always') ? matched.id : undefined;
+    const forceTarget = isSingleTarget || SPECIFIC_CONDITIONS.has(rule.condition);
+    const targetId = forceTarget ? matched.id : undefined;
 
     return { ability: bestAbility(chosen), targetId };
   }
@@ -676,7 +706,8 @@ function chooseAbility(
   fighter: BattleFighter,
   attackers: BattleFighter[],
   defenders: BattleFighter[],
-  silenced: boolean
+  silenced: boolean,
+  turn = 1
 ): string | null {
   const enemies = fighter.team === 'attacker' ? defenders : attackers;
   const allies = fighter.team === 'attacker' ? attackers : defenders;
@@ -698,7 +729,7 @@ function chooseAbility(
 
   // === GAMBIT SYSTEM (TACTICS) ===
   if (fighter.tactics && fighter.tactics.length > 0) {
-    const gambit = evaluateGambit(fighter, allies, enemies, availableAbilities);
+    const gambit = evaluateGambit(fighter, allies, enemies, availableAbilities, turn);
     if (gambit) {
       fighter.preferredTargetId = gambit.targetId;
       return gambit.ability;

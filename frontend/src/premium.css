@@ -227,16 +227,96 @@
 .tactic-rule-card {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  padding: 12px;
+  padding: 10px;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, opacity 0.2s;
 }
 
 .tactic-rule-card:hover {
   border-color: rgba(145, 70, 255, 0.5);
+}
+
+.tactic-rule-card.rule-disabled {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+}
+
+.tactics-hint {
+  font-size: 10px;
+  color: #9aa;
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.tactics-hint b { color: #ff79c6; }
+
+.rule-priority {
+  flex: 0 0 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  color: #fff;
+  background: linear-gradient(160deg, #9146ff, #6a2dc4);
+  border-radius: 6px;
+  box-shadow: 0 0 8px rgba(145, 70, 255, 0.4);
+}
+
+.rule-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.rule-controls {
+  flex: 0 0 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+}
+
+.rule-toggle,
+.rule-move,
+.rule-del {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  width: 26px;
+  height: 20px;
+  font-size: 11px;
+  line-height: 1;
+  color: #ccc;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.rule-toggle:hover,
+.rule-move:hover:not(:disabled),
+.rule-del:hover {
+  border-color: rgba(145, 70, 255, 0.6);
+  color: #fff;
+}
+
+.rule-toggle.on { color: #4ade80; }
+.rule-toggle.off { color: #777; }
+.rule-del:hover { color: #ff5252; border-color: rgba(255, 82, 82, 0.6); }
+
+.rule-move:disabled {
+  opacity: 0.3;
+  cursor: default;
 }
 
 .rule-row {

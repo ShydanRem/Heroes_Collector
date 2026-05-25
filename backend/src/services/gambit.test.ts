@@ -163,3 +163,52 @@ describe('Bug #5 — enemy_boss ripiega correttamente senza boss flaggato', () =
     expect(dec!.targetId).toBe('big');
   });
 });
+
+describe('Nuove condizioni Gambit', () => {
+  it('ultimate_ready scatta solo se una ultimate e\' disponibile', () => {
+    const self = fighter('attacker', {
+      ability_ids: ['atk_colpo_base', 'ult_mille_lame'],
+      tactics: [rule({ target: 'any_enemy', condition: 'ultimate_ready', action: 'use_special' })],
+    });
+    const en = fighter('defender');
+    // con la ult disponibile → scatta
+    expect(evaluateGambit(self, [self], [en], ['atk_colpo_base', 'ult_mille_lame'])).not.toBeNull();
+    // senza la ult tra le disponibili (in cooldown) → non scatta
+    expect(evaluateGambit(self, [self], [en], ['atk_colpo_base'])).toBeNull();
+  });
+
+  it('ally_dead scatta quando un alleato e\' morto', () => {
+    const self = fighter('attacker', {
+      ability_ids: ['atk_colpo_base', 'ult_custode'],
+      tactics: [rule({ target: 'any_enemy', condition: 'ally_dead', action: 'use_special' })],
+    });
+    const deadAlly = fighter('attacker', { id: 'dead' });
+    deadAlly.isAlive = false;
+    const en = fighter('defender');
+    expect(evaluateGambit(self, [self, deadAlly], [en], ['atk_colpo_base', 'ult_custode'])).not.toBeNull();
+    expect(evaluateGambit(self, [self], [en], ['atk_colpo_base', 'ult_custode'])).toBeNull();
+  });
+
+  it('enemy_count_geq_3 scatta con 3+ nemici vivi (per AoE)', () => {
+    const self = fighter('attacker', { tactics: [rule({ condition: 'enemy_count_geq_3', action: 'attack' })] });
+    const e = () => fighter('defender');
+    expect(evaluateGambit(self, [self], [e(), e(), e()], ['atk_colpo_base'])).not.toBeNull();
+    expect(evaluateGambit(self, [self], [e(), e()], ['atk_colpo_base'])).toBeNull();
+  });
+
+  it('turn_geq_3 scatta dal turno 3 in poi', () => {
+    const self = fighter('attacker', { tactics: [rule({ condition: 'turn_geq_3', action: 'attack' })] });
+    const en = fighter('defender');
+    expect(evaluateGambit(self, [self], [en], ['atk_colpo_base'], 1)).toBeNull();
+    expect(evaluateGambit(self, [self], [en], ['atk_colpo_base'], 3)).not.toBeNull();
+  });
+
+  it('hp_gt_80 punta un soggetto ancora in salute (opener buff)', () => {
+    const self = fighter('attacker', { tactics: [rule({ target: 'enemy_lowest_hp', condition: 'hp_gt_80', action: 'attack' })] });
+    const healthy = fighter('defender', { id: 'h', hp: 200, currentHp: 200 });
+    const dec = evaluateGambit(self, [self], [healthy], ['atk_colpo_base']);
+    expect(dec!.targetId).toBe('h');
+    const hurt = fighter('defender', { id: 'hurt', hp: 200, currentHp: 50 });
+    expect(evaluateGambit(self, [self], [hurt], ['atk_colpo_base'])).toBeNull();
+  });
+});

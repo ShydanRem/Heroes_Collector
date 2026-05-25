@@ -2,7 +2,10 @@
 // Il vocabolario deve combaciare con il frontend TacticsEditor e con il motore di combattimento.
 
 export const VALID_TARGETS = new Set(['self', 'ally_lowest_hp', 'enemy_lowest_hp', 'enemy_boss', 'any_enemy']);
-export const VALID_CONDITIONS = new Set(['always', 'hp_lt_50', 'hp_lt_25', 'is_stunned', 'has_no_buff', 'ultimate_ready']);
+export const VALID_CONDITIONS = new Set([
+  'always', 'hp_lt_50', 'hp_lt_25', 'hp_gt_80', 'is_stunned', 'has_no_buff',
+  'ultimate_ready', 'ally_dead', 'enemy_count_geq_3', 'turn_geq_3',
+]);
 export const VALID_ACTIONS = new Set(['attack', 'heal', 'defend', 'use_special']);
 export const MAX_RULES = 10; // headroom oltre i 5 slot della UI, ma evita row bloat / DoS
 
