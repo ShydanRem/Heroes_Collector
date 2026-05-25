@@ -152,6 +152,14 @@ export function PvpArena() {
           textAlign: 'center', fontSize: 12, fontWeight: 800, color: '#f44336',
         }}>
           VS {result.opponentName}
+          {result.isBot && (
+            <span style={{
+              marginLeft: 6, fontSize: 9, fontWeight: 700, color: '#adadb8',
+              background: '#0e0e10', borderRadius: 3, padding: '1px 4px', verticalAlign: 'middle',
+            }}>
+              🤖 BOT
+            </span>
+          )}
         </div>
 
         {/* Speed control */}

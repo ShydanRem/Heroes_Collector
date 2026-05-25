@@ -259,6 +259,7 @@ export interface PvpResult {
   battleId: string;
   won: boolean;
   opponentName: string;
+  isBot?: boolean;
   log: BattleLogEntry[];
   totalTurns: number;
   eloChange: number;

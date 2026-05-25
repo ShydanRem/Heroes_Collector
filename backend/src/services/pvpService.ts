@@ -5,6 +5,7 @@ import { addExpToHero, addExpToRosterHero } from './heroService';
 import { addGold, addEssences } from './userService';
 import { addWeeklyPoints, POINTS } from './weeklyService';
 import { getTalentStatBonuses, getTalentSpecialEffects } from './talentService';
+import { generateBotOpponent } from './pvpBot';
 
 // ============================================
 // RISULTATO PVP
@@ -22,6 +23,7 @@ export interface PvpResult {
   battleId: string;
   won: boolean;
   opponentName: string;
+  isBot: boolean;
   log: BattleLogEntry[];
   totalTurns: number;
   eloChange: number;
@@ -84,52 +86,72 @@ export async function findAndFight(userId: string): Promise<PvpResult> {
   );
   const myElo = myEloRow.rows[0]?.elo_rating || BASE_ELO;
 
-  // Trova avversario: ELO simile, non se stesso, con party attivo non vuoto
+  // Carica i miei eroi (servono sia per combattere sia per scalare un eventuale bot)
+  const myHeroes = await getPartyHeroes(myParty.id);
+  if (myHeroes.length === 0) {
+    throw new Error('Il tuo party e vuoto!');
+  }
+
+  // Trova un avversario REALE: qualunque utente con un party attivo non vuoto
+  // (non serve che abbia gia giocato PVP). ELO simile preferito.
   const opponentResult = await query(
-    `SELECT l.user_id, l.elo_rating, u.display_name
-     FROM leaderboard l
-     JOIN users u ON u.twitch_user_id = l.user_id
-     WHERE l.user_id != $1
-     AND EXISTS (
-       SELECT 1 FROM parties p
-       WHERE p.user_id = l.user_id AND p.is_active = TRUE AND array_length(p.hero_ids, 1) > 0
-     )
-     ORDER BY ABS(l.elo_rating - $2), RANDOM()
+    `SELECT u.twitch_user_id AS user_id, COALESCE(l.elo_rating, $3) AS elo_rating, u.display_name
+     FROM parties p
+     JOIN users u ON u.twitch_user_id = p.user_id
+     LEFT JOIN leaderboard l ON l.user_id = p.user_id
+     WHERE p.is_active = TRUE
+       AND array_length(p.hero_ids, 1) > 0
+       AND p.user_id != $1
+     ORDER BY ABS(COALESCE(l.elo_rating, $3) - $2), RANDOM()
      LIMIT 1`,
-    [userId, myElo]
+    [userId, myElo, BASE_ELO]
   );
 
-  if (opponentResult.rows.length === 0) {
-    throw new Error('Nessun avversario disponibile! Servono piu giocatori con un party attivo.');
+  // Dati avversario: reale se trovato, altrimenti bot.
+  let isBot = false;
+  let opponentName = '';
+  let opponentElo = myElo;
+  let opponentUserId: string | null = null;
+  let opponentPartyId: string | null = null;
+  let opponentHeroes: any[] = [];
+
+  if (opponentResult.rows.length > 0) {
+    const candidate = opponentResult.rows[0];
+    const candidateParty = await getActiveParty(candidate.user_id);
+    const candidateHeroes = candidateParty ? await getPartyHeroes(candidateParty.id) : [];
+    if (candidateParty && candidateHeroes.length > 0) {
+      opponentHeroes = candidateHeroes;
+      opponentName = candidate.display_name;
+      opponentElo = candidate.elo_rating;
+      opponentUserId = candidate.user_id;
+      opponentPartyId = candidateParty.id;
+    }
   }
 
-  const opponent = opponentResult.rows[0];
-  const opponentParty = await getActiveParty(opponent.user_id);
-  if (!opponentParty) {
-    throw new Error('Avversario senza party attivo. Riprova.');
-  }
-
-  // Carica eroi di entrambi i party
-  const myHeroes = await getPartyHeroes(myParty.id);
-  const opponentHeroes = await getPartyHeroes(opponentParty.id);
-
-  if (myHeroes.length === 0 || opponentHeroes.length === 0) {
-    throw new Error('Uno dei party e vuoto!');
+  // Nessun avversario reale valido → genera un BOT scalato sul giocatore.
+  // Cosi il PVP e SEMPRE giocabile (fix arena vuota + piu engagement).
+  if (opponentHeroes.length === 0) {
+    const bot = generateBotOpponent(myHeroes, myElo);
+    opponentHeroes = bot.heroes;
+    opponentName = bot.name;
+    opponentElo = bot.elo;
+    isBot = true;
   }
 
   // Crea fighter
   const myFighters = myHeroes.map((h: any) => createFighter(h, 'attacker'));
   const opponentFighters = opponentHeroes.map((h: any) => createFighter(h, 'defender'));
 
-  // Applica talenti del giocatore
+  // Applica talenti del giocatore (e dell'avversario, solo se reale)
   let talentEffects = new Set<string>();
   try {
     const talentBonuses = await getTalentStatBonuses(userId);
     talentEffects = await getTalentSpecialEffects(userId);
     for (const f of myFighters) applyTalentBonuses(f, talentBonuses);
-    // Applica anche talenti avversario
-    const oppBonuses = await getTalentStatBonuses(opponent.user_id);
-    for (const f of opponentFighters) applyTalentBonuses(f, oppBonuses);
+    if (!isBot && opponentUserId) {
+      const oppBonuses = await getTalentStatBonuses(opponentUserId);
+      for (const f of opponentFighters) applyTalentBonuses(f, oppBonuses);
+    }
   } catch { /* */ }
 
   // Applica sinergie a entrambi i party
@@ -139,32 +161,39 @@ export async function findAndFight(userId: string): Promise<PvpResult> {
   // Combatti!
   const outcome = runBattle(myFighters, opponentFighters, { talentEffects });
 
-  // Calcola cambio ELO
-  const eloChange = calculateEloChange(myElo, opponent.elo_rating, outcome.won);
-  const opponentEloChange = calculateEloChange(opponent.elo_rating, myElo, !outcome.won);
-
+  // Calcola cambio ELO del giocatore
+  const eloChange = calculateEloChange(myElo, opponentElo, outcome.won);
   const newElo = myElo + eloChange;
-  const newOpponentElo = opponent.elo_rating + opponentEloChange;
 
-  // Aggiorna ELO di entrambi
+  // Aggiorna il MIO ELO + win/loss
   if (outcome.won) {
     await query(
       'UPDATE leaderboard SET elo_rating = $1, wins = wins + 1, updated_at = NOW() WHERE user_id = $2',
       [newElo, userId]
-    );
-    await query(
-      'UPDATE leaderboard SET elo_rating = $1, losses = losses + 1, updated_at = NOW() WHERE user_id = $2',
-      [newOpponentElo, opponent.user_id]
     );
   } else {
     await query(
       'UPDATE leaderboard SET elo_rating = $1, losses = losses + 1, updated_at = NOW() WHERE user_id = $2',
       [newElo, userId]
     );
-    await query(
-      'UPDATE leaderboard SET elo_rating = $1, wins = wins + 1, updated_at = NOW() WHERE user_id = $2',
-      [newOpponentElo, opponent.user_id]
-    );
+  }
+
+  // Aggiorna l'avversario SOLO se reale (i bot non hanno riga leaderboard)
+  if (!isBot && opponentUserId) {
+    await ensureLeaderboardEntry(opponentUserId);
+    const opponentEloChange = calculateEloChange(opponentElo, myElo, !outcome.won);
+    const newOpponentElo = opponentElo + opponentEloChange;
+    if (outcome.won) {
+      await query(
+        'UPDATE leaderboard SET elo_rating = $1, losses = losses + 1, updated_at = NOW() WHERE user_id = $2',
+        [newOpponentElo, opponentUserId]
+      );
+    } else {
+      await query(
+        'UPDATE leaderboard SET elo_rating = $1, wins = wins + 1, updated_at = NOW() WHERE user_id = $2',
+        [newOpponentElo, opponentUserId]
+      );
+    }
   }
 
   // Rewards
@@ -203,10 +232,10 @@ export async function findAndFight(userId: string): Promise<PvpResult> {
      RETURNING id`,
     [
       userId,
-      opponent.user_id,
+      opponentUserId,
       myParty.id,
-      opponentParty.id,
-      outcome.won ? userId : opponent.user_id,
+      opponentPartyId,
+      outcome.won ? userId : opponentUserId,
       JSON.stringify({ turns: outcome.totalTurns, logLength: outcome.log.length }),
       JSON.stringify({ exp: expReward, gold: goldReward }),
     ]
@@ -218,7 +247,8 @@ export async function findAndFight(userId: string): Promise<PvpResult> {
   return {
     battleId: battleResult.rows[0].id,
     won: outcome.won,
-    opponentName: opponent.display_name,
+    opponentName,
+    isBot,
     log: outcome.log,
     totalTurns: outcome.totalTurns,
     eloChange,

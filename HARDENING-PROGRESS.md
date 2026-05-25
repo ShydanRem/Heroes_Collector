@@ -26,8 +26,19 @@ Ordine d'attacco (dalla review):
 - [x] `validateEnv()` fail-fast all'avvio in produzione
 - ⚠️ NUOVO: per dev locale serve `ALLOW_DEV_AUTH=true` in `backend/.env` (documentato in .env.example)
 
+## ✅ BUG PRIORITÀ MAX — PVP arena vuota (FATTO, build verde + test unit)
+Root cause: `findAndFight` cercava avversari solo tra chi aveva già una riga `leaderboard`
++ party attivo → in testing/bassa popolazione 0 avversari → errore, mai un fight = "arena vuota".
+Fix:
+- [x] ricerca avversario allargata (qualsiasi utente con party attivo non vuoto, niente requisito leaderboard)
+- [x] avversario BOT di fallback scalato sul party del giocatore (`pvpBot.ts`) → PVP sempre giocabile
+- [x] ELO/save bot-aware (no update avversario inesistente, defender NULL)
+- [x] badge "🤖 BOT" nel frontend (trasparenza)
+- [x] test unit del generatore: `backend/src/scripts/verifyPvpBot.ts` (npx ts-node)
+- ⚠️ DA VERIFICARE LIVE: flusso PVP completo contro DB reale in locale
+
 ## ⬜ Blocco 3 — Test + lint + CI
-- [ ] da fare
+- [ ] da fare (seed: c'è già verifyPvpBot.ts come primo test)
 
 ## ⬜ Blocco 4 — Indici DB + CHECK constraints (DB-H1/H3/H4, DB-H2 float→int)
 - [ ] da fare

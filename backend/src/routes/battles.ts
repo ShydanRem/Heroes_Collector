@@ -51,6 +51,7 @@ battleRoutes.post('/pvp', async (req: Request, res: Response) => {
       battleId: result.battleId,
       won: result.won,
       opponentName: result.opponentName,
+      isBot: result.isBot,
       log: result.log,
       totalTurns: result.totalTurns,
       eloChange: result.eloChange,
