@@ -3,7 +3,9 @@
 -- ============================================
 
 -- Colonne roster mancanti (erano ADD COLUMN inline nel codice)
-ALTER TABLE roster ADD COLUMN IF NOT EXISTS capture_rarity VARCHAR(32) DEFAULT 'comune';
+-- NOTA: capture_rarity e' gia definita dalla migration 006 come enum `rarity`
+-- NOT NULL. NON ridefinirla qui come VARCHAR: creerebbe schemi divergenti tra
+-- ambienti a seconda dell'ordine di esecuzione.
 ALTER TABLE roster ADD COLUMN IF NOT EXISTS capture_level INTEGER DEFAULT 1;
 ALTER TABLE roster ADD COLUMN IF NOT EXISTS exp INTEGER DEFAULT 0;
 ALTER TABLE roster ADD COLUMN IF NOT EXISTS ability_ids TEXT[];
@@ -19,5 +21,7 @@ ALTER TABLE users ALTER COLUMN energy SET DEFAULT 100;
 -- Alzare energia max per il playtest
 ALTER TABLE users ALTER COLUMN max_energy SET DEFAULT 200;
 
--- Aggiornare utenti esistenti che hanno ancora i valori vecchi
-UPDATE users SET energy = GREATEST(energy, 100) WHERE energy < 100;
+-- NOTA: rimosso l'UPDATE one-time "energy = GREATEST(energy, 100)".
+-- Era un boost una-tantum del playtest ma, eseguito a ogni deploy dal vecchio
+-- migration runner, ri-flooizzava l'energia di tutti i giocatori a ogni rilascio
+-- (bug di economia live). I nuovi utenti prendono comunque il DEFAULT 100 sopra.
