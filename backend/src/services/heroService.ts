@@ -1,7 +1,7 @@
-import { query } from '../config/database';
+import { query, withTransaction } from '../config/database';
 import { Hero, HeroClass, Rarity, CAPTURE_ENERGY_COST, RARITY_ORDER, UPGRADE_ESSENCE_COST } from '../types';
 import { generateHero, calculateStats, selectAbilities, tryLevelUp, scoreToRarity, calculateActivityScore } from './heroGenerator';
-import { consumeEnergy, refreshActivityScore } from './userService';
+import { consumeEnergy, refreshActivityScore, spendGold, addEnergy } from './userService';
 
 /**
  * Crea l'eroe per un utente che ha fatto opt-in.
@@ -168,14 +168,24 @@ export async function captureHero(
     return { success: false, message: `Energia insufficiente! Servono ${energyCost} energia.` };
   }
 
-  // Aggiungi al roster con livello 1, EXP 0 e abilità iniziali
+  // Aggiungi al roster con livello 1, EXP 0 e abilità iniziali.
+  // ON CONFLICT: se una cattura concorrente ha gia inserito la riga (UNIQUE
+  // owner_user_id+hero_id), non duplichiamo e rimborsiamo l'energia consumata.
   const initialLevel = 1;
   const initialAbilities = selectAbilities(hero.heroClass, chosenRarity, initialLevel, captorUserId);
 
-  await query(
-    'INSERT INTO roster (owner_user_id, hero_id, capture_rarity, capture_level, exp, ability_ids) VALUES ($1, $2, $3, $4, $5, $6)',
+  const inserted = await query(
+    `INSERT INTO roster (owner_user_id, hero_id, capture_rarity, capture_level, exp, ability_ids)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (owner_user_id, hero_id) DO NOTHING
+     RETURNING id`,
     [captorUserId, heroId, chosenRarity, initialLevel, 0, initialAbilities]
   );
+
+  if (inserted.rows.length === 0) {
+    await addEnergy(captorUserId, energyCost);
+    return { success: false, message: 'Hai già catturato questo eroe!' };
+  }
 
   // Punti classifica settimanale + missioni giornaliere
   try {
@@ -237,66 +247,72 @@ export async function upgradeRosteredHero(
   userId: string,
   heroId: string
 ): Promise<{ success: boolean; message: string; hero?: Hero }> {
-  // Trova la entry nel roster
-  const rosterResult = await query(
-    'SELECT r.*, h.rarity AS original_rarity, h.hero_class, h.level FROM roster r JOIN heroes h ON r.hero_id = h.id WHERE r.owner_user_id = $1 AND r.hero_id = $2',
-    [userId, heroId]
-  );
-  if (rosterResult.rows.length === 0) {
-    return { success: false, message: 'Eroe non trovato nel tuo roster!' };
-  }
+  // Tutto dentro una transazione: lock della riga roster + deduzione essenze
+  // atomica. Cosi due upgrade concorrenti non pagano due volte per un solo step.
+  return withTransaction(async (client) => {
+    const rosterResult = await client.query(
+      `SELECT r.*, h.rarity AS original_rarity, h.hero_class, h.level
+       FROM roster r JOIN heroes h ON r.hero_id = h.id
+       WHERE r.owner_user_id = $1 AND r.hero_id = $2
+       FOR UPDATE OF r`,
+      [userId, heroId]
+    );
+    if (rosterResult.rows.length === 0) {
+      return { success: false, message: 'Eroe non trovato nel tuo roster!' };
+    }
 
-  const rosterEntry = rosterResult.rows[0];
-  const currentRarity: Rarity = rosterEntry.capture_rarity;
-  const originalRarity: Rarity = rosterEntry.original_rarity;
+    const rosterEntry = rosterResult.rows[0];
+    const currentRarity: Rarity = rosterEntry.capture_rarity;
+    const originalRarity: Rarity = rosterEntry.original_rarity;
 
-  // Trova la rarità successiva
-  const currentIdx = RARITY_ORDER.indexOf(currentRarity);
-  const originalIdx = RARITY_ORDER.indexOf(originalRarity);
+    // Trova la rarità successiva
+    const currentIdx = RARITY_ORDER.indexOf(currentRarity);
+    const originalIdx = RARITY_ORDER.indexOf(originalRarity);
 
-  if (currentIdx < 0 || currentIdx >= RARITY_ORDER.length - 1) {
-    return { success: false, message: 'Questo eroe è già alla rarità massima!' };
-  }
+    if (currentIdx < 0 || currentIdx >= RARITY_ORDER.length - 1) {
+      return { success: false, message: 'Questo eroe è già alla rarità massima!' };
+    }
 
-  const nextRarity = RARITY_ORDER[currentIdx + 1];
-  const nextIdx = currentIdx + 1;
+    const nextRarity = RARITY_ORDER[currentIdx + 1];
+    const nextIdx = currentIdx + 1;
 
-  // Non può superare la rarità dell'eroe originale
-  if (nextIdx > originalIdx) {
-    return { success: false, message: 'Non puoi superare la rarità originale dell\'eroe!' };
-  }
+    // Non può superare la rarità dell'eroe originale
+    if (nextIdx > originalIdx) {
+      return { success: false, message: 'Non puoi superare la rarità originale dell\'eroe!' };
+    }
 
-  // Controlla essenze
-  const essenceCost = UPGRADE_ESSENCE_COST[nextRarity];
-  const userResult = await query(
-    'SELECT essences FROM users WHERE twitch_user_id = $1',
-    [userId]
-  );
-  const userEssences = userResult.rows[0]?.essences || 0;
-  if (userEssences < essenceCost) {
-    return { success: false, message: `Essenze insufficienti! Servono ${essenceCost} Essenze Eroiche (ne hai ${userEssences}).` };
-  }
+    // Deduci essenze in modo atomico dentro la transazione
+    const essenceCost = UPGRADE_ESSENCE_COST[nextRarity];
+    const deduct = await client.query(
+      `UPDATE users SET essences = COALESCE(essences, 0) - $1, updated_at = NOW()
+       WHERE twitch_user_id = $2 AND COALESCE(essences, 0) >= $1
+       RETURNING essences`,
+      [essenceCost, userId]
+    );
+    if (deduct.rows.length === 0) {
+      const have = await client.query(
+        'SELECT COALESCE(essences, 0) AS e FROM users WHERE twitch_user_id = $1',
+        [userId]
+      );
+      const userEssences = have.rows[0]?.e ?? 0;
+      return { success: false, message: `Essenze insufficienti! Servono ${essenceCost} Essenze Eroiche (ne hai ${userEssences}).` };
+    }
 
-  // Deduci essenze
-  await query(
-    'UPDATE users SET essences = essences - $1 WHERE twitch_user_id = $2',
-    [essenceCost, userId]
-  );
+    // Aggiorna la rarità nel roster
+    await client.query(
+      'UPDATE roster SET capture_rarity = $1 WHERE owner_user_id = $2 AND hero_id = $3',
+      [nextRarity, userId, heroId]
+    );
 
-  // Aggiorna la rarità nel roster
-  await query(
-    'UPDATE roster SET capture_rarity = $1 WHERE owner_user_id = $2 AND hero_id = $3',
-    [nextRarity, userId, heroId]
-  );
+    // Ritorna l'eroe aggiornato con le nuove stats
+    const hero = await getHeroById(heroId);
+    if (hero) {
+      hero.rarity = nextRarity;
+      hero.stats = calculateStats(hero.heroClass, nextRarity, hero.level);
+    }
 
-  // Ritorna l'eroe aggiornato con le nuove stats
-  const hero = await getHeroById(heroId);
-  if (hero) {
-    hero.rarity = nextRarity;
-    hero.stats = calculateStats(hero.heroClass, nextRarity, hero.level);
-  }
-
-  return { success: true, message: `Rarità migliorata a ${nextRarity}!`, hero: hero || undefined };
+    return { success: true, message: `Rarità migliorata a ${nextRarity}!`, hero: hero || undefined };
+  });
 }
 
 /**
@@ -476,10 +492,11 @@ export async function rerollHeroClass(
     throw new Error('Hai gia questa classe!');
   }
 
-  // Controlla gold
-  const userResult = await query('SELECT gold FROM users WHERE twitch_user_id = $1', [twitchUserId]);
-  const gold = userResult.rows[0]?.gold || 0;
-  if (gold < REROLL_COST) {
+  // Deduci gold in modo atomico (no race / no saldo negativo)
+  const paid = await spendGold(twitchUserId, REROLL_COST);
+  if (!paid) {
+    const userResult = await query('SELECT gold FROM users WHERE twitch_user_id = $1', [twitchUserId]);
+    const gold = userResult.rows[0]?.gold || 0;
     throw new Error(`Servono ${REROLL_COST} gold! Ne hai ${gold}.`);
   }
 
@@ -487,8 +504,7 @@ export async function rerollHeroClass(
   const newStats = calculateStats(newClass, hero.rarity, hero.level);
   const newAbilities = selectAbilities(newClass, hero.rarity, hero.level, twitchUserId);
 
-  // Applica
-  await query('UPDATE users SET gold = gold - $1 WHERE twitch_user_id = $2', [REROLL_COST, twitchUserId]);
+  // Applica all'eroe
   await query(
     `UPDATE heroes SET hero_class = $1,
      hp = $2, atk = $3, def = $4, spd = $5, crit = $6, crit_dmg = $7,

@@ -187,6 +187,46 @@ export async function addEssences(twitchUserId: string, amount: number): Promise
 }
 
 /**
+ * Spesa atomica di gold. Un singolo UPDATE condizionale: il lock di riga di
+ * Postgres serializza le richieste concorrenti, quindi niente double-spend e
+ * niente saldo negativo. Restituisce true solo se il gold e stato scalato.
+ */
+export async function spendGold(twitchUserId: string, amount: number): Promise<boolean> {
+  const result = await query(
+    `UPDATE users SET gold = gold - $1, updated_at = NOW()
+     WHERE twitch_user_id = $2 AND gold >= $1
+     RETURNING gold`,
+    [amount, twitchUserId]
+  );
+  return result.rows.length > 0;
+}
+
+/**
+ * Spesa atomica di Essenze Eroiche. Stesso pattern di spendGold.
+ */
+export async function spendEssences(twitchUserId: string, amount: number): Promise<boolean> {
+  const result = await query(
+    `UPDATE users SET essences = COALESCE(essences, 0) - $1, updated_at = NOW()
+     WHERE twitch_user_id = $2 AND COALESCE(essences, 0) >= $1
+     RETURNING essences`,
+    [amount, twitchUserId]
+  );
+  return result.rows.length > 0;
+}
+
+/**
+ * Restituisce energia (es. refund quando un'azione fallisce dopo averla consumata).
+ * Non supera mai max_energy.
+ */
+export async function addEnergy(twitchUserId: string, amount: number): Promise<void> {
+  await query(
+    `UPDATE users SET energy = LEAST(max_energy, energy + $1), updated_at = NOW()
+     WHERE twitch_user_id = $2`,
+    [amount, twitchUserId]
+  );
+}
+
+/**
  * Ottieni profilo utente.
  */
 export async function getUserProfile(twitchUserId: string): Promise<UserProfile | null> {

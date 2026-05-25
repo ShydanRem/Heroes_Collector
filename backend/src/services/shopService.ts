@@ -1,5 +1,6 @@
 import { query } from '../config/database';
 import { giveItem } from './itemService';
+import { spendGold } from './userService';
 import { ITEMS, ITEM_MAP } from '../data/items';
 import { Rarity } from '../types';
 
@@ -136,24 +137,18 @@ export async function purchaseItem(
     return { success: false, message: 'Articolo esaurito!' };
   }
 
-  // Controlla gold
-  const userResult = await query(
-    'SELECT gold FROM users WHERE twitch_user_id = $1',
-    [userId]
-  );
-  if (userResult.rows.length === 0) {
-    return { success: false, message: 'Utente non trovato' };
-  }
-
-  if (userResult.rows[0].gold < listing.priceGold) {
+  // Deduci gold in modo atomico (no race / no saldo negativo).
+  const paid = await spendGold(userId, listing.priceGold);
+  if (!paid) {
+    const userResult = await query(
+      'SELECT gold FROM users WHERE twitch_user_id = $1',
+      [userId]
+    );
+    if (userResult.rows.length === 0) {
+      return { success: false, message: 'Utente non trovato' };
+    }
     return { success: false, message: `Gold insufficiente! Servono ${listing.priceGold}g.` };
   }
-
-  // Deduci gold
-  await query(
-    'UPDATE users SET gold = gold - $1 WHERE twitch_user_id = $2',
-    [listing.priceGold, userId]
-  );
 
   // Applica effetto in base al tipo e genera messaggio descrittivo
   let resultMessage = '';

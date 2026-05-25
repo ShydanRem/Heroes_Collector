@@ -132,8 +132,10 @@ export async function claimDailyLogin(userId: string): Promise<ClaimResult> {
   const reward = DAILY_REWARDS[streakDay - 1];
   const bestStreak = Math.max(status.bestStreak, newStreak);
 
-  // Aggiorna utente: streak, gold, energia — usa CURRENT_DATE di Postgres
-  await query(
+  // Claim atomico: l'UPDATE applica il reward SOLO se non e gia stato riscosso
+  // oggi (last_login_date != CURRENT_DATE). Due richieste concorrenti non
+  // possono quindi raddoppiare gold/energia: la seconda trova 0 righe.
+  const claimed = await query(
     `UPDATE users SET
        login_streak = $1,
        best_streak = $2,
@@ -141,9 +143,15 @@ export async function claimDailyLogin(userId: string): Promise<ClaimResult> {
        gold = gold + $3,
        energy = LEAST(max_energy, energy + $4),
        updated_at = NOW()
-     WHERE twitch_user_id = $5`,
+     WHERE twitch_user_id = $5
+       AND last_login_date IS DISTINCT FROM CURRENT_DATE
+     RETURNING login_streak`,
     [newStreak, bestStreak, reward.gold, reward.energy, userId]
   );
+
+  if (claimed.rows.length === 0) {
+    throw new Error('Hai gia riscosso il premio giornaliero!');
+  }
 
   // Essenze (se > 0)
   if (reward.essences > 0) {

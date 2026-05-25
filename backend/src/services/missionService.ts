@@ -240,17 +240,26 @@ export async function claimMission(
     throw new Error('Ricompensa gia riscossa');
   }
 
-  // Segna come riscossa
-  await query(
-    'UPDATE daily_missions SET claimed = true WHERE id = $1',
-    [missionId]
+  // Claim atomico: solo la richiesta che porta claimed da false->true paga.
+  // Una seconda richiesta concorrente trova 0 righe e non raddoppia il reward.
+  const gate = await query(
+    `UPDATE daily_missions SET claimed = true
+     WHERE id = $1 AND user_id = $2 AND completed_at IS NOT NULL AND claimed = false
+     RETURNING reward_gold, reward_exp, reward_essences`,
+    [missionId, userId]
   );
 
+  if (gate.rows.length === 0) {
+    throw new Error('Ricompensa gia riscossa');
+  }
+
+  const claimedMission = gate.rows[0];
+
   // Assegna gold
-  await addGold(userId, mission.reward_gold);
+  await addGold(userId, claimedMission.reward_gold);
 
   // Assegna essenze
-  const essences = mission.reward_essences || 0;
+  const essences = claimedMission.reward_essences || 0;
   if (essences > 0) {
     await addEssences(userId, essences);
   }
@@ -262,8 +271,8 @@ export async function claimMission(
   );
 
   for (const hero of heroesResult.rows) {
-    await addExpToHero(hero.id, mission.reward_exp);
+    await addExpToHero(hero.id, claimedMission.reward_exp);
   }
 
-  return { gold: mission.reward_gold, exp: mission.reward_exp, essences };
+  return { gold: claimedMission.reward_gold, exp: claimedMission.reward_exp, essences };
 }
