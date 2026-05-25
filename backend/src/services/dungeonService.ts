@@ -348,7 +348,6 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
     }
   } catch (err) {
     // Se le tabelle zone non esistono ancora, il dungeon funziona comunque
-    // @ts-ignore
     console.warn('Zone progress non salvato (tabella mancante?):', err);
   }
 

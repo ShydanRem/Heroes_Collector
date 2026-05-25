@@ -166,7 +166,7 @@ export async function getPartyHeroes(partyId: string): Promise<any[]> {
   
   return result.rows.map((row: any) => {
     // Gestione tattiche (Gambit)
-    let tacticsRaw = row.roster_id ? row.roster_tactics : row.user_tactics;
+    const tacticsRaw = row.roster_id ? row.roster_tactics : row.user_tactics;
     let tactics = [];
     if (typeof tacticsRaw === 'string') {
       try { tactics = JSON.parse(tacticsRaw); } catch (e) {}

@@ -266,7 +266,7 @@ export function runBattle(
       }
 
 
-      let targets = selectTargets(abilityDef.target, fighter, enemies, allies, ability);
+      const targets = selectTargets(abilityDef.target, fighter, enemies, allies, ability);
       let totalAbilityDamage = 0;
 
       for (const target of targets) {

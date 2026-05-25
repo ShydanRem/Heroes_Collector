@@ -1,4 +1,4 @@
-import { Ability, AbilityType, HeroClass, Rarity, StatusEffect, TargetType } from '../types';
+import { Ability, AbilityType, HeroClass, Rarity, RARITY_ORDER, StatusEffect, TargetType } from '../types';
 
 // ============================================
 // POOL COMPLETO ABILITA' (~70)
@@ -825,7 +825,6 @@ export function getAbilitiesForClass(heroClass: HeroClass): Ability[] {
 
 // Abilità disponibili per una classe e rarità
 export function getAvailableAbilities(heroClass: HeroClass, rarity: Rarity): Ability[] {
-  const { RARITY_ORDER } = require('../types');
   const rarityIndex = RARITY_ORDER.indexOf(rarity);
 
   return ABILITIES.filter(a => {

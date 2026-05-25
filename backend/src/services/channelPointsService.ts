@@ -96,7 +96,7 @@ export async function handleChannelPointRedemption(
       );
       return { success: true, message: 'Energia al massimo!' };
 
-    case 'exp_boost':
+    case 'exp_boost': {
       const heroResult = await query(
         'SELECT id FROM heroes WHERE twitch_user_id = $1 LIMIT 1',
         [userId]
@@ -105,6 +105,7 @@ export async function handleChannelPointRedemption(
         await addExpToHero(heroResult.rows[0].id, 500);
       }
       return { success: true, message: '+500 EXP al tuo eroe!' };
+    }
 
     case 'gold_pack':
       await query(

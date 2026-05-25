@@ -65,7 +65,7 @@ twitchRoutes.post('/eventsub', async (req: Request, res: Response) => {
       // Twitch chiede di confermare l'URL
       return res.status(200).type('text/plain').send(req.body.challenge);
 
-    case 'notification':
+    case 'notification': {
       // Evento reale
       const eventType = req.body.subscription.type;
       const event = req.body.event;
@@ -76,6 +76,7 @@ twitchRoutes.post('/eventsub', async (req: Request, res: Response) => {
         console.error('Errore gestione evento:', err);
       }
       return res.status(200).json({ ok: true });
+    }
 
     case 'revocation':
       console.log('EventSub revocato:', req.body.subscription.type);

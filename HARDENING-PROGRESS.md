@@ -37,8 +37,17 @@ Fix:
 - [x] test unit del generatore: `backend/src/scripts/verifyPvpBot.ts` (npx ts-node)
 - ⚠️ DA VERIFICARE LIVE: flusso PVP completo contro DB reale in locale
 
-## ⬜ Blocco 3 — Test + lint + CI
-- [ ] da fare (seed: c'è già verifyPvpBot.ts come primo test)
+## ✅ Blocco 3 — Test + lint + CI (FATTO, tutto verde)
+- [x] **Vitest** sul backend (`npm test` → `vitest run`) — 36 test, 3 file, ~0.3s
+  - `heroGenerator.test.ts` — activity score, soglie rarità, classi deterministiche, stats, exp/levelup
+  - `pvpBot.test.ts` — size capped a 5, scaling livello/rarità/elo, mai arena vuota, stats positive
+  - `battleEngine.test.ts` — terminazione ≤30 turni, party superiore vince sempre (RNG-robust), createFighter, talenti, sinergie
+  - test esclusi dalla build `tsc` (tsconfig `exclude`)
+- [x] **ESLint 10** flat config (`npm run lint`) — 0 errori, 16 warning (debito `any` esistente, non bloccante)
+  - regole bug-reali = error (no-var, prefer-const, no-case-declarations…), debito esistente = warn
+- [x] **GitHub Actions** `.github/workflows/ci.yml` — job backend (typecheck+lint+test) + frontend (build), Node 20, `npm ci`
+- [x] script aggiunti: `typecheck`, `test`, `test:watch`, `lint`
+- 🐛 BONUS: scovato e fixato `require('../types')` inline in `abilities.ts` (rompeva sotto qualsiasi bundler non-CommonJS)
 
 ## ⬜ Blocco 4 — Indici DB + CHECK constraints (DB-H1/H3/H4, DB-H2 float→int)
 - [ ] da fare

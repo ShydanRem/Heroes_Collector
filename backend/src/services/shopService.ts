@@ -170,7 +170,7 @@ export async function purchaseItem(
       resultMessage = `Energia ripristinata al massimo!`;
       break;
 
-    case 'exp_potion':
+    case 'exp_potion': {
       const heroResult = await query(
         'SELECT id, display_name FROM heroes WHERE twitch_user_id = $1 LIMIT 1',
         [userId]
@@ -183,8 +183,9 @@ export async function purchaseItem(
         resultMessage = `Pergamena usata, ma nessun eroe trovato.`;
       }
       break;
+    }
 
-    case 'reroll':
+    case 'reroll': {
       const myHero = await query(
         'SELECT * FROM heroes WHERE twitch_user_id = $1',
         [userId]
@@ -205,6 +206,7 @@ export async function purchaseItem(
         resultMessage = `Cristallo usato, ma nessun eroe trovato.`;
       }
       break;
+    }
 
     case 'equipment':
       if (listing.itemId) {
