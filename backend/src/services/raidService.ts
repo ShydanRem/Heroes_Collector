@@ -266,6 +266,7 @@ export async function attackRaid(userId: string): Promise<RaidAttackResult> {
     crit: b?.crit || 15,
     crit_dmg: b?.crit_dmg || 170,
     ability_ids: b?.ability_ids || ['atk_tempesta_arcana', 'atk_nube_tossica', 'deb_aoe_curse'],
+    tier: 'boss',
   }, 'defender');
 
   // Applica sinergie party

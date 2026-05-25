@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { query } from '../config/database';
+import { sanitizeRules } from '../services/tacticsValidation';
 
 export const tacticsRoutes = Router();
 
@@ -37,7 +38,7 @@ tacticsRoutes.get('/:heroId', async (req: Request, res: Response) => {
     res.json({ rules: result.rows[0].tactics_json || [] });
   } catch (err: any) {
     console.error('Errore GET /tactics/:heroId:', err);
-    res.status(500).json({ error: `Errore interno: ${err.message}` });
+    res.status(500).json({ error: 'Errore interno del server' });
   }
 });
 
@@ -55,19 +56,26 @@ tacticsRoutes.post('/', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'ID Eroe non valido' });
     }
 
+    // Valida la shape delle regole prima di toccare il DB (no JSON arbitrario)
+    const sanitized = sanitizeRules(rules);
+    if (!sanitized.ok) {
+      return res.status(400).json({ error: sanitized.error });
+    }
+    const cleanRules = sanitized.rules;
+
     // Prova ad aggiornare l'eroe principale
     let updateResult = await query(
-      `UPDATE users SET tactics_json = $1 
-       WHERE twitch_user_id = $2 AND twitch_user_id = (SELECT twitch_user_id FROM heroes WHERE id = $3) 
+      `UPDATE users SET tactics_json = $1
+       WHERE twitch_user_id = $2 AND twitch_user_id = (SELECT twitch_user_id FROM heroes WHERE id = $3)
        RETURNING twitch_user_id`,
-      [JSON.stringify(rules), userId, heroId]
+      [JSON.stringify(cleanRules), userId, heroId]
     );
 
     if (updateResult.rowCount === 0) {
       // Se non era l'eroe principale, aggiorna nel roster
       updateResult = await query(
         'UPDATE roster SET tactics_json = $1 WHERE owner_user_id = $2 AND hero_id = $3 RETURNING hero_id',
-        [JSON.stringify(rules), userId, heroId]
+        [JSON.stringify(cleanRules), userId, heroId]
       );
     }
 
@@ -78,6 +86,6 @@ tacticsRoutes.post('/', async (req: Request, res: Response) => {
     res.json({ message: 'Tattiche salvate con successo' });
   } catch (err: any) {
     console.error('Errore POST /tactics:', err);
-    res.status(500).json({ error: `Errore interno: ${err.message}` });
+    res.status(500).json({ error: 'Errore interno del server' });
   }
 });

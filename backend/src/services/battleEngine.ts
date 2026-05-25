@@ -23,6 +23,8 @@ export interface BattleFighter {
   threat: number; // aggro accumulato
   customState?: any; // per effetti speciali temporanei come il chain attack
   tactics?: any[]; // Regole Gambit (Tactics) per l'IA
+  isBoss?: boolean; // true per i boss di zona/raid — usato dal target Gambit `enemy_boss`
+  preferredTargetId?: string; // target imposto da una regola Gambit per il turno corrente (transiente)
 }
 
 // Ruoli per classe — scalabile, basta aggiungere nuove classi qui
@@ -506,6 +508,167 @@ export function runBattle(
 }
 
 // ============================================
+// GAMBIT (TACTICS) — valutazione regole
+// ============================================
+
+// Solo questi effetti contano come "buff" veri. I debuff (veleno, stordimento,
+// maledizione, ...) NON devono far scattare `has_no_buff`.
+const BUFF_EFFECTS = new Set<StatusEffect>([
+  StatusEffect.SCUDO,
+  StatusEffect.FURIA,
+  StatusEffect.EVASIONE,
+  StatusEffect.RIFLESSO,
+  StatusEffect.BENEDIZIONE,
+  StatusEffect.RIGENERAZIONE,
+  StatusEffect.INVULNERABILE,
+  StatusEffect.HASTE_ESTREMO,
+]);
+
+function hasBuff(fighter: BattleFighter): boolean {
+  return fighter.statusEffects.some(s => s.duration > 0 && BUFF_EFFECTS.has(s.effect));
+}
+
+function lowestHpFighter(fighters: BattleFighter[]): BattleFighter {
+  return fighters.reduce((lo, f) =>
+    (f.currentHp / f.maxHp < lo.currentHp / lo.maxHp ? f : lo));
+}
+
+/**
+ * Risolve il gruppo di "soggetti" di una regola Gambit a partire dal suo target.
+ * Per i target singoli (self, *_lowest_hp, enemy_boss) ritorna un solo fighter;
+ * per `any_enemy` ritorna tutti i nemici vivi.
+ */
+function getGambitSubjects(
+  target: string,
+  fighter: BattleFighter,
+  allies: BattleFighter[],
+  enemies: BattleFighter[]
+): BattleFighter[] {
+  const aliveAllies = allies.filter(a => a.isAlive);
+  const aliveEnemies = enemies.filter(e => e.isAlive);
+
+  switch (target) {
+    case 'self':
+      return fighter.isAlive ? [fighter] : [];
+    case 'ally_lowest_hp':
+      return aliveAllies.length > 0 ? [lowestHpFighter(aliveAllies)] : [];
+    case 'enemy_lowest_hp':
+      return aliveEnemies.length > 0 ? [lowestHpFighter(aliveEnemies)] : [];
+    case 'enemy_boss': {
+      if (aliveEnemies.length === 0) return [];
+      const boss = aliveEnemies.find(e => e.isBoss);
+      if (boss) return [boss];
+      // Nessun boss flaggato (es. PVP): ripiega sul nemico con piu' HP max (boss-like)
+      return [aliveEnemies.reduce((hi, e) => (e.maxHp > hi.maxHp ? e : hi))];
+    }
+    case 'any_enemy':
+    default:
+      return aliveEnemies;
+  }
+}
+
+/**
+ * Valuta una condizione Gambit sui soggetti risolti e ritorna il PRIMO fighter
+ * che la soddisfa (o null se nessuno). Cosi' la condizione `hp_lt_25 SU enemy_boss`
+ * guarda davvero il boss, non "un nemico qualsiasi".
+ */
+function matchGambitCondition(condition: string, subjects: BattleFighter[]): BattleFighter | null {
+  if (subjects.length === 0) return null;
+  switch (condition) {
+    case 'always':
+      return subjects[0];
+    case 'hp_lt_50':
+      return subjects.find(f => f.currentHp / f.maxHp < 0.5) ?? null;
+    case 'hp_lt_25':
+      return subjects.find(f => f.currentHp / f.maxHp < 0.25) ?? null;
+    case 'is_stunned':
+      return subjects.find(f => hasStatus(f, StatusEffect.STORDIMENTO)) ?? null;
+    case 'has_no_buff':
+      return subjects.find(f => !hasBuff(f)) ?? null;
+    case 'ultimate_ready':
+      // soddisfatta dal soggetto se ESISTE: la disponibilita' ult e' verificata
+      // a valle sul fighter stesso (vedi evaluateGambit)
+      return subjects[0];
+    default:
+      return null;
+  }
+}
+
+function abilitiesForAction(action: string, availableAbilities: string[]): string[] {
+  switch (action) {
+    case 'attack':
+      return availableAbilities.filter(id => ABILITY_MAP.get(id)?.type === AbilityType.ATTACCO);
+    case 'heal':
+      return availableAbilities.filter(id => ABILITY_MAP.get(id)?.type === AbilityType.SUPPORTO);
+    case 'defend':
+      return availableAbilities.filter(id => ABILITY_MAP.get(id)?.type === AbilityType.DIFESA);
+    case 'use_special':
+      return availableAbilities.filter(id => {
+        const ty = ABILITY_MAP.get(id)?.type;
+        return ty === AbilityType.ULTIMATE || ty === AbilityType.DEBUFF;
+      });
+    default:
+      return [];
+  }
+}
+
+function bestAbility(abilities: string[]): string {
+  return abilities.slice().sort((a, b) => {
+    const aDef = ABILITY_MAP.get(a);
+    const bDef = ABILITY_MAP.get(b);
+    const aWeight = (aDef?.type === AbilityType.ULTIMATE ? 100 : 0) + (aDef?.power || 0);
+    const bWeight = (bDef?.type === AbilityType.ULTIMATE ? 100 : 0) + (bDef?.power || 0);
+    return bWeight - aWeight;
+  })[0];
+}
+
+export interface GambitDecision {
+  ability: string;
+  targetId?: string;
+}
+
+/**
+ * Valuta le regole Gambit del fighter in ordine di priorita' e ritorna la prima
+ * che scatta (abilita' + target preferito), o null se nessuna regola e' applicabile.
+ * Funzione pura (no RNG, no mutazione) → testabile in isolamento.
+ */
+export function evaluateGambit(
+  fighter: BattleFighter,
+  allies: BattleFighter[],
+  enemies: BattleFighter[],
+  availableAbilities: string[]
+): GambitDecision | null {
+  if (!fighter.tactics || fighter.tactics.length === 0) return null;
+
+  for (const rule of fighter.tactics) {
+    if (!rule || rule.enabled === false) continue;
+    if (!rule.target || !rule.condition || !rule.action) continue;
+
+    const subjects = getGambitSubjects(rule.target, fighter, allies, enemies);
+    const matched = matchGambitCondition(rule.condition, subjects);
+    if (!matched) continue;
+
+    const chosen = abilitiesForAction(rule.action, availableAbilities);
+    if (chosen.length === 0) continue;
+
+    // `ultimate_ready`: la regola scatta solo se l'azione ha davvero una ultimate pronta
+    if (rule.condition === 'ultimate_ready') {
+      const hasUlt = chosen.some(id => ABILITY_MAP.get(id)?.type === AbilityType.ULTIMATE);
+      if (!hasUlt) continue;
+    }
+
+    // Target preferito: per i target singoli lo imponiamo sempre; per `any_enemy`
+    // solo se la condizione ha selezionato un nemico specifico (non `always`).
+    const isSingleTarget = rule.target !== 'any_enemy';
+    const targetId = (isSingleTarget || rule.condition !== 'always') ? matched.id : undefined;
+
+    return { ability: bestAbility(chosen), targetId };
+  }
+
+  return null;
+}
+
+// ============================================
 // IA SCELTA ABILITA'
 // ============================================
 
@@ -517,6 +680,10 @@ function chooseAbility(
 ): string | null {
   const enemies = fighter.team === 'attacker' ? defenders : attackers;
   const allies = fighter.team === 'attacker' ? attackers : defenders;
+
+  // Reset del target preferito Gambit: ogni turno riparte pulito (no leak dal turno precedente)
+  fighter.preferredTargetId = undefined;
+
   const availableAbilities = fighter.abilities.filter(id => {
     const cd = fighter.cooldowns.get(id) || 0;
     if (cd > 0) return false;
@@ -531,57 +698,10 @@ function chooseAbility(
 
   // === GAMBIT SYSTEM (TACTICS) ===
   if (fighter.tactics && fighter.tactics.length > 0) {
-    for (const rule of fighter.tactics) {
-      if (rule.enabled === false) continue;
-      
-      // Valuta condizione
-      let conditionMet = false;
-      const t = rule.target;
-      const c = rule.condition;
-      
-      const targetGroup = (t === 'self') ? [fighter] : 
-                          (t.includes('ally')) ? allies.filter(a => a.isAlive) :
-                          enemies.filter(e => e.isAlive);
-                          
-      if (c === 'always') {
-        conditionMet = true;
-      } else if (c === 'hp_lt_50') {
-        conditionMet = targetGroup.some(f => f.currentHp / f.maxHp < 0.5);
-      } else if (c === 'hp_lt_25') {
-        conditionMet = targetGroup.some(f => f.currentHp / f.maxHp < 0.25);
-      } else if (c === 'is_stunned') {
-        conditionMet = targetGroup.some(f => hasStatus(f, StatusEffect.STORDIMENTO));
-      } else if (c === 'has_no_buff') {
-        conditionMet = targetGroup.some(f => f.statusEffects.length === 0);
-      }
-
-      if (conditionMet) {
-        // Cerca abilità corrispondente all'azione
-        const actionType = rule.action; // 'attack', 'heal', 'defend', 'use_special'
-        let chosenAbilities: string[] = [];
-        
-        if (actionType === 'attack') {
-          chosenAbilities = availableAbilities.filter(id => ABILITY_MAP.get(id)?.type === AbilityType.ATTACCO);
-        } else if (actionType === 'heal') {
-          chosenAbilities = availableAbilities.filter(id => ABILITY_MAP.get(id)?.type === AbilityType.SUPPORTO);
-        } else if (actionType === 'defend') {
-          chosenAbilities = availableAbilities.filter(id => ABILITY_MAP.get(id)?.type === AbilityType.DIFESA);
-        } else if (actionType === 'use_special') {
-          chosenAbilities = availableAbilities.filter(id => ABILITY_MAP.get(id)?.type === AbilityType.ULTIMATE || ABILITY_MAP.get(id)?.type === AbilityType.DEBUFF);
-        }
-
-        // Se abbiamo abilità valide per questa azione, eseguiamo!
-        if (chosenAbilities.length > 0) {
-          // Preferiamo l'abilità con power maggiore (o ultimate)
-          return chosenAbilities.sort((a, b) => {
-            const aDef = ABILITY_MAP.get(a);
-            const bDef = ABILITY_MAP.get(b);
-            const aWeight = (aDef?.type === AbilityType.ULTIMATE ? 100 : 0) + (aDef?.power || 0);
-            const bWeight = (bDef?.type === AbilityType.ULTIMATE ? 100 : 0) + (bDef?.power || 0);
-            return bWeight - aWeight;
-          })[0];
-        }
-      }
+    const gambit = evaluateGambit(fighter, allies, enemies, availableAbilities);
+    if (gambit) {
+      fighter.preferredTargetId = gambit.targetId;
+      return gambit.ability;
     }
   }
 
@@ -674,9 +794,18 @@ function selectTargets(
   const aliveEnemies = enemies.filter(e => e.isAlive);
   const aliveAllies = allies.filter(a => a.isAlive);
 
+  // Target imposto da una regola Gambit per questo turno (se valido e ancora vivo)
+  const preferredEnemy = fighter.preferredTargetId
+    ? aliveEnemies.find(e => e.id === fighter.preferredTargetId)
+    : undefined;
+  const preferredAlly = fighter.preferredTargetId
+    ? aliveAllies.find(a => a.id === fighter.preferredTargetId)
+    : undefined;
+
   switch (targetType) {
     case TargetType.SINGOLO_NEMICO:
       if (aliveEnemies.length === 0) return [];
+      if (preferredEnemy) return [preferredEnemy];
       return [selectEnemyTarget(fighter, aliveEnemies)];
 
     case TargetType.TUTTI_NEMICI:
@@ -687,6 +816,7 @@ function selectTargets(
 
     case TargetType.SINGOLO_ALLEATO:
       if (aliveAllies.length === 0) return [];
+      if (preferredAlly) return [preferredAlly];
       return [selectAllyTarget(fighter, aliveAllies)];
 
     case TargetType.TUTTI_ALLEATI:
@@ -702,6 +832,7 @@ function selectTargets(
         }
         return hits;
       }
+      if (preferredEnemy) return [preferredEnemy];
       return [aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)]];
 
     default:
@@ -910,6 +1041,7 @@ export function createFighter(
     isAlive: (heroData.currentHp ?? hp) > 0,
     threat: 0,
     tactics: heroData.tactics || [],
+    isBoss: heroData.isBoss === true || heroData.tier === 'boss',
   };
 }
 
