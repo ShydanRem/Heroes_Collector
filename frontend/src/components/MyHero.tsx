@@ -17,7 +17,7 @@ interface MyHeroProps {
 
 const ALL_CLASSES: HeroClass[] = ['guardiano', 'lama', 'arcano', 'custode', 'ombra', 'ranger', 'sciamano', 'crono', 'dragoon', 'samurai', 'necromante', 'alchimista'];
 const REROLL_COST = 500;
-const EXP_BASE = 150;
+const EXP_BASE = 300;
 
 type SubTab = 'skills' | 'equip' | 'talents' | 'missions' | 'more';
 
@@ -30,7 +30,7 @@ const SUB_TABS: { id: SubTab; label: string; icon: string }[] = [
 ];
 
 function expForLevel(level: number): number {
-  return Math.floor(EXP_BASE * Math.pow(level, 1.5));
+  return Math.floor(EXP_BASE * Math.pow(level, 2.0));
 }
 
 const STAT_LABELS: Record<string, string> = {

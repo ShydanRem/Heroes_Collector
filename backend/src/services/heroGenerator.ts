@@ -209,7 +209,7 @@ export function generateHero(
  * Calcola l'EXP necessaria per raggiungere il prossimo livello.
  */
 export function expForLevel(level: number): number {
-  return Math.floor(EXP_BASE * Math.pow(level, 1.5));
+  return Math.floor(EXP_BASE * Math.pow(level, 2.0));
 }
 
 /**

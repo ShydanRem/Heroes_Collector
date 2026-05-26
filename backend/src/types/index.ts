@@ -225,8 +225,8 @@ export const UPGRADE_ESSENCE_COST: Record<Rarity, number> = {
   [Rarity.MASTER]: 200,
 };
 
-// EXP necessaria per livello (formula: base * livello^1.5)
-export const EXP_BASE = 150;
+// EXP necessaria per livello (formula: base * livello^2.0)
+export const EXP_BASE = 300;
 export const MAX_LEVEL = 50;
 
 // Dimensione massima party
