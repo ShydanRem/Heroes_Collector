@@ -59,10 +59,10 @@ export const DUNGEON_MODIFIERS: DungeonModifier[] = [
     id: 'incubo',
     name: 'Incubo',
     emoji: '💀',
-    description: 'Nemici +50% HP ma doppio loot e EXP',
+    description: 'Nemici +50% HP ma +80% loot e EXP',
     difficulty: 'difficile',
-    goldMultiplier: 2.0,
-    expMultiplier: 2.0,
+    goldMultiplier: 1.8,
+    expMultiplier: 1.8,
     apply: (fighters, team) => {
       if (team === 'defender') {
         for (const f of fighters) {
@@ -76,9 +76,9 @@ export const DUNGEON_MODIFIERS: DungeonModifier[] = [
     id: 'ricchezza',
     name: 'Febbre dell\'Oro',
     emoji: '💰',
-    description: 'Triplo gold ma nemici +20% ATK',
+    description: 'Doppio gold ma nemici +20% ATK',
     difficulty: 'difficile',
-    goldMultiplier: 3.0,
+    goldMultiplier: 2.0,
     expMultiplier: 1.0,
     apply: (fighters, team) => {
       if (team === 'defender') {
@@ -137,10 +137,10 @@ export const DUNGEON_MODIFIERS: DungeonModifier[] = [
     id: 'elitario',
     name: 'Sfida Elitaria',
     emoji: '👑',
-    description: 'Nemici hanno +30% a tutte le stats ma tripla EXP',
+    description: 'Nemici hanno +30% a tutte le stats ma doppia EXP',
     difficulty: 'difficile',
     goldMultiplier: 1.5,
-    expMultiplier: 3.0,
+    expMultiplier: 2.0,
     apply: (fighters, team) => {
       if (team === 'defender') {
         for (const f of fighters) {

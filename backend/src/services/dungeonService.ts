@@ -260,8 +260,8 @@ export async function runDungeon(userId: string, zoneId: string = 'forest'): Pro
 
   // Bonus completamento dungeon
   if (won) {
-    totalExpReward = Math.floor(totalExpReward * 1.5);
-    totalGoldReward = Math.floor(totalGoldReward * 1.5);
+    totalExpReward = Math.floor(totalExpReward * 1.3);
+    totalGoldReward = Math.floor(totalGoldReward * 1.3);
 
     // Loot bonus completamento (chance leggendari)
     const bonusDrops = rollLoot(zone.totalWaves, true);

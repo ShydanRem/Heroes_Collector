@@ -62,7 +62,7 @@ export const ZONES: ZoneDefinition[] = [
     emoji: '🌾',
     order: 1,
     totalWaves: 5,
-    baseScale: 1.4,
+    baseScale: 1.6,
     recommendedLevel: [6, 14],
     monsterPool: {
       minions: ['mob_skeleton', 'mob_bat', 'mob_goblin'],
@@ -86,7 +86,7 @@ export const ZONES: ZoneDefinition[] = [
     emoji: '🪨',
     order: 2,
     totalWaves: 6,
-    baseScale: 1.9,
+    baseScale: 2.6,
     recommendedLevel: [12, 20],
     monsterPool: {
       minions: ['mob_slime', 'mob_skeleton', 'mob_wisp'],
@@ -111,7 +111,7 @@ export const ZONES: ZoneDefinition[] = [
     emoji: '🐊',
     order: 3,
     totalWaves: 6,
-    baseScale: 2.5,
+    baseScale: 3.8,
     recommendedLevel: [18, 28],
     monsterPool: {
       minions: ['mob_rat', 'mob_bat', 'mob_wisp'],
@@ -136,7 +136,7 @@ export const ZONES: ZoneDefinition[] = [
     emoji: '🌋',
     order: 4,
     totalWaves: 7,
-    baseScale: 3.2,
+    baseScale: 5.2,
     recommendedLevel: [26, 38],
     monsterPool: {
       minions: ['mob_wisp', 'mob_goblin', 'mob_skeleton'],
@@ -162,7 +162,7 @@ export const ZONES: ZoneDefinition[] = [
     emoji: '🌀',
     order: 5,
     totalWaves: 7,
-    baseScale: 4.2,
+    baseScale: 7.0,
     recommendedLevel: [35, 50],
     monsterPool: {
       minions: ['mob_slime', 'mob_goblin', 'mob_bat', 'mob_skeleton', 'mob_wisp', 'mob_rat'],
