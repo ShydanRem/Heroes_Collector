@@ -451,6 +451,8 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
     const hpPercent = Math.max(0, (fighter.currentHp / fighter.maxHp) * 100);
     const hpColor = hpPercent > 50 ? '#22c55e' : hpPercent > 20 ? '#f59e0b' : '#ef4444';
 
+    const isBoss = fighter.tier === 'boss';
+
     let animClass = '';
     if (!fighter.isAlive) animClass = 'dead';
     else if (isCelebration && fighter.team === 'left') animClass = 'celebrate';
@@ -460,12 +462,12 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
     const myFloats = floatingTexts.filter(ft => ft.fighterId === fighter.id);
     const myBubble = bubbles.find(b => b.fighterId === fighter.id);
 
-    // Front row sprite leggermente piu' grande
-    const spriteSize = row === 'front' ? 42 : 36;
+    // Front row sprite leggermente piu' grande; i boss dominano la scena
+    const spriteSize = isBoss ? 60 : row === 'front' ? 42 : 36;
     const shadowWidth = spriteSize * 0.7;
 
     return (
-      <div key={fighter.id} className={`arena-fighter ${animClass} arena-fighter-${side}`}
+      <div key={fighter.id} className={`arena-fighter ${animClass} arena-fighter-${side} ${isBoss ? 'arena-fighter-boss' : ''}`}
         style={{
           position: 'absolute',
           left: `${x}%`,
@@ -474,7 +476,7 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           opacity: fighter.isAlive ? 1 : 0.2,
           transition: 'opacity 0.5s ease',
-          zIndex: row === 'front' ? 6 : 4,
+          zIndex: isBoss ? 7 : row === 'front' ? 6 : 4,
         }}
       >
         {/* Floating texts */}
@@ -523,10 +525,12 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
 
         {/* Nome */}
         <div style={{
-          fontSize: 7, color: fighter.isAlive ? '#bbb' : '#444',
-          marginTop: 1, maxWidth: 50, overflow: 'hidden',
+          fontSize: isBoss ? 9 : 7,
+          color: isBoss ? '#fbbf24' : fighter.isAlive ? '#bbb' : '#444',
+          fontWeight: isBoss ? 700 : 400,
+          marginTop: 1, maxWidth: isBoss ? 70 : 50, overflow: 'hidden',
           textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center',
-          textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+          textShadow: isBoss ? '0 0 6px rgba(251,191,36,0.6), 0 1px 2px rgba(0,0,0,0.9)' : '0 1px 2px rgba(0,0,0,0.8)',
         }}>
           {fighter.name.length > 10 ? fighter.name.split(' ').pop() : fighter.name}
         </div>
@@ -538,12 +542,29 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
   const leftFighters = leftTeam.map(f => fighters.get(f.id) || f);
   const rightFighters = rightTeam.map(f => fighters.get(f.id) || f);
 
+  // Boss in campo → banner HP in stile JRPG in cima all'arena
+  const bossFighter = rightFighters.find(f => f.tier === 'boss');
+  const bossHpPct = bossFighter ? Math.max(0, (bossFighter.currentHp / bossFighter.maxHp) * 100) : 0;
+
   return (
     <div className={`battle-arena ${isShaking ? 'screen-shake' : ''} ${isUltimateActive ? 'ultimate-active' : ''}`}>
       <div className={`arena-field ${isFlashing ? 'impact-flash' : ''} ${(isShaking || activeTargetId) ? 'zoom-focus' : ''} ${isUltimateActive ? 'ultimate-dark-bg' : ''}`}>
         <div className="arena-bg" />
         {/* Linea orizzonte / terreno */}
         <div className="arena-ground" />
+
+        {/* Boss HP banner (stile JRPG) — mostrato solo se c'e' un boss in campo */}
+        {bossFighter && (
+          <div className={`boss-banner ${bossFighter.isAlive ? '' : 'boss-defeated'}`}>
+            <div className="boss-banner-name">
+              <span className="boss-banner-crown">👑</span>
+              {bossFighter.name}
+            </div>
+            <div className="boss-banner-hp">
+              <div className="boss-banner-hp-fill" style={{ width: `${bossHpPct}%` }} />
+            </div>
+          </div>
+        )}
 
         {/* Effects Layer */}
         <div className={`screen-impact ${isImpactActive ? 'impact-active' : ''}`} />
