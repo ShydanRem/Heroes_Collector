@@ -28,18 +28,18 @@ const PERMANENT_SHOP: Omit<ShopListing, 'id' | 'isActive'>[] = [
   // Consumabili
   {
     itemId: null, itemType: 'energy',
-    name: 'Pozione di Energia', description: 'Recupera 40 energia.',
-    priceGold: 50, priceChannelPoints: 0, stock: -1,
+    name: 'Pozione di Energia', description: 'Recupera 40 energia. Max 5/giorno.',
+    priceGold: 80, priceChannelPoints: 0, stock: -1,
   },
   {
     itemId: null, itemType: 'energy_full',
-    name: 'Elisir di Energia', description: 'Recupera tutta l\'energia al massimo.',
-    priceGold: 150, priceChannelPoints: 0, stock: -1,
+    name: 'Elisir di Energia', description: 'Recupera tutta l\'energia. Max 2/giorno.',
+    priceGold: 350, priceChannelPoints: 0, stock: -1,
   },
   {
     itemId: null, itemType: 'exp_potion',
-    name: 'Pergamena dell\'Esperienza', description: 'Dona 200 EXP a un eroe.',
-    priceGold: 100, priceChannelPoints: 0, stock: -1,
+    name: 'Pergamena dell\'Esperienza', description: 'Dona 150 EXP a un eroe. Max 3/giorno.',
+    priceGold: 250, priceChannelPoints: 0, stock: -1,
   },
   {
     itemId: null, itemType: 'reroll',
@@ -137,9 +137,48 @@ export async function purchaseItem(
     return { success: false, message: 'Articolo esaurito!' };
   }
 
+  // Cap acquisti giornalieri (rebalance Phase 2): conta in modo atomico PRIMA di
+  // spendere gold; se oltre il limite si fa rollback del contatore e si rifiuta.
+  const DAILY_CAPS: Record<string, number> = {
+    energy: 5,
+    energy_full: 2,
+    exp_potion: 3,
+  };
+  const dailyCap = DAILY_CAPS[listing.itemType];
+  const today = new Date().toISOString().slice(0, 10);
+  if (dailyCap !== undefined) {
+    const usage = await query(
+      `INSERT INTO daily_purchases (user_id, item_type, date, count)
+       VALUES ($1, $2, $3, 1)
+       ON CONFLICT (user_id, item_type, date)
+       DO UPDATE SET count = daily_purchases.count + 1
+       RETURNING count`,
+      [userId, listing.itemType, today]
+    );
+    if (usage.rows[0].count > dailyCap) {
+      await query(
+        `UPDATE daily_purchases SET count = count - 1
+         WHERE user_id = $1 AND item_type = $2 AND date = $3`,
+        [userId, listing.itemType, today]
+      );
+      return {
+        success: false,
+        message: `Limite giornaliero raggiunto: max ${dailyCap}/giorno per ${listing.name}.`,
+      };
+    }
+  }
+
   // Deduci gold in modo atomico (no race / no saldo negativo).
   const paid = await spendGold(userId, listing.priceGold);
   if (!paid) {
+    // Pagamento fallito: rollback del contatore cap appena incrementato.
+    if (dailyCap !== undefined) {
+      await query(
+        `UPDATE daily_purchases SET count = count - 1
+         WHERE user_id = $1 AND item_type = $2 AND date = $3`,
+        [userId, listing.itemType, today]
+      );
+    }
     const userResult = await query(
       'SELECT gold FROM users WHERE twitch_user_id = $1',
       [userId]
@@ -177,8 +216,8 @@ export async function purchaseItem(
       );
       if (heroResult.rows.length > 0) {
         const { addExpToHero } = await import('./heroService');
-        await addExpToHero(heroResult.rows[0].id, 200);
-        resultMessage = `+200 EXP a ${heroResult.rows[0].display_name}!`;
+        await addExpToHero(heroResult.rows[0].id, 150);
+        resultMessage = `+150 EXP a ${heroResult.rows[0].display_name}!`;
       } else {
         resultMessage = `Pergamena usata, ma nessun eroe trovato.`;
       }
