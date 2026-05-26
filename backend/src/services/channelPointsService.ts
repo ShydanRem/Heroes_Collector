@@ -33,21 +33,21 @@ export const CHANNEL_POINT_REWARDS: ChannelPointReward[] = [
     type: 'energy_full',
     name: 'Ricarica Energia Completa',
     description: 'Riporta l\'energia al massimo.',
-    cost: 1500,
+    cost: 2000,
   },
   {
     id: 'cp_exp_boost',
     type: 'exp_boost',
-    name: 'Boost EXP (+500)',
-    description: 'Dona 500 EXP al tuo eroe principale.',
-    cost: 2000,
+    name: 'Boost EXP (+300)',
+    description: 'Dona 300 EXP al tuo eroe principale.',
+    cost: 3000,
   },
   {
     id: 'cp_gold_pack',
     type: 'gold_pack',
-    name: 'Sacchetto d\'Oro (+200)',
-    description: 'Ricevi 200 gold.',
-    cost: 1000,
+    name: 'Sacchetto d\'Oro (+250)',
+    description: 'Ricevi 250 gold.',
+    cost: 1500,
   },
   {
     id: 'cp_mystery_box',
@@ -102,17 +102,17 @@ export async function handleChannelPointRedemption(
         [userId]
       );
       if (heroResult.rows.length > 0) {
-        await addExpToHero(heroResult.rows[0].id, 500);
+        await addExpToHero(heroResult.rows[0].id, 300);
       }
-      return { success: true, message: '+500 EXP al tuo eroe!' };
+      return { success: true, message: '+300 EXP al tuo eroe!' };
     }
 
     case 'gold_pack':
       await query(
-        'UPDATE users SET gold = gold + 200 WHERE twitch_user_id = $1',
+        'UPDATE users SET gold = gold + 250 WHERE twitch_user_id = $1',
         [userId]
       );
-      return { success: true, message: '+200 gold!' };
+      return { success: true, message: '+250 gold!' };
 
     case 'mystery_box':
       return await openMysteryBox(userId);
