@@ -673,3 +673,254 @@
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
 }
+
+/* ============================================================
+   PREMIUM RAID v2 — Phase 5 / Batch 1 (boss banner + HP + leaderboard)
+   Eleva la vista INFO del RaidBoss alla qualita JRPG di MyHero.
+   ============================================================ */
+.raid-boss-banner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px 16px;
+  border-radius: 14px;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(244, 67, 54, 0.22) 0%, transparent 60%),
+    linear-gradient(180deg, #1b0707 0%, #140b14 100%);
+  border: 1px solid rgba(244, 67, 54, 0.45);
+  box-shadow: inset 0 0 30px rgba(244, 67, 54, 0.12), 0 8px 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+.raid-boss-banner::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: radial-gradient(circle, rgba(244, 67, 54, 0.10) 0%, transparent 55%);
+  animation: raidGlow 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+.raid-corner {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255, 215, 0, 0.55);
+  pointer-events: none;
+}
+.raid-corner.tl { top: 7px; left: 7px; border-right: none; border-bottom: none; }
+.raid-corner.tr { top: 7px; right: 7px; border-left: none; border-bottom: none; }
+.raid-corner.bl { bottom: 7px; left: 7px; border-right: none; border-top: none; }
+.raid-corner.br { bottom: 7px; right: 7px; border-left: none; border-top: none; }
+
+.raid-boss-emoji {
+  font-size: 64px;
+  line-height: 1;
+  filter: drop-shadow(0 4px 10px rgba(244, 67, 54, 0.5));
+  animation: raidBossIdle 2.6s ease-in-out infinite;
+}
+@keyframes raidBossIdle {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-4px) scale(1.04); }
+}
+.raid-boss-name {
+  margin: 8px 0 2px;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-align: center;
+  color: #ff5a4d;
+  text-shadow: 0 0 14px rgba(244, 67, 54, 0.55), 0 2px 2px rgba(0, 0, 0, 0.6);
+}
+.raid-boss-tag {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #ffd700;
+  opacity: 0.85;
+}
+
+.raid-hp { width: 100%; margin: 16px 0 0; }
+.raid-hp-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.raid-hp-top .lbl { color: #adadb8; }
+.raid-hp-track {
+  position: relative;
+  height: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.raid-hp-fill {
+  position: relative;
+  height: 100%;
+  border-radius: 10px 0 0 10px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.raid-hp-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  animation: hpShine 2.4s ease-in-out infinite;
+}
+.raid-hp-track::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 10px;
+  background: repeating-linear-gradient(90deg, transparent 0 9.5%, rgba(0, 0, 0, 0.28) 9.5% 10%);
+}
+.raid-hp-danger .raid-hp-fill { animation: raidHpPulse 0.9s ease-in-out infinite; }
+@keyframes raidHpPulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.45); }
+}
+.raid-hp-pct {
+  text-align: center;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #adadb8;
+  margin-top: 5px;
+  text-transform: uppercase;
+}
+
+.raid-attack-btn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 13px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(180deg, #ff5a4d 0%, #c62828 100%);
+  box-shadow: 0 4px 16px rgba(244, 67, 54, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.raid-attack-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 22px rgba(244, 67, 54, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.raid-attack-btn:active { transform: translateY(0); }
+
+.raid-defeated-badge {
+  text-align: center;
+  color: #ffd700;
+  font-weight: 900;
+  font-size: 19px;
+  padding: 12px;
+  margin-top: 14px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid #ffd700;
+  box-shadow: inset 0 0 18px rgba(255, 215, 0, 0.15);
+}
+
+.raid-contrib { margin-top: 16px; }
+.raid-contrib-title {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #9147ff;
+  margin-bottom: 8px;
+}
+.raid-contrib-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.raid-contrib-cell {
+  text-align: center;
+  padding: 10px 6px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(145, 71, 255, 0.12), rgba(0, 0, 0, 0.2));
+  border: 1px solid rgba(145, 71, 255, 0.25);
+}
+.raid-contrib-cell .v { font-size: 14px; font-weight: 900; color: #fff; }
+.raid-contrib-cell .v.dmg { color: #ff5a4d; }
+.raid-contrib-cell .v.best { color: #ff9800; }
+.raid-contrib-cell .k {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #adadb8;
+  margin-top: 2px;
+}
+
+.raid-lb-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #adadb8;
+  margin: 18px 0 10px;
+}
+.raid-lb-head .count { font-size: 9px; font-weight: 600; letter-spacing: 0; text-transform: none; color: #777; }
+.raid-lb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03), transparent);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: transform 0.12s ease;
+}
+.raid-lb-row:hover { transform: translateX(2px); }
+.raid-lb-rank {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 900;
+  color: #adadb8;
+  background: rgba(0, 0, 0, 0.3);
+}
+.raid-lb-rank.r1 { background: linear-gradient(135deg, #ffd700, #b8860b); color: #000; box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
+.raid-lb-rank.r2 { background: linear-gradient(135deg, #c0c0c0, #808080); color: #000; }
+.raid-lb-rank.r3 { background: linear-gradient(135deg, #cd7f32, #8b4513); color: #fff; }
+.raid-lb-name {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.raid-lb-dmg { color: #ff5a4d; font-weight: 900; font-size: 12px; }
+.raid-lb-dmg span { font-size: 8px; color: #adadb8; }
+
+/* Animazioni referenziate sopra ma mai definite: bagliore banner + shine barra HP */
+@keyframes raidGlow {
+  0%, 100% { opacity: 0.45; transform: scale(0.92); }
+  50%      { opacity: 1;    transform: scale(1.08); }
+}
+@keyframes hpShine {
+  0%        { left: -60%; }
+  55%, 100% { left: 140%; }
+}

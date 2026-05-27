@@ -532,7 +532,7 @@ export function BattleArena({ leftTeam, rightTeam, log, speed = 800, onComplete,
           textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center',
           textShadow: isBoss ? '0 0 6px rgba(251,191,36,0.6), 0 1px 2px rgba(0,0,0,0.9)' : '0 1px 2px rgba(0,0,0,0.8)',
         }}>
-          {fighter.name.length > 10 ? fighter.name.split(' ').pop() : fighter.name}
+          {fighter.name}
         </div>
       </div>
     );

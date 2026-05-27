@@ -97,105 +97,77 @@ export function RaidBoss() {
   // ===== INFO BOSS =====
   if (state === 'info') {
     const hpBarColor = raid.hpPercent > 50 ? '#22c55e' : raid.hpPercent > 20 ? '#ff9800' : '#f44336';
+    const hpDanger = raid.hpPercent <= 20;
 
     return (
       <div className="raid-container">
-        <div className="raid-header">
-          <div className="raid-boss-display">
-            <div className="raid-boss-sprite-container" style={{ fontSize: 60 }}>
-              {raid.emoji}
-            </div>
-            <h2 style={{ fontSize: 24, fontWeight: 900, color: '#f44336', textShadow: '0 0 15px rgba(244,67,54,0.3)', margin: '0 0 4px' }}>
-              {raid.name}
-            </h2>
-            <div style={{ fontSize: 10, color: '#adadb8', textTransform: 'uppercase', letterSpacing: 2 }}>
-              Boss Settimanale #{raid.weekNumber}
-            </div>
-          </div>
+        <div className="raid-boss-banner">
+          <span className="raid-corner tl" /><span className="raid-corner tr" />
+          <span className="raid-corner bl" /><span className="raid-corner br" />
+
+          <div className="raid-boss-emoji">{raid.emoji}</div>
+          <div className="raid-boss-name">{raid.name}</div>
+          <div className="raid-boss-tag">Boss Settimanale #{raid.weekNumber}</div>
 
           {raid.defeated ? (
-            <div style={{ 
-              textAlign: 'center', color: '#ffd700', fontWeight: 900, fontSize: 20, 
-              padding: '10px', background: 'rgba(0,0,0,0.3)', borderRadius: 12,
-              border: '1px solid #ffd700'
-            }}>
-              🏆 SCONFITTO!
-            </div>
+            <div className="raid-defeated-badge">🏆 SCONFITTO!</div>
           ) : (
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4, fontWeight: 800 }}>
-                <span style={{ color: '#adadb8' }}>HP DEL BOSS</span>
-                <span style={{ color: hpBarColor }}>{raid.currentHp.toLocaleString()}</span>
+            <>
+              <div className={`raid-hp${hpDanger ? ' raid-hp-danger' : ''}`}>
+                <div className="raid-hp-top">
+                  <span className="lbl">HP del Boss</span>
+                  <span style={{ color: hpBarColor }}>{raid.currentHp.toLocaleString()}</span>
+                </div>
+                <div className="raid-hp-track">
+                  <div className="raid-hp-fill" style={{
+                    width: `${raid.hpPercent}%`,
+                    background: `linear-gradient(90deg, ${hpBarColor}, ${hpBarColor}99)`,
+                  }} />
+                </div>
+                <div className="raid-hp-pct">{raid.hpPercent}% rimanente</div>
               </div>
-              <div style={{ height: 16, background: 'rgba(0,0,0,0.4)', borderRadius: 8, overflow: 'hidden', border: '1px solid #333' }}>
-                <div className="hp-bar-fill" style={{
-                  width: `${raid.hpPercent}%`,
-                  height: '100%',
-                  background: `linear-gradient(90deg, ${hpBarColor}, ${hpBarColor}aa)`,
-                  transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)',
-                }} />
-              </div>
-              <div style={{ textAlign: 'center', fontSize: 10, color: '#adadb8', marginTop: 4, fontWeight: 700 }}>
-                {raid.hpPercent}% RIMANENTE
-              </div>
-            </div>
-          )}
 
-          {!raid.defeated && (
-            <button className="btn btn-primary" onClick={handleAttack}
-              style={{ 
-                width: '100%', background: '#f44336', fontSize: 16, padding: '12px',
-                boxShadow: '0 4px 15px rgba(244,67,54,0.4)', fontWeight: 900
-              }}>
-              ATTACCA IL BOSS!
-            </button>
+              <button className="raid-attack-btn" onClick={handleAttack}>
+                ⚔️ Attacca il Boss!
+              </button>
+            </>
           )}
           {error && <div style={{ color: '#f44336', fontSize: 11, marginTop: 8, textAlign: 'center', fontWeight: 700 }}>⚠️ {error}</div>}
         </div>
 
         {raid.myContribution && (
-          <div className="contribution-bar-container">
-            <div style={{ fontSize: 11, color: '#9147ff', fontWeight: 900, marginBottom: 8, textTransform: 'uppercase' }}>
-              🎯 La tua contribuzione
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-              <div style={{ background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ fontSize: 12, fontWeight: 900, color: '#f44336' }}>{raid.myContribution.damageDealt.toLocaleString()}</div>
-                <div style={{ fontSize: 8, color: '#adadb8', textTransform: 'uppercase' }}>Totale</div>
+          <div className="raid-contrib">
+            <div className="raid-contrib-title">🎯 La tua contribuzione</div>
+            <div className="raid-contrib-grid">
+              <div className="raid-contrib-cell">
+                <div className="v dmg">{raid.myContribution.damageDealt.toLocaleString()}</div>
+                <div className="k">Totale</div>
               </div>
-              <div style={{ background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ fontSize: 12, fontWeight: 900 }}>{raid.myContribution.attempts}</div>
-                <div style={{ fontSize: 8, color: '#adadb8', textTransform: 'uppercase' }}>Turni</div>
+              <div className="raid-contrib-cell">
+                <div className="v">{raid.myContribution.attempts}</div>
+                <div className="k">Turni</div>
               </div>
-              <div style={{ background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ fontSize: 12, fontWeight: 900, color: '#ff9800' }}>{raid.myContribution.bestDamage.toLocaleString()}</div>
-                <div style={{ fontSize: 8, color: '#adadb8', textTransform: 'uppercase' }}>Best</div>
+              <div className="raid-contrib-cell">
+                <div className="v best">{raid.myContribution.bestDamage.toLocaleString()}</div>
+                <div className="k">Best</div>
               </div>
             </div>
           </div>
         )}
 
-        <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#adadb8', marginBottom: 10, textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between' }}>
-            <span>🏆 Leaderboard</span>
-            <span style={{ fontSize: 10, fontWeight: 400 }}>{raid.totalContributors} eroi attivi</span>
-          </div>
-          
-          {raid.topContributors.slice(0, 5).map((c, i) => (
-            <div key={c.userId} className="leaderboard-item">
-              <div className={`leaderboard-rank rank-${i + 1}`}>
-                {i < 3 ? '' : i + 1}
-                {i === 0 && '🥇'}
-                {i === 1 && '🥈'}
-                {i === 2 && '🥉'}
-              </div>
-              <div style={{ flex: 1, fontSize: 12, fontWeight: 700 }}>{c.displayName}</div>
-              <div style={{ color: '#f44336', fontWeight: 900, fontSize: 12 }}>
-                {c.damageDealt.toLocaleString()} <span style={{ fontSize: 9 }}>dmg</span>
-              </div>
-            </div>
-          ))}
+        <div className="raid-lb-head">
+          <span>🏆 Leaderboard</span>
+          <span className="count">{raid.totalContributors} eroi attivi</span>
         </div>
+        {raid.topContributors.slice(0, 5).map((c, i) => (
+          <div key={c.userId} className="raid-lb-row">
+            <div className={`raid-lb-rank${i < 3 ? ` r${i + 1}` : ''}`}>
+              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+            </div>
+            <div className="raid-lb-name">{c.displayName}</div>
+            <div className="raid-lb-dmg">{c.damageDealt.toLocaleString()} <span>dmg</span></div>
+          </div>
+        ))}
       </div>
     );
   }
