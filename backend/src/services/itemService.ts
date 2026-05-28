@@ -6,6 +6,18 @@ import { HeroClass } from '../types';
 // GESTIONE INVENTARIO E EQUIPMENT
 // ============================================
 
+// Prezzi di vendita per rarità — unica fonte di verità (usata in sellItem e sellBulk)
+export const SELL_PRICES: Record<string, number> = {
+  comune: 5,
+  non_comune: 15,
+  raro: 40,
+  molto_raro: 100,
+  epico: 250,
+  leggendario: 600,
+  mitico: 1500,
+  master: 3000,
+};
+
 export interface InventoryItem {
   id: string;
   itemId: string;
@@ -17,6 +29,7 @@ export interface InventoryItem {
   quantity: number;
   equippedOn: string | null; // hero ID
   allowedClasses?: string[]; // classi che possono equipaggiare
+  sellValue: number; // gold per pezzo (rispetta la rarità)
 }
 
 /**
@@ -80,6 +93,7 @@ export async function getInventory(userId: string): Promise<InventoryItem[]> {
       quantity: row.quantity,
       equippedOn: row.equipped_on,
       allowedClasses: def?.allowedClasses || undefined,
+      sellValue: SELL_PRICES[row.rarity] ?? 5,
     };
   });
 }
@@ -238,18 +252,6 @@ export async function sellItem(
     return { success: false, gold: 0, message: 'Rimuovi l\'oggetto prima di venderlo' };
   }
 
-  // Prezzo vendita per rarita
-  const sellPrices: Record<string, number> = {
-    comune: 5,
-    non_comune: 15,
-    raro: 40,
-    molto_raro: 100,
-    epico: 250,
-    leggendario: 600,
-    mitico: 1500,
-    master: 3000,
-  };
-
   // Rimuovi l'oggetto in modo atomico: solo chi "vince" la DELETE accredita il
   // gold. Cosi due vendite concorrenti dello stesso item non raddoppiano il gold.
   const deleted = await query(
@@ -263,7 +265,7 @@ export async function sellItem(
     return { success: false, gold: 0, message: 'Oggetto non disponibile (gia venduto o equipaggiato)' };
   }
 
-  const goldPerItem = sellPrices[item.rarity] || 5;
+  const goldPerItem = SELL_PRICES[item.rarity] || 5;
   const totalGold = goldPerItem * deleted.rows[0].quantity;
 
   // Aggiungi gold
