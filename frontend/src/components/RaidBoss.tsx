@@ -119,7 +119,7 @@ export function RaidBoss() {
                   <span className="lbl">HP del Boss</span>
                   <span style={{ color: hpBarColor }}>{raid.currentHp.toLocaleString()}</span>
                 </div>
-                <div className="raid-hp-track">
+                <div className="result-hp-track">
                   <div className="raid-hp-fill" style={{
                     width: `${raid.hpPercent}%`,
                     background: `linear-gradient(90deg, ${hpBarColor}, ${hpBarColor}99)`,
@@ -229,9 +229,9 @@ export function RaidBoss() {
     return (
       <div>
         {/* === BANNER risultato (gold-victory / red-hit) === */}
-        <div className={`raid-result-banner ${victory ? 'victory' : ''}`}>
+        <div className={`result-banner ${victory ? 'victory' : ''}`}>
           {victory ? (
-            <div className="raid-victory-title">⚔ BOSS SCONFITTO ⚔</div>
+            <div className="result-title">⚔ BOSS SCONFITTO ⚔</div>
           ) : (
             <div style={{
               fontSize: 11, fontWeight: 800, color: '#f44336',
@@ -243,7 +243,7 @@ export function RaidBoss() {
           <CountUp
             to={attackResult.damageDealt}
             duration={900}
-            className={`raid-damage-mega ${victory ? 'victory' : ''}`}
+            className={`result-mega-number ${victory ? 'victory' : ''}`}
           />
           <div style={{ fontSize: 10, color: '#adadb8', marginTop: 6 }}>
             danni in {attackResult.totalTurns} turni — <strong style={{ color: '#fff' }}>{dps.toLocaleString()}</strong> DPS
@@ -260,16 +260,16 @@ export function RaidBoss() {
                 <span>Boss HP</span>
                 <span>{hpAfter.toLocaleString()} / {hpTotal.toLocaleString()}</span>
               </div>
-              <div className="raid-hp-track">
-                <div className="raid-hp-before" style={{ width: `${beforePercent}%` }} />
-                <div className="raid-hp-after" style={{ width: `${afterPercent}%` }} />
+              <div className="result-hp-track">
+                <div className="result-hp-before" style={{ width: `${beforePercent}%` }} />
+                <div className="result-hp-after" style={{ width: `${afterPercent}%` }} />
               </div>
             </div>
           )}
         </div>
 
         {/* === RICOMPENSE === */}
-        <div className="raid-reward-box">
+        <div className="reward-box">
           <div style={{
             fontSize: 9, color: '#adadb8', textAlign: 'center',
             textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8,
@@ -277,7 +277,7 @@ export function RaidBoss() {
             Ricompense
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-            <div className="raid-reward-pill">
+            <div className="reward-pill">
               <CountUp
                 to={attackResult.rewards.exp}
                 duration={700}
@@ -286,7 +286,7 @@ export function RaidBoss() {
               />
               <div style={{ fontSize: 9, color: '#adadb8', letterSpacing: 1 }}>EXP</div>
             </div>
-            <div className="raid-reward-pill">
+            <div className="reward-pill">
               <CountUp
                 to={attackResult.rewards.gold}
                 duration={700}

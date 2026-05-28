@@ -3,6 +3,7 @@ import * as api from '../services/api';
 import { DungeonResult, ZoneInfo } from '../services/api';
 import { BattleArena, ArenaFighter } from './BattleArena';
 import { HeroClass, Rarity } from '../types';
+import { CountUp } from './CountUp';
 
 const SPEED_OPTIONS = [
   { label: '1x', value: 600 },
@@ -206,30 +207,69 @@ export function BattleView() {
     return (
       <div>
         <div style={{
-          background: 'linear-gradient(135deg, #1a0a2e 0%, #18181b 100%)',
-          borderRadius: 8, padding: 14, textAlign: 'center', marginBottom: 8,
-          border: '1px solid #333',
+          background: 'linear-gradient(160deg, #1a0a2e 0%, #0a0a0a 60%, #1a0a2e 100%)',
+          borderRadius: 14, padding: '20px 16px', textAlign: 'center', marginBottom: 10,
+          border: '2px solid #9147ff',
+          boxShadow: '0 0 24px rgba(145,71,255,0.35), inset 0 0 30px rgba(145,71,255,0.06)',
+          position: 'relative', overflow: 'hidden',
         }}>
-          <div style={{ fontSize: 28, marginBottom: 4 }}>{selectedZone.emoji}</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#9147ff', marginBottom: 2 }}>
+          <div style={{ fontSize: 44, marginBottom: 6, filter: 'drop-shadow(0 0 12px rgba(145,71,255,0.6))' }}>
+            {selectedZone.emoji}
+          </div>
+          <div style={{
+            fontSize: 20, fontWeight: 900, letterSpacing: 1,
+            background: 'linear-gradient(180deg, #c084fc, #7e3af2)',
+            WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent',
+            textShadow: '0 0 14px rgba(145,71,255,0.45)',
+            marginBottom: 8,
+          }}>
             {selectedZone.name}
           </div>
-          <div style={{ fontSize: 11, color: '#adadb8', marginBottom: 4 }}>
-            {selectedZone.totalWaves} ondate — Livello consigliato: {selectedZone.recommendedLevel}
+          <div style={{
+            display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10,
+          }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999,
+              background: 'rgba(145,71,255,0.18)', color: '#c084fc',
+              border: '1px solid rgba(145,71,255,0.3)',
+            }}>
+              {selectedZone.totalWaves} Ondate
+            </span>
+            <span style={{
+              fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999,
+              background: 'rgba(34,197,94,0.15)', color: '#22c55e',
+              border: '1px solid rgba(34,197,94,0.3)',
+            }}>
+              Lv. {selectedZone.recommendedLevel}
+            </span>
           </div>
           {selectedZone.cleared && (
-            <div style={{ fontSize: 10, color: '#f59e0b', marginBottom: 6 }}>
-              Zona gia completata — Ricompense ridotte (farm mode)
+            <div style={{
+              fontSize: 10, color: '#f59e0b', fontWeight: 700, marginBottom: 10,
+              padding: '4px 10px', borderRadius: 6, display: 'inline-block',
+              background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)',
+            }}>
+              ⚠ Farm mode — Ricompense ridotte
             </div>
           )}
-          <button className="btn btn-primary" onClick={startDungeon} style={{ fontSize: 14, padding: '10px 24px' }}>
-            Entra!
+          <button
+            className="btn btn-primary"
+            onClick={startDungeon}
+            style={{
+              fontSize: 14, padding: '12px 32px', fontWeight: 900, letterSpacing: 2,
+              background: 'linear-gradient(180deg, #9147ff, #5e35b1)',
+              border: '1px solid #c084fc', borderRadius: 10,
+              boxShadow: '0 6px 18px rgba(145,71,255,0.45)',
+              display: 'block', margin: '0 auto',
+            }}
+          >
+            ⚔ ENTRA
           </button>
-          {error && <div style={{ color: '#f44336', fontSize: 12, marginTop: 8 }}>{error}</div>}
+          {error && <div style={{ color: '#f44336', fontSize: 12, marginTop: 10 }}>{error}</div>}
         </div>
 
         <button className="btn btn-secondary" onClick={backToZoneSelect} style={{ width: '100%', fontSize: 11 }}>
-          Cambia zona
+          ← Cambia zona
         </button>
       </div>
     );
@@ -323,21 +363,29 @@ export function BattleView() {
 
     return (
       <div style={{ textAlign: 'center' }}>
-        <div style={{
-          background: wave.won ? '#1b5e20' : '#b71c1c',
-          borderRadius: 8, padding: 12, marginBottom: 8,
-        }}>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>
-            Ondata {wave.wave}: {wave.won ? 'SUPERATA!' : 'SCONFITTA'}
+        <div className={`result-banner ${wave.won ? 'victory' : 'defeat'}`}>
+          <div className={`result-title ${wave.won ? '' : 'defeat'}`} style={{ fontSize: 18 }}>
+            {wave.won ? `✦ ONDATA ${wave.wave} SUPERATA ✦` : `✗ ONDATA ${wave.wave} SCONFITTA`}
           </div>
-          <div style={{ fontSize: 11, marginTop: 4, color: 'rgba(255,255,255,0.8)' }}>
-            {wave.enemies.map(e => e.name).join(', ')} — {wave.totalTurns} turni
+          <div style={{ fontSize: 10, color: '#adadb8', marginTop: 4 }}>
+            {wave.enemies.map(e => e.name).join(' · ')}
+          </div>
+          <div style={{ fontSize: 10, color: '#fff', marginTop: 4, opacity: 0.8 }}>
+            {wave.totalTurns} turni di combattimento
           </div>
         </div>
 
-        <button className="btn btn-primary" onClick={isLastWave || !wave.won ? () => setState('result') : nextWave}
-          style={{ fontSize: 13, padding: '8px 20px' }}>
-          {isLastWave || !wave.won ? 'Vedi risultati' : `Ondata ${currentWave + 2} →`}
+        <button
+          className="btn btn-primary"
+          onClick={isLastWave || !wave.won ? () => setState('result') : nextWave}
+          style={{
+            fontSize: 13, padding: '10px 24px', fontWeight: 800, letterSpacing: 1,
+            background: 'linear-gradient(180deg, #9147ff, #5e35b1)',
+            border: '1px solid #c084fc', borderRadius: 10,
+            boxShadow: '0 4px 14px rgba(145,71,255,0.35)',
+          }}
+        >
+          {isLastWave || !wave.won ? '📜 Vedi risultati' : `Ondata ${currentWave + 2} →`}
         </button>
       </div>
     );
@@ -388,59 +436,120 @@ export function BattleView() {
           </div>
         )}
 
-        <div style={{
-          background: dungeonResult.won ? '#1b5e20' : '#b71c1c',
-          borderRadius: 8, padding: 16, textAlign: 'center', marginBottom: 8,
-        }}>
-          <div style={{ fontSize: 22, fontWeight: 800 }}>
-            {dungeonResult.won ? 'VITTORIA!' : 'SCONFITTA'}
+        <div className={`result-banner ${dungeonResult.won ? 'victory' : 'defeat'} ${dungeonResult.isReplay ? 'farm' : ''}`}>
+          <div className={`result-title ${dungeonResult.won ? '' : 'defeat'}`}>
+            {dungeonResult.won ? '✦ VITTORIA ✦' : '✗ SCONFITTA'}
           </div>
-          <div style={{ fontSize: 12, marginTop: 4 }}>
-            {dungeonResult.zoneEmoji} {dungeonResult.zoneName} — {dungeonResult.wavesCompleted}/{dungeonResult.totalWaves} ondate
+          <div style={{ fontSize: 11, color: '#fff', opacity: 0.85, marginTop: 4, letterSpacing: 1 }}>
+            {dungeonResult.zoneEmoji} {dungeonResult.zoneName}
+          </div>
+          <div style={{
+            display: 'inline-block', marginTop: 8, padding: '4px 12px',
+            borderRadius: 999, background: 'rgba(0,0,0,0.35)',
+            fontSize: 13, fontWeight: 800, color: '#fff', letterSpacing: 1,
+          }}>
+            {dungeonResult.wavesCompleted}/{dungeonResult.totalWaves} ondate
           </div>
           {dungeonResult.isReplay && (
-            <div style={{ fontSize: 10, color: '#f59e0b', marginTop: 4 }}>Farm mode — ricompense ridotte</div>
+            <div style={{ fontSize: 9, color: '#f59e0b', marginTop: 8, letterSpacing: 1 }}>
+              ⚠ FARM MODE — RICOMPENSE RIDOTTE
+            </div>
           )}
         </div>
 
-        <div style={{
-          background: '#18181b', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid #333',
-        }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#9147ff', marginBottom: 6 }}>Ricompense</div>
-          <div style={{ display: 'flex', justifyContent: 'space-around', fontSize: 14 }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#64b5f6' }}>+{dungeonResult.rewards.exp}</div>
-              <div style={{ fontSize: 10, color: '#adadb8' }}>EXP</div>
+        <div className="reward-box">
+          <div style={{
+            fontSize: 9, color: '#adadb8', textAlign: 'center',
+            textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8,
+          }}>
+            Ricompense
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+            <div className="reward-pill">
+              <CountUp
+                to={dungeonResult.rewards.exp}
+                duration={800}
+                style={{ fontSize: 20, fontWeight: 900, color: '#64b5f6' }}
+                format={n => `+${n.toLocaleString()}`}
+              />
+              <div style={{ fontSize: 9, color: '#adadb8', letterSpacing: 1 }}>EXP</div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#ffd700' }}>+{dungeonResult.rewards.gold}</div>
-              <div style={{ fontSize: 10, color: '#adadb8' }}>Gold</div>
+            <div className="reward-pill">
+              <CountUp
+                to={dungeonResult.rewards.gold}
+                duration={800}
+                style={{ fontSize: 20, fontWeight: 900, color: '#ffd700' }}
+                format={n => `+${n.toLocaleString()}`}
+              />
+              <div style={{ fontSize: 9, color: '#adadb8', letterSpacing: 1 }}>GOLD</div>
             </div>
           </div>
           {dungeonResult.rewards.items.length > 0 && (
-            <div style={{ textAlign: 'center', marginTop: 8, color: '#ff9800', fontWeight: 700, fontSize: 12 }}>
-              Loot: {dungeonResult.rewards.items.join(', ')}
+            <div style={{
+              marginTop: 10, padding: '6px 8px',
+              background: 'linear-gradient(90deg, rgba(255,152,0,0.15), rgba(255,152,0,0.04))',
+              borderLeft: '3px solid #ff9800', borderRadius: 4,
+            }}>
+              <div style={{ fontSize: 9, color: '#ff9800', letterSpacing: 1, marginBottom: 2 }}>
+                💎 LOOT
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>
+                {dungeonResult.rewards.items.join(' · ')}
+              </div>
             </div>
           )}
         </div>
 
         {/* Riepilogo ondate */}
-        <div style={{ marginBottom: 8 }}>
+        <div style={{ marginBottom: 10 }}>
+          <div style={{
+            fontSize: 9, color: '#adadb8', textAlign: 'center',
+            textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6,
+          }}>
+            Riepilogo ondate
+          </div>
           {dungeonResult.waves.map((w) => (
-            <div key={w.wave} style={{
-              display: 'flex', justifyContent: 'space-between',
-              background: '#18181b', borderRadius: 4, padding: '4px 8px', marginBottom: 2, fontSize: 11,
-              borderLeft: `3px solid ${w.won ? '#00c853' : '#f44336'}`,
-            }}>
-              <span>Ondata {w.wave}: {w.enemies.map(e => e.name).join(', ')}</span>
-              <span style={{ color: w.won ? '#00c853' : '#f44336' }}>{w.won ? `${w.totalTurns}t` : 'KO'}</span>
+            <div key={w.wave} className={`wave-row ${w.won ? 'won' : 'lost'}`}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                <span className="wave-num">#{w.wave}</span>
+                <span style={{
+                  fontSize: 10, color: '#adadb8',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
+                  {w.enemies.map(e => e.name).join(' · ')}
+                </span>
+              </span>
+              <span style={{
+                fontWeight: 800, fontSize: 10,
+                color: w.won ? '#22c55e' : '#f44336',
+                whiteSpace: 'nowrap', marginLeft: 8,
+              }}>
+                {w.won ? `${w.totalTurns}t ✓` : '✗ KO'}
+              </span>
             </div>
           ))}
         </div>
 
         <div style={{ display: 'flex', gap: 6 }}>
-          <button className="btn btn-primary" onClick={startDungeon} style={{ flex: 1 }}>Riprova</button>
-          <button className="btn btn-secondary" onClick={backToZoneSelect} style={{ flex: 1 }}>Mappa</button>
+          <button
+            className="btn btn-primary"
+            onClick={startDungeon}
+            style={{
+              flex: 1, padding: '10px', fontWeight: 800, letterSpacing: 1,
+              background: 'linear-gradient(180deg, #9147ff, #5e35b1)',
+              border: '1px solid #c084fc', borderRadius: 10,
+              boxShadow: '0 4px 14px rgba(145,71,255,0.35)',
+            }}
+          >
+            🔄 Riprova
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={backToZoneSelect}
+            style={{ flex: 1, padding: '10px' }}
+          >
+            🗺 Mappa
+          </button>
         </div>
       </div>
     );
