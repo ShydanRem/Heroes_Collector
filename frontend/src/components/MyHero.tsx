@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Hero, HeroClass, UserProfile, Ability, Rarity, RARITY_COLORS, RARITY_LABELS, CLASS_LABELS, CLASS_EMOJIS } from '../types';
+import { Hero, HeroClass, UserProfile, Ability, RARITY_COLORS, RARITY_LABELS, CLASS_LABELS, CLASS_EMOJIS } from '../types';
 import { HeroSprite } from './HeroSprite';
 import { getEffectiveStats, computeCP } from '../utils/stats';
 import { Missions } from './Missions';
@@ -7,7 +7,11 @@ import { Achievements } from './Achievements';
 import { DailyLogin } from './DailyLogin';
 import { TalentTree } from './TalentTree';
 import * as api from '../services/api';
+import type { InventoryItem } from '../services/api';
 import { STAT_LABELS, STAT_MAX, STAT_ICONS } from '../constants/stats';
+import { EquipPanel } from './EquipPanel';
+import { CountUp } from './CountUp';
+import { PowerUpBadge } from './PowerUpBadge';
 
 interface MyHeroProps {
   profile: UserProfile;
@@ -40,8 +44,10 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
   const [rerolling, setRerolling] = useState(false);
   const [rerollMsg, setRerollMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [abilities, setAbilities] = useState<Ability[]>([]);
-  const [equipment, setEquipment] = useState<any[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [equipBonuses, setEquipBonuses] = useState<Record<string, number>>({});
+  const [previewBonuses, setPreviewBonuses] = useState<Record<string, number> | null>(null);
+  const [equipTriggerKey, setEquipTriggerKey] = useState(0);
 
   useEffect(() => {
     if (hero) loadHeroDetails();
@@ -55,8 +61,8 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
         api.getInventory(),
       ]);
       setAbilities(detailData.abilities || []);
-      const equipped = invData.inventory.filter((item: any) => item.equippedOn === hero.id);
-      setEquipment(equipped);
+      setInventory(invData.inventory);
+      const equipped = invData.inventory.filter(item => item.equippedOn === hero.id);
       const bonuses: Record<string, number> = {};
       for (const item of equipped) {
         if (item.statBonuses) {
@@ -82,7 +88,9 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
   const expPercent = Math.min(100, Math.floor((hero.exp / expNeeded) * 100));
   const effectiveStats = getEffectiveStats(hero);
 
-  const combatPower = computeCP(effectiveStats, equipBonuses);
+  const activeBonuses = previewBonuses ?? equipBonuses;
+  const realCP = computeCP(effectiveStats, equipBonuses);
+  const combatPower = computeCP(effectiveStats, activeBonuses);
 
   return (
     <div className="profile-container">
@@ -118,10 +126,15 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
             <span className="jrpg-dot">•</span>
             <span>Lv <strong>{hero.level}</strong></span>
           </div>
-          <div className="jrpg-cp-line">
+          <div className="jrpg-cp-line" style={{ position: 'relative' }}>
             <span className="jrpg-cp-label">COMBAT POWER</span>
-            <strong className="jrpg-cp-value">{combatPower.toLocaleString()}</strong>
+            <CountUp
+              to={combatPower}
+              className="jrpg-cp-value"
+              style={previewBonuses ? { color: combatPower >= realCP ? '#22c55e' : '#ef4444' } : undefined}
+            />
             <span className="jrpg-cp-star">⭐</span>
+            <PowerUpBadge triggerKey={equipTriggerKey} />
           </div>
         </div>
 
@@ -138,7 +151,9 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
       <div className="jrpg-stats">
         {(['atk', 'def', 'hp', 'spd', 'crit', 'critDmg'] as const).map(stat => {
           const base = effectiveStats[stat];
-          const bonus = equipBonuses[stat] || 0;
+          const bonus = activeBonuses[stat] || 0;
+          const realBonus = equipBonuses[stat] || 0;
+          const isPreviewing = previewBonuses !== null && bonus !== realBonus;
           const total = base + bonus;
           const max = STAT_MAX[stat];
           const percent = Math.min(100, Math.max(4, (total / max) * 100));
@@ -146,6 +161,7 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
           const display = stat === 'hp' && total >= 1000
             ? `${(total / 1000).toFixed(1)}k`
             : `${total}${suffix}`;
+          const previewColor = bonus > realBonus ? '#22c55e' : '#ef4444';
           return (
             <div key={stat} className="jrpg-stat-row">
               <span className="jrpg-stat-icon">{STAT_ICONS[stat]}</span>
@@ -156,7 +172,7 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
                   style={{ width: `${percent}%`, background: rarityColor, color: rarityColor }}
                 />
               </div>
-              <span className="jrpg-stat-value">
+              <span className="jrpg-stat-value" style={isPreviewing ? { color: previewColor } : undefined}>
                 {display}
                 {bonus > 0 && <span className="jrpg-stat-bonus">+{bonus}</span>}
               </span>
@@ -232,42 +248,34 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
 
         {subTab === 'equip' && (
           <div className="animate-fadeIn">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {['arma', 'armatura', 'accessorio'].map(slot => {
-                const item = equipment.find(e => e.slot === slot);
-                return (
-                  <div key={slot} style={{ 
-                    background: '#18181b', borderRadius: 12, padding: 12, 
-                    border: '1px solid #333', display: 'flex', gap: 12, alignItems: 'center'
-                  }}>
-                    <div style={{ 
-                      width: 40, height: 40, background: '#0e0e10', borderRadius: 8, 
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
-                      border: item ? `1px solid ${RARITY_COLORS[item.rarity as Rarity]}` : '1px dashed #444'
-                    }}>
-                      {item ? (slot === 'arma' ? '⚔️' : slot === 'armatura' ? '🛡️' : '💍') : '＋'}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      {item ? (
-                        <>
-                          <div style={{ fontWeight: 800, fontSize: 13 }}>{item.name}</div>
-                          <div style={{ fontSize: 9, color: RARITY_COLORS[item.rarity as Rarity], textTransform: 'uppercase' }}>{item.rarity}</div>
-                        </>
-                      ) : (
-                        <div style={{ fontSize: 11, color: '#555' }}>Slot {slot} vuoto</div>
-                      )}
-                    </div>
-                    {item?.statBonuses && (
-                      <div style={{ textAlign: 'right' }}>
-                        {Object.entries(item.statBonuses as Record<string, number>).map(([s, v]) => (
-                          <div key={s} style={{ color: '#22c55e', fontSize: 10, fontWeight: 800 }}>+{v as number} {STAT_LABELS[s]}</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            <EquipPanel
+              hero={hero}
+              inventory={inventory}
+              effectiveStats={effectiveStats}
+              currentBonuses={equipBonuses}
+              onPreviewBonuses={setPreviewBonuses}
+              onEquip={async (inventoryId) => {
+                try {
+                  await api.equipItem(inventoryId, hero.id);
+                  setEquipTriggerKey(k => k + 1);
+                  await loadHeroDetails();
+                  onProfileRefresh?.();
+                } catch (e) { console.error(e); }
+              }}
+              onUnequip={async (inventoryId) => {
+                try {
+                  await api.unequipItem(inventoryId);
+                  await loadHeroDetails();
+                } catch (e) { console.error(e); }
+              }}
+              onSell={async (inventoryId) => {
+                try {
+                  await api.sellItem(inventoryId);
+                  await loadHeroDetails();
+                  onProfileRefresh?.();
+                } catch (e) { console.error(e); }
+              }}
+            />
           </div>
         )}
 
