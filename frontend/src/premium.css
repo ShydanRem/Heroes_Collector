@@ -924,3 +924,31 @@
   0%        { left: -60%; }
   55%, 100% { left: 140%; }
 }
+
+/* === POWER UP badge (transient, dopo equip) === */
+.power-up-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  background: linear-gradient(180deg, #ffd700, #ff8a00);
+  color: #1a1a1a;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  border-radius: 999px;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+  box-shadow: 0 4px 14px rgba(255,180,0,0.55);
+  animation: powerUpPop 1.4s ease-out forwards;
+  z-index: 50;
+  pointer-events: none;
+}
+@keyframes powerUpPop {
+  0%   { opacity: 0; transform: translate(-50%, 6px) scale(0.7); }
+  20%  { opacity: 1; transform: translate(-50%, -14px) scale(1.15); }
+  35%  { transform: translate(-50%, -14px) scale(1.0); }
+  85%  { opacity: 1; transform: translate(-50%, -22px) scale(1.0); }
+  100% { opacity: 0; transform: translate(-50%, -34px) scale(0.95); }
+}
