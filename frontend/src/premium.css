@@ -985,3 +985,17 @@
   from { transform: translateY(20px); opacity: 0; }
   to   { transform: translateY(0); opacity: 1; }
 }
+
+/* === Coin fly (sell feedback) === */
+.coin-fly {
+  position: fixed;
+  font-size: 22px;
+  pointer-events: none;
+  z-index: 9999;
+  animation: coinFlyAnim 0.9s cubic-bezier(.22,1.13,.34,1.06) forwards;
+}
+@keyframes coinFlyAnim {
+  0%   { opacity: 1; transform: translate(0, 0) scale(1); }
+  60%  { opacity: 1; transform: translate(var(--dx, 0px), var(--dy, -80px)) scale(1.2); }
+  100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, -120px)) scale(0.6); }
+}

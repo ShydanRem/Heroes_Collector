@@ -6,6 +6,7 @@ import { STAT_LABELS } from '../constants/stats';
 import { getItemIcon, SLOT_ICONS } from '../utils/itemIcon';
 import { ItemCard } from './ItemCard';
 import { itemSellValue } from '../utils/stats';
+import { CoinFly } from './CoinFly';
 
 const RARITY_ORDER: Record<string, number> = {
   master: 8, mitico: 7, leggendario: 6, epico: 5,
@@ -53,6 +54,14 @@ export function Inventory() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [seenIds] = useState<Set<string>>(() => loadSeen());
   const [, forceRerender] = useState(0);
+  const [coinBurst, setCoinBurst] = useState<{ x: number; y: number; key: number } | null>(null);
+
+  function triggerCoinBurst(selector: string) {
+    const el = document.querySelector(selector) as HTMLElement | null;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setCoinBurst({ x: rect.left + rect.width / 2, y: rect.top, key: Date.now() });
+  }
 
   useEffect(() => {
     if (inventory.length === 0) return;
@@ -109,6 +118,7 @@ export function Inventory() {
     try {
       const ids = Array.from(selectedIds);
       const result = await api.sellBulk(ids);
+      triggerCoinBurst('.sticky-sell-bar');
       await loadData();
       setMessage({
         text: `Venduti ${result.soldCount} oggetti per ${result.gold}g${result.skipped.length ? ` (${result.skipped.length} saltati)` : ''}`,
@@ -502,6 +512,14 @@ export function Inventory() {
             💰 Vendi
           </button>
         </div>
+      )}
+
+      {coinBurst && (
+        <CoinFly
+          key={coinBurst.key}
+          origin={{ x: coinBurst.x, y: coinBurst.y }}
+          onDone={() => setCoinBurst(null)}
+        />
       )}
 
       {message && <div className={`toast ${message.type}`}>{message.text}</div>}
