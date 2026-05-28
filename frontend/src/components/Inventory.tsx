@@ -12,6 +12,20 @@ const RARITY_ORDER: Record<string, number> = {
   molto_raro: 4, raro: 3, non_comune: 2, comune: 1,
 };
 
+const SEEN_KEY = 'heroes-collector:seen-items';
+function loadSeen(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SEEN_KEY);
+    if (!raw) return new Set();
+    return new Set(JSON.parse(raw));
+  } catch { return new Set(); }
+}
+function saveSeen(seen: Set<string>) {
+  try {
+    localStorage.setItem(SEEN_KEY, JSON.stringify(Array.from(seen)));
+  } catch { /* ignore */ }
+}
+
 const SLOT_LABELS: Record<string, string> = {
   arma: 'Arma',
   armatura: 'Armatura',
@@ -37,6 +51,20 @@ export function Inventory() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [seenIds] = useState<Set<string>>(() => loadSeen());
+  const [, forceRerender] = useState(0);
+
+  useEffect(() => {
+    if (inventory.length === 0) return;
+    const newOnes = inventory.filter(it => !seenIds.has(it.id));
+    if (newOnes.length === 0) return;
+    const t = setTimeout(() => {
+      for (const it of newOnes) seenIds.add(it.id);
+      saveSeen(seenIds);
+      forceRerender(n => n + 1);
+    }, 4000);
+    return () => clearTimeout(t);
+  }, [inventory, seenIds]);
 
   function toggleSelect(id: string) {
     setSelectedIds(prev => {
@@ -50,6 +78,29 @@ export function Inventory() {
   function exitSelectMode() {
     setSelectMode(false);
     setSelectedIds(new Set());
+  }
+
+  async function handleQuickSellCommons() {
+    const commonsUnequipped = inventory.filter(i => i.rarity === 'comune' && !i.equippedOn);
+    if (commonsUnequipped.length === 0) {
+      setMessage({ text: 'Nessun oggetto comune da vendere', type: 'success' });
+      return;
+    }
+    const totalEstimate = commonsUnequipped.reduce((s, it) => s + itemSellValue(it), 0);
+    if (!confirm(`Vendere ${commonsUnequipped.length} oggetti comuni per ~${totalEstimate}g?`)) return;
+    setBulkBusy(true);
+    try {
+      const result = await api.sellBulk(commonsUnequipped.map(i => i.id));
+      await loadData();
+      setMessage({
+        text: `Venduti ${result.soldCount} comuni per ${result.gold}g`,
+        type: 'success',
+      });
+    } catch (err: any) {
+      setMessage({ text: err.message, type: 'error' });
+    } finally {
+      setBulkBusy(false);
+    }
   }
 
   async function handleBulkSell() {
@@ -362,6 +413,25 @@ export function Inventory() {
         >Valore</button>
       </div>
 
+      {/* Quick-sell comuni (solo se ce ne sono) */}
+      {(() => {
+        const commons = inventory.filter(i => i.rarity === 'comune' && !i.equippedOn);
+        if (commons.length === 0 || selectMode) return null;
+        const total = commons.reduce((s, it) => s + itemSellValue(it), 0);
+        return (
+          <div style={{ marginBottom: 8 }}>
+            <button
+              onClick={handleQuickSellCommons}
+              disabled={bulkBusy}
+              className="btn btn-secondary"
+              style={{ width: '100%', fontSize: 10, padding: '6px', color: '#ffd700' }}
+            >
+              ⚡ Vendi {commons.length} comuni non equipaggiati (+{total}g)
+            </button>
+          </div>
+        );
+      })()}
+
       {filteredInventory.length === 0 ? (
         <div className="empty-state">
           <p>🎒 Il tuo zaino e vuoto!</p>
@@ -375,6 +445,7 @@ export function Inventory() {
             <div key={item.id} style={{ marginBottom: 4 }}>
               <ItemCard
                 item={item}
+                isNew={!seenIds.has(item.id)}
                 showSellValue={isSellable && !selectMode}
                 selected={selectMode && isSelected}
                 onClick={() => {
