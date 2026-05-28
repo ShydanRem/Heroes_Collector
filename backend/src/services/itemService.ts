@@ -265,7 +265,7 @@ export async function sellItem(
     return { success: false, gold: 0, message: 'Oggetto non disponibile (gia venduto o equipaggiato)' };
   }
 
-  const goldPerItem = SELL_PRICES[item.rarity] || 5;
+  const goldPerItem = SELL_PRICES[item.rarity] ?? 5;
   const totalGold = goldPerItem * deleted.rows[0].quantity;
 
   // Aggiungi gold
