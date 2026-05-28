@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Hero, RARITY_COLORS, RARITY_LABELS, CLASS_EMOJIS, CLASS_LABELS, HeroClass } from '../types';
 import * as api from '../services/api';
 import { InventoryItem } from '../services/api';
+import { STAT_LABELS } from '../constants/stats';
 
 const SLOT_LABELS: Record<string, string> = {
   arma: 'Arma',
@@ -52,10 +53,6 @@ function getItemIcon(name: string, slot: string): string {
   // Fallback per slot
   return SLOT_ICONS[slot] || '📦';
 }
-
-const STAT_LABELS: Record<string, string> = {
-  hp: 'HP', atk: 'ATK', def: 'DEF', spd: 'SPD', crit: 'CRIT', critDmg: 'C.DMG',
-};
 
 function canHeroEquip(hero: Hero, item: InventoryItem): boolean {
   if (!item.allowedClasses || item.allowedClasses.length === 0) return true;

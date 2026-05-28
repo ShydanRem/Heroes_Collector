@@ -7,6 +7,7 @@ import { Achievements } from './Achievements';
 import { DailyLogin } from './DailyLogin';
 import { TalentTree } from './TalentTree';
 import * as api from '../services/api';
+import { STAT_LABELS, STAT_MAX, STAT_ICONS } from '../constants/stats';
 
 interface MyHeroProps {
   profile: UserProfile;
@@ -32,19 +33,6 @@ const SUB_TABS: { id: SubTab; label: string; icon: string }[] = [
 function expForLevel(level: number): number {
   return Math.floor(EXP_BASE * Math.pow(level, 2.0));
 }
-
-const STAT_LABELS: Record<string, string> = {
-  hp: 'HP', atk: 'ATK', def: 'DEF', spd: 'SPD', crit: 'CRIT', critDmg: 'C.DMG',
-};
-
-// Soft cap per normalizzare le barre stat (visual reference, non gameplay)
-const STAT_MAX: Record<string, number> = {
-  atk: 600, def: 500, hp: 6000, spd: 350, crit: 100, critDmg: 300,
-};
-
-const STAT_ICONS: Record<string, string> = {
-  atk: '⚔️', def: '🛡️', hp: '❤️', spd: '⚡', crit: '🎯', critDmg: '💥',
-};
 
 export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHeroProps) {
   const [subTab, setSubTab] = useState<SubTab>('skills');
