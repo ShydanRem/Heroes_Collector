@@ -4,6 +4,13 @@ import * as api from '../services/api';
 import { InventoryItem } from '../services/api';
 import { STAT_LABELS } from '../constants/stats';
 import { getItemIcon, SLOT_ICONS } from '../utils/itemIcon';
+import { ItemCard } from './ItemCard';
+import { itemSellValue } from '../utils/stats';
+
+const RARITY_ORDER: Record<string, number> = {
+  master: 8, mitico: 7, leggendario: 6, epico: 5,
+  molto_raro: 4, raro: 3, non_comune: 2, comune: 1,
+};
 
 const SLOT_LABELS: Record<string, string> = {
   arma: 'Arma',
@@ -25,6 +32,7 @@ export function Inventory() {
   const [equipTarget, setEquipTarget] = useState<string | null>(null); // heroId per equip
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [filter, setFilter] = useState<string>('');
+  const [sort, setSort] = useState<'rarity' | 'value'>('rarity');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => { loadData(); }, []);
@@ -94,9 +102,15 @@ export function Inventory() {
     allHeroes.unshift(myHero);
   }
 
-  const filteredInventory = filter
+  const filteredInventory = (filter
     ? inventory.filter(i => i.slot === filter)
-    : inventory;
+    : [...inventory]
+  ).sort((a, b) => {
+    if (sort === 'value') return (b.sellValue * b.quantity) - (a.sellValue * a.quantity);
+    return (RARITY_ORDER[b.rarity] ?? 0) - (RARITY_ORDER[a.rarity] ?? 0);
+  });
+
+  const totalValue = filteredInventory.reduce((sum, it) => sum + itemSellValue(it), 0);
 
   if (loading) {
     return <div className="loading"><div className="spinner" /> Caricamento...</div>;
@@ -254,11 +268,26 @@ export function Inventory() {
     );
   }
 
-  // Lista inventario
+  // Lista inventario premium
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-        <span style={{ fontSize: 12, color: '#adadb8' }}>{inventory.length} oggetti</span>
+      {/* Header riepilogo */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        marginBottom: 8, padding: '8px 10px',
+        background: 'linear-gradient(180deg, #2d2d35, #18181b)',
+        borderRadius: 8, border: '1px solid #333',
+      }}>
+        <div>
+          <div style={{ fontSize: 11, color: '#adadb8' }}>Zaino</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#efeff1' }}>
+            {filteredInventory.length} oggetti
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 9, color: '#adadb8', textTransform: 'uppercase', letterSpacing: 1 }}>Valore totale</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#ffd700' }}>{totalValue.toLocaleString()}g</div>
+        </div>
       </div>
 
       {/* Filtri slot */}
@@ -275,59 +304,44 @@ export function Inventory() {
         ))}
       </div>
 
+      {/* Sort */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 8, alignItems: 'center' }}>
+        <span style={{ fontSize: 9, color: '#adadb8', marginRight: 4 }}>Ordina:</span>
+        <button
+          className="btn btn-secondary"
+          onClick={() => setSort('rarity')}
+          style={{ fontSize: 9, padding: '3px 8px', background: sort === 'rarity' ? '#9147ff' : undefined, color: sort === 'rarity' ? '#fff' : undefined }}
+        >Rarità</button>
+        <button
+          className="btn btn-secondary"
+          onClick={() => setSort('value')}
+          style={{ fontSize: 9, padding: '3px 8px', background: sort === 'value' ? '#9147ff' : undefined, color: sort === 'value' ? '#fff' : undefined }}
+        >Valore</button>
+      </div>
+
       {filteredInventory.length === 0 ? (
         <div className="empty-state">
           <p>🎒 Il tuo zaino e vuoto!</p>
           <p>Completa dungeon o compra dallo shop per ottenere oggetti.</p>
         </div>
       ) : (
-        filteredInventory.map(item => {
-          const rarityColor = RARITY_COLORS[item.rarity as keyof typeof RARITY_COLORS] || '#9e9e9e';
-          const equippedHero = item.equippedOn ? allHeroes.find(h => h.id === item.equippedOn) : null;
-          const hasRestriction = item.allowedClasses && item.allowedClasses.length > 0;
-
-          return (
-            <div key={item.id}
+        filteredInventory.map(item => (
+          <div key={item.id} style={{ marginBottom: 4 }}>
+            <ItemCard
+              item={item}
+              showSellValue={!item.equippedOn}
               onClick={() => setSelectedItem(item)}
-              style={{
-                background: '#18181b', borderRadius: 6, padding: '8px 10px',
-                marginBottom: 4, cursor: 'pointer', border: '1px solid #333',
-                borderLeft: `3px solid ${rarityColor}`,
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ fontSize: 18, width: 24, textAlign: 'center' }}>
-                  {getItemIcon(item.name, item.slot)}
+              right={item.equippedOn ? (
+                <div style={{ color: '#9147ff', fontSize: 10 }}>
+                  {(() => {
+                    const h = allHeroes.find(h => h.id === item.equippedOn);
+                    return h ? `${CLASS_EMOJIS[h.heroClass]} ${h.displayName}` : 'Equipaggiato';
+                  })()}
                 </div>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 700 }}>{item.name}</div>
-                  <div style={{ fontSize: 9, display: 'flex', gap: 6, color: '#adadb8', marginTop: 1 }}>
-                    <span style={{ color: rarityColor }}>{RARITY_LABELS[item.rarity as keyof typeof RARITY_LABELS]}</span>
-                    <span>{SLOT_ICONS[item.slot] || ''} {SLOT_LABELS[item.slot]}</span>
-                    {item.quantity > 1 && <span>x{item.quantity}</span>}
-                  </div>
-                  {hasRestriction && (
-                    <div style={{ fontSize: 8, color: '#ff9800', marginTop: 1 }}>
-                      {item.allowedClasses!.map(c => CLASS_EMOJIS[c as HeroClass] || '').join('')}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div style={{ textAlign: 'right', fontSize: 10 }}>
-                {equippedHero && (
-                  <div style={{ color: '#9147ff' }}>
-                    {CLASS_EMOJIS[equippedHero.heroClass]} {equippedHero.displayName}
-                  </div>
-                )}
-                <div style={{ color: '#555' }}>
-                  {Object.entries(item.statBonuses).map(([s, v]) =>
-                    `${(v as number) >= 0 ? '+' : ''}${v}${STAT_LABELS[s] || s}`
-                  ).join(' ')}
-                </div>
-              </div>
-            </div>
-          );
-        })
+              ) : undefined}
+            />
+          </div>
+        ))
       )}
 
       {message && <div className={`toast ${message.type}`}>{message.text}</div>}
