@@ -3,6 +3,7 @@ import * as api from '../services/api';
 import { RaidInfo, RaidAttackResult } from '../services/api';
 import { BattleArena, ArenaFighter } from './BattleArena';
 import { HeroClass, Rarity } from '../types';
+import { CountUp } from './CountUp';
 
 const RAID_SPEED_OPTIONS = [
   { label: '1x', value: 400 },
@@ -215,48 +216,116 @@ export function RaidBoss() {
 
   // ===== RESULT =====
   if (state === 'result' && attackResult) {
+    const victory = attackResult.bossDefeated;
+    const hpBefore = attackResult.bossHpBefore;
+    const hpAfter = attackResult.bossHpAfter;
+    const hpTotal = Math.max(hpBefore, 1);
+    const beforePercent = Math.min(100, (hpBefore / hpTotal) * 100);
+    const afterPercent = Math.min(100, (hpAfter / hpTotal) * 100);
+    const dps = attackResult.totalTurns > 0
+      ? Math.floor(attackResult.damageDealt / attackResult.totalTurns)
+      : attackResult.damageDealt;
+
     return (
       <div>
-        <div style={{
-          background: attackResult.bossDefeated ? '#1b5e20' : '#18181b',
-          borderRadius: 8, padding: 16, textAlign: 'center', marginBottom: 8,
-          border: `2px solid ${attackResult.bossDefeated ? '#00c853' : '#f44336'}`,
-        }}>
-          {attackResult.bossDefeated && (
-            <div style={{ fontSize: 20, fontWeight: 800, color: '#ffd700', marginBottom: 4 }}>
-              BOSS SCONFITTO!
+        {/* === BANNER risultato (gold-victory / red-hit) === */}
+        <div className={`raid-result-banner ${victory ? 'victory' : ''}`}>
+          {victory ? (
+            <div className="raid-victory-title">⚔ BOSS SCONFITTO ⚔</div>
+          ) : (
+            <div style={{
+              fontSize: 11, fontWeight: 800, color: '#f44336',
+              letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4,
+            }}>
+              💥 colpo inflitto
             </div>
           )}
-          <div style={{ fontSize: 28, fontWeight: 800, color: '#f44336' }}>
-            {attackResult.damageDealt.toLocaleString()}
+          <CountUp
+            to={attackResult.damageDealt}
+            duration={900}
+            className={`raid-damage-mega ${victory ? 'victory' : ''}`}
+          />
+          <div style={{ fontSize: 10, color: '#adadb8', marginTop: 6 }}>
+            danni in {attackResult.totalTurns} turni — <strong style={{ color: '#fff' }}>{dps.toLocaleString()}</strong> DPS
           </div>
-          <div style={{ fontSize: 11, color: '#adadb8' }}>danni inflitti in {attackResult.totalTurns} turni</div>
-          <div style={{ fontSize: 10, color: '#555', marginTop: 4 }}>
-            Boss HP: {attackResult.bossHpAfter.toLocaleString()} / {attackResult.bossHpBefore.toLocaleString()}
-          </div>
+
+          {/* HP boss prima → dopo */}
+          {!victory && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{
+                fontSize: 9, color: '#adadb8',
+                display: 'flex', justifyContent: 'space-between', marginBottom: 4,
+                textTransform: 'uppercase', letterSpacing: 1,
+              }}>
+                <span>Boss HP</span>
+                <span>{hpAfter.toLocaleString()} / {hpTotal.toLocaleString()}</span>
+              </div>
+              <div className="raid-hp-track">
+                <div className="raid-hp-before" style={{ width: `${beforePercent}%` }} />
+                <div className="raid-hp-after" style={{ width: `${afterPercent}%` }} />
+              </div>
+            </div>
+          )}
         </div>
 
-        <div style={{ background: '#18181b', borderRadius: 8, padding: 12, marginBottom: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-around', fontSize: 14 }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#64b5f6' }}>+{attackResult.rewards.exp}</div>
-              <div style={{ fontSize: 10, color: '#adadb8' }}>EXP</div>
+        {/* === RICOMPENSE === */}
+        <div className="raid-reward-box">
+          <div style={{
+            fontSize: 9, color: '#adadb8', textAlign: 'center',
+            textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8,
+          }}>
+            Ricompense
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+            <div className="raid-reward-pill">
+              <CountUp
+                to={attackResult.rewards.exp}
+                duration={700}
+                style={{ fontSize: 20, fontWeight: 900, color: '#64b5f6' }}
+                format={n => `+${n.toLocaleString()}`}
+              />
+              <div style={{ fontSize: 9, color: '#adadb8', letterSpacing: 1 }}>EXP</div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#ffd700' }}>+{attackResult.rewards.gold}</div>
-              <div style={{ fontSize: 10, color: '#adadb8' }}>Gold</div>
+            <div className="raid-reward-pill">
+              <CountUp
+                to={attackResult.rewards.gold}
+                duration={700}
+                style={{ fontSize: 20, fontWeight: 900, color: '#ffd700' }}
+                format={n => `+${n.toLocaleString()}`}
+              />
+              <div style={{ fontSize: 9, color: '#adadb8', letterSpacing: 1 }}>GOLD</div>
             </div>
           </div>
           {attackResult.rewards.items.length > 0 && (
-            <div style={{ textAlign: 'center', marginTop: 8, color: '#ff9800', fontWeight: 700, fontSize: 12 }}>
-              Drop: {attackResult.rewards.items.join(', ')}
+            <div style={{
+              marginTop: 10, padding: '6px 8px',
+              background: 'linear-gradient(90deg, rgba(255,152,0,0.15), rgba(255,152,0,0.04))',
+              borderLeft: '3px solid #ff9800', borderRadius: 4,
+            }}>
+              <div style={{ fontSize: 9, color: '#ff9800', letterSpacing: 1, marginBottom: 2 }}>
+                💎 DROP
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>
+                {attackResult.rewards.items.join(' · ')}
+              </div>
             </div>
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button className="btn btn-primary" onClick={handleAttack} style={{ flex: 1, background: '#f44336' }}>Ancora!</button>
-          <button className="btn btn-secondary" onClick={backToInfo} style={{ flex: 1 }}>Indietro</button>
+        {/* === ACTIONS === */}
+        <div className="raid-action-row">
+          {!victory && (
+            <button onClick={handleAttack} className="raid-action-attack">
+              ⚔ Ancora!
+            </button>
+          )}
+          <button
+            className="btn btn-secondary"
+            onClick={backToInfo}
+            style={{ flex: 1, padding: '10px', fontSize: 12 }}
+          >
+            {victory ? 'Indietro' : 'Indietro'}
+          </button>
         </div>
       </div>
     );
