@@ -333,6 +333,19 @@ export async function sellItem(inventoryId: string): Promise<{ message: string; 
   });
 }
 
+export interface BulkSellResult {
+  soldCount: number;
+  gold: number;
+  skipped: { inventoryId: string; reason: 'equipped' | 'not_found' | 'already_sold' }[];
+}
+
+export async function sellBulk(inventoryIds: string[]): Promise<BulkSellResult> {
+  return request('/items/sell-bulk', {
+    method: 'POST',
+    body: JSON.stringify({ inventoryIds }),
+  });
+}
+
 // ============ RAID ============
 
 export interface RaidInfo {
