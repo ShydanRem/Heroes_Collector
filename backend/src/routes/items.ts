@@ -99,6 +99,10 @@ itemRoutes.post('/sell-bulk', async (req: Request, res: Response) => {
     if (inventoryIds.length > 200) {
       return res.status(400).json({ error: 'Massimo 200 oggetti per richiesta' });
     }
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!inventoryIds.every((id: unknown) => typeof id === 'string' && UUID_RE.test(id))) {
+      return res.status(400).json({ error: 'inventoryIds deve contenere UUID validi' });
+    }
 
     const result = await itemService.sellBulk(userId, inventoryIds);
     res.json(result);

@@ -329,6 +329,8 @@ export async function sellBulk(
         } else if (reasonMap.get(id)) {
           skipped.push({ inventoryId: id, reason: 'equipped' });
         } else {
+          // Branch difensiva: nello stesso txn una riga unequipped non può essere uscita
+          // dalla SELECT FOR UPDATE. Reason mantenuta nel type union per exhaustiveness.
           skipped.push({ inventoryId: id, reason: 'already_sold' });
         }
       }
@@ -344,7 +346,7 @@ export async function sellBulk(
     for (const row of selectable.rows) {
       const price = SELL_PRICES[row.rarity] ?? 5;
       totalGold += price * row.quantity;
-      totalCount += 1; // contiamo stack, non singoli pezzi
+      totalCount += row.quantity; // singoli pezzi venduti (es. stack x5 → +5)
     }
 
     // Delete atomico — solo quello che era ancora presente
@@ -356,9 +358,10 @@ export async function sellBulk(
     );
 
     if (deleted.rows.length !== selectable.rows.length) {
-      // race: qualcuno ha venduto/equipaggiato tra SELECT e DELETE. Non capita con FOR UPDATE,
-      // ma in caso, throw per rollback.
-      throw new Error('sellBulk race detected — rolling back');
+      // Safety net difensiva: FOR UPDATE già impedisce concorrenti di toccare le righe lockate,
+      // quindi questo branch è in pratica unreachable. Se mai dovesse scattare (es. trigger ON DELETE
+      // CASCADE futuri o cambi di schema) il throw rolla indietro la transazione senza accreditare gold.
+      throw new Error('sellBulk row-count mismatch — rolling back');
     }
 
     await client.query(
