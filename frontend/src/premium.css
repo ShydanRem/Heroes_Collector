@@ -952,3 +952,17 @@
   85%  { opacity: 1; transform: translate(-50%, -22px) scale(1.0); }
   100% { opacity: 0; transform: translate(-50%, -34px) scale(0.95); }
 }
+
+/* === Item card glow per alta rarità (epico+) === */
+.item-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.item-card:hover { transform: translateY(-1px); }
+.item-card--shimmer {
+  background:
+    linear-gradient(180deg, #18181b, #18181b) padding-box,
+    linear-gradient(120deg,
+      rgba(255,215,0,0.0) 0%,
+      rgba(255,215,0,0.18) 35%,
+      rgba(255,215,0,0.0) 70%) border-box;
+  border-color: transparent !important;
+  box-shadow: 0 0 12px rgba(255,180,0,0.15);
+}
