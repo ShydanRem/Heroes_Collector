@@ -87,6 +87,27 @@ itemRoutes.post('/sell', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/items/sell-bulk - Vendita multipla in transazione
+itemRoutes.post('/sell-bulk', async (req: Request, res: Response) => {
+  try {
+    const userId = req.twitchUser!.user_id;
+    const { inventoryIds } = req.body;
+
+    if (!Array.isArray(inventoryIds)) {
+      return res.status(400).json({ error: 'inventoryIds (array) richiesto' });
+    }
+    if (inventoryIds.length > 200) {
+      return res.status(400).json({ error: 'Massimo 200 oggetti per richiesta' });
+    }
+
+    const result = await itemService.sellBulk(userId, inventoryIds);
+    res.json(result);
+  } catch (err) {
+    console.error('Errore POST /sell-bulk:', err);
+    res.status(500).json({ error: 'Errore interno' });
+  }
+});
+
 // GET /api/items/equipped/:heroId - Oggetti equipaggiati su un eroe
 itemRoutes.get('/equipped/:heroId', async (req: Request, res: Response) => {
   try {

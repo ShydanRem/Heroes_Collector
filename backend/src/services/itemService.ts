@@ -276,3 +276,96 @@ export async function sellItem(
 
   return { success: true, gold: totalGold, message: `Venduto per ${totalGold} gold!` };
 }
+
+// ============================================
+// VENDITA BULK
+// ============================================
+
+export interface BulkSellResult {
+  soldCount: number;
+  gold: number;
+  skipped: { inventoryId: string; reason: 'equipped' | 'not_found' | 'already_sold' }[];
+}
+
+/**
+ * Vende in batch più oggetti. Transazionale: salta gli equipaggiati e quelli già venduti,
+ * accredita gold solo per quelli effettivamente eliminati.
+ */
+export async function sellBulk(
+  userId: string,
+  inventoryIds: string[]
+): Promise<BulkSellResult> {
+  if (inventoryIds.length === 0) {
+    return { soldCount: 0, gold: 0, skipped: [] };
+  }
+
+  return withTransaction(async (client) => {
+    // Lock + select gli inventory item richiesti che appartengono all'utente e non sono equipaggiati
+    const selectable = await client.query(
+      `SELECT i.id, i.quantity, d.rarity
+       FROM inventory i
+       JOIN item_definitions d ON d.id = i.item_id
+       WHERE i.id = ANY($1::uuid[]) AND i.user_id = $2 AND i.equipped_on IS NULL
+       FOR UPDATE OF i`,
+      [inventoryIds, userId]
+    );
+
+    const found = new Set(selectable.rows.map((r: any) => r.id));
+    const skipped: BulkSellResult['skipped'] = [];
+
+    // Determina chi è stato saltato e perché (per i mancanti, scopri se equipaggiato o assente)
+    const missingIds = inventoryIds.filter(id => !found.has(id));
+    if (missingIds.length > 0) {
+      const reasonRows = await client.query(
+        `SELECT id, equipped_on FROM inventory WHERE id = ANY($1::uuid[]) AND user_id = $2`,
+        [missingIds, userId]
+      );
+      const reasonMap = new Map<string, string | null>(
+        reasonRows.rows.map((r: any) => [r.id, r.equipped_on])
+      );
+      for (const id of missingIds) {
+        if (!reasonMap.has(id)) {
+          skipped.push({ inventoryId: id, reason: 'not_found' });
+        } else if (reasonMap.get(id)) {
+          skipped.push({ inventoryId: id, reason: 'equipped' });
+        } else {
+          skipped.push({ inventoryId: id, reason: 'already_sold' });
+        }
+      }
+    }
+
+    if (selectable.rows.length === 0) {
+      return { soldCount: 0, gold: 0, skipped };
+    }
+
+    // Calcola gold totale (prezzo per rarità × quantity)
+    let totalGold = 0;
+    let totalCount = 0;
+    for (const row of selectable.rows) {
+      const price = SELL_PRICES[row.rarity] ?? 5;
+      totalGold += price * row.quantity;
+      totalCount += 1; // contiamo stack, non singoli pezzi
+    }
+
+    // Delete atomico — solo quello che era ancora presente
+    const deleted = await client.query(
+      `DELETE FROM inventory
+       WHERE id = ANY($1::uuid[]) AND user_id = $2 AND equipped_on IS NULL
+       RETURNING id`,
+      [selectable.rows.map((r: any) => r.id), userId]
+    );
+
+    if (deleted.rows.length !== selectable.rows.length) {
+      // race: qualcuno ha venduto/equipaggiato tra SELECT e DELETE. Non capita con FOR UPDATE,
+      // ma in caso, throw per rollback.
+      throw new Error('sellBulk race detected — rolling back');
+    }
+
+    await client.query(
+      'UPDATE users SET gold = gold + $1, updated_at = NOW() WHERE twitch_user_id = $2',
+      [totalGold, userId]
+    );
+
+    return { soldCount: totalCount, gold: totalGold, skipped };
+  });
+}
