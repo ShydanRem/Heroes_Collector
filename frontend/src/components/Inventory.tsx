@@ -34,6 +34,42 @@ export function Inventory() {
   const [filter, setFilter] = useState<string>('');
   const [sort, setSort] = useState<'rarity' | 'value'>('rarity');
   const [error, setError] = useState<string | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }
+
+  async function handleBulkSell() {
+    if (selectedIds.size === 0) return;
+    setBulkBusy(true);
+    try {
+      const ids = Array.from(selectedIds);
+      const result = await api.sellBulk(ids);
+      await loadData();
+      setMessage({
+        text: `Venduti ${result.soldCount} oggetti per ${result.gold}g${result.skipped.length ? ` (${result.skipped.length} saltati)` : ''}`,
+        type: 'success',
+      });
+      exitSelectMode();
+    } catch (err: any) {
+      setMessage({ text: err.message, type: 'error' });
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   useEffect(() => { loadData(); }, []);
 
@@ -287,6 +323,13 @@ export function Inventory() {
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 9, color: '#adadb8', textTransform: 'uppercase', letterSpacing: 1 }}>Valore totale</div>
           <div style={{ fontSize: 14, fontWeight: 800, color: '#ffd700' }}>{totalValue.toLocaleString()}g</div>
+          <button
+            className="btn btn-secondary"
+            onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
+            style={{ fontSize: 9, padding: '3px 8px', marginTop: 4 }}
+          >
+            {selectMode ? 'Annulla' : 'Seleziona'}
+          </button>
         </div>
       </div>
 
@@ -325,23 +368,69 @@ export function Inventory() {
           <p>Completa dungeon o compra dallo shop per ottenere oggetti.</p>
         </div>
       ) : (
-        filteredInventory.map(item => (
-          <div key={item.id} style={{ marginBottom: 4 }}>
-            <ItemCard
-              item={item}
-              showSellValue={!item.equippedOn}
-              onClick={() => setSelectedItem(item)}
-              right={item.equippedOn ? (
-                <div style={{ color: '#9147ff', fontSize: 10 }}>
-                  {(() => {
-                    const h = allHeroes.find(h => h.id === item.equippedOn);
-                    return h ? `${CLASS_EMOJIS[h.heroClass]} ${h.displayName}` : 'Equipaggiato';
-                  })()}
-                </div>
-              ) : undefined}
-            />
+        filteredInventory.map(item => {
+          const isSelected = selectedIds.has(item.id);
+          const isSellable = !item.equippedOn;
+          return (
+            <div key={item.id} style={{ marginBottom: 4 }}>
+              <ItemCard
+                item={item}
+                showSellValue={isSellable && !selectMode}
+                selected={selectMode && isSelected}
+                onClick={() => {
+                  if (selectMode) {
+                    if (!isSellable) return; // equipaggiati protetti
+                    toggleSelect(item.id);
+                  } else {
+                    setSelectedItem(item);
+                  }
+                }}
+                right={selectMode ? (
+                  <div style={{
+                    width: 20, height: 20, borderRadius: 4,
+                    background: isSelected ? '#22c55e' : '#0e0e10',
+                    color: isSelected ? '#0a0a0a' : '#555',
+                    border: '1px solid #444',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 900, fontSize: 12,
+                    opacity: isSellable ? 1 : 0.4,
+                  }}>
+                    {isSelected ? '✓' : ''}
+                  </div>
+                ) : (item.equippedOn ? (
+                  <div style={{ color: '#9147ff', fontSize: 10 }}>
+                    {(() => {
+                      const h = allHeroes.find(h => h.id === item.equippedOn);
+                      return h ? `${CLASS_EMOJIS[h.heroClass]} ${h.displayName}` : 'Equipaggiato';
+                    })()}
+                  </div>
+                ) : undefined)}
+              />
+            </div>
+          );
+        })
+      )}
+
+      {selectMode && selectedIds.size > 0 && (
+        <div className="sticky-sell-bar">
+          <div>
+            <div style={{ fontSize: 10, color: '#adadb8' }}>{selectedIds.size} selezionati</div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: '#ffd700' }}>
+              +{Array.from(selectedIds)
+                .map(id => inventory.find(i => i.id === id))
+                .filter((it): it is InventoryItem => !!it)
+                .reduce((sum, it) => sum + itemSellValue(it), 0).toLocaleString()}g
+            </div>
           </div>
-        ))
+          <button
+            onClick={handleBulkSell}
+            disabled={bulkBusy}
+            className="btn btn-primary"
+            style={{ fontSize: 12, padding: '8px 16px' }}
+          >
+            💰 Vendi
+          </button>
+        </div>
       )}
 
       {message && <div className={`toast ${message.type}`}>{message.text}</div>}
