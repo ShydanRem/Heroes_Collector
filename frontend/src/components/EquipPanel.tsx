@@ -1,25 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Hero, RARITY_COLORS, HeroStats } from '../types';
 import { InventoryItem } from '../services/api';
 import { STAT_LABELS } from '../constants/stats';
-import { computeCP, isStrictlyBetter } from '../utils/stats';
+import { computeCP, isStrictlyBetter, canHeroEquip } from '../utils/stats';
 import { ComparisonRow } from './ComparisonRow';
-import { getItemIcon } from '../utils/itemIcon';
+import { getItemIcon, SLOT_ICONS, SLOT_LABELS } from '../utils/itemIcon';
 
 const SLOTS = ['arma', 'armatura', 'accessorio'] as const;
 type Slot = typeof SLOTS[number];
-
-const SLOT_ICONS_LOCAL: Record<Slot, string> = {
-  arma: '⚔️',
-  armatura: '🛡️',
-  accessorio: '💍',
-};
-
-const SLOT_LABELS_LOCAL: Record<Slot, string> = {
-  arma: 'Arma',
-  armatura: 'Armatura',
-  accessorio: 'Accessorio',
-};
 
 interface EquipPanelProps {
   hero: Hero;
@@ -51,15 +39,17 @@ function addBonuses(a: Record<string, number>, b: Record<string, number>): Recor
   return out;
 }
 
-function canHeroEquip(hero: Hero, item: InventoryItem): boolean {
-  if (!item.allowedClasses || item.allowedClasses.length === 0) return true;
-  return item.allowedClasses.includes(hero.heroClass);
-}
-
 export function EquipPanel({
   hero, inventory, effectiveStats, currentBonuses, onPreviewBonuses, onEquip, onUnequip, onSell,
 }: EquipPanelProps) {
   const [expandedSlot, setExpandedSlot] = useState<Slot | null>(null);
+
+  // Cleanup: se il pannello si smonta (es. tab switch) resetta il preview sull'header,
+  // altrimenti le stat bar restano colorate "preview" anche fuori dalla tab Equip.
+  useEffect(() => {
+    return () => { onPreviewBonuses(null); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const equippedOnHero = useMemo(
     () => inventory.filter(i => i.equippedOn === hero.id),
@@ -154,7 +144,7 @@ export function EquipPanel({
                   </>
                 ) : (
                   <div style={{ fontSize: 11, color: '#555' }}>
-                    {SLOT_ICONS_LOCAL[slot]} Slot {SLOT_LABELS_LOCAL[slot]} vuoto — tocca per equipaggiare
+                    {SLOT_ICONS[slot]} Slot {SLOT_LABELS[slot]} vuoto — tocca per equipaggiare
                   </div>
                 )}
               </div>
@@ -199,7 +189,7 @@ export function EquipPanel({
                 )}
                 {candidates.length === 0 ? (
                   <div style={{ fontSize: 11, color: '#737380', padding: 8, textAlign: 'center' }}>
-                    Nessun {SLOT_LABELS_LOCAL[slot]} disponibile in zaino.
+                    Nessun {SLOT_LABELS[slot]} disponibile in zaino.
                   </div>
                 ) : (
                   candidates.map(c => (

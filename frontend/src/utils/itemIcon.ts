@@ -4,6 +4,12 @@ export const SLOT_ICONS: Record<string, string> = {
   accessorio: '💍',
 };
 
+export const SLOT_LABELS: Record<string, string> = {
+  arma: 'Arma',
+  armatura: 'Armatura',
+  accessorio: 'Accessorio',
+};
+
 export function getItemIcon(name: string, slot: string): string {
   const n = name.toLowerCase();
   // Armi

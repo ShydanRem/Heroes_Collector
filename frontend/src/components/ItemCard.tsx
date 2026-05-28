@@ -3,6 +3,7 @@ import { InventoryItem } from '../services/api';
 import { RARITY_COLORS, RARITY_LABELS } from '../types';
 import { STAT_LABELS } from '../constants/stats';
 import { getItemIcon } from '../utils/itemIcon';
+import { itemSellValue } from '../utils/stats';
 
 interface ItemCardProps {
   item: InventoryItem;
@@ -70,7 +71,7 @@ export function ItemCard({ item, showSellValue, isNew, selected, onClick, right 
       </div>
       <div style={{ textAlign: 'right', fontSize: 10, flexShrink: 0 }}>
         {right ?? (showSellValue && (
-          <div style={{ color: '#ffd700', fontWeight: 700 }}>{item.sellValue}g</div>
+          <div style={{ color: '#ffd700', fontWeight: 700 }}>{itemSellValue(item)}g</div>
         ))}
       </div>
     </div>

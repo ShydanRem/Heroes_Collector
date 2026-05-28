@@ -3,6 +3,14 @@ import { CLASS_MODIFIERS } from '../constants/balance';
 import type { InventoryItem } from '../services/api';
 
 /**
+ * True se l'eroe può equipaggiare l'item (rispetta allowedClasses).
+ */
+export function canHeroEquip(hero: Hero, item: Pick<InventoryItem, 'allowedClasses'>): boolean {
+  if (!item.allowedClasses || item.allowedClasses.length === 0) return true;
+  return item.allowedClasses.includes(hero.heroClass);
+}
+
+/**
  * Calcola le statistiche effettive di un eroe applicando i modificatori di classe.
  */
 export function getEffectiveStats(hero: Hero): HeroStats {

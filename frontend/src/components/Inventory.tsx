@@ -3,9 +3,9 @@ import { Hero, RARITY_COLORS, RARITY_LABELS, CLASS_EMOJIS, CLASS_LABELS, HeroCla
 import * as api from '../services/api';
 import { InventoryItem } from '../services/api';
 import { STAT_LABELS } from '../constants/stats';
-import { getItemIcon, SLOT_ICONS } from '../utils/itemIcon';
+import { getItemIcon, SLOT_ICONS, SLOT_LABELS } from '../utils/itemIcon';
 import { ItemCard } from './ItemCard';
-import { itemSellValue } from '../utils/stats';
+import { itemSellValue, canHeroEquip } from '../utils/stats';
 import { CoinFly } from './CoinFly';
 
 const RARITY_ORDER: Record<string, number> = {
@@ -25,17 +25,6 @@ function saveSeen(seen: Set<string>) {
   try {
     localStorage.setItem(SEEN_KEY, JSON.stringify(Array.from(seen)));
   } catch { /* ignore */ }
-}
-
-const SLOT_LABELS: Record<string, string> = {
-  arma: 'Arma',
-  armatura: 'Armatura',
-  accessorio: 'Accessorio',
-};
-
-function canHeroEquip(hero: Hero, item: InventoryItem): boolean {
-  if (!item.allowedClasses || item.allowedClasses.length === 0) return true;
-  return item.allowedClasses.includes(hero.heroClass);
 }
 
 export function Inventory() {
@@ -207,7 +196,8 @@ export function Inventory() {
     return (RARITY_ORDER[b.rarity] ?? 0) - (RARITY_ORDER[a.rarity] ?? 0);
   });
 
-  const totalValue = filteredInventory.reduce((sum, it) => sum + itemSellValue(it), 0);
+  // Total value SEMPRE dell'intero zaino — il filtro slot cambia solo cosa si vede, non cosa vale lo zaino
+  const totalValue = inventory.reduce((sum, it) => sum + itemSellValue(it), 0);
 
   if (loading) {
     return <div className="loading"><div className="spinner" /> Caricamento...</div>;
