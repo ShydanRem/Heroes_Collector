@@ -305,6 +305,7 @@ export interface InventoryItem {
   quantity: number;
   equippedOn: string | null;
   allowedClasses?: string[];
+  sellValue: number; // gold per pezzo dal backend
 }
 
 export async function getInventory(): Promise<{ inventory: InventoryItem[] }> {

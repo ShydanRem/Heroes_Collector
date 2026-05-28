@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Hero, HeroClass, UserProfile, Ability, Rarity, RARITY_COLORS, RARITY_LABELS, CLASS_LABELS, CLASS_EMOJIS } from '../types';
 import { HeroSprite } from './HeroSprite';
-import { getEffectiveStats } from '../utils/stats';
+import { getEffectiveStats, computeCP } from '../utils/stats';
 import { Missions } from './Missions';
 import { Achievements } from './Achievements';
 import { DailyLogin } from './DailyLogin';
@@ -82,19 +82,7 @@ export function MyHero({ profile, hero, onHeroUpdate, onProfileRefresh }: MyHero
   const expPercent = Math.min(100, Math.floor((hero.exp / expNeeded) * 100));
   const effectiveStats = getEffectiveStats(hero);
 
-  // Calcolo Combat Power (CP) approssimativo
-  const calculateCP = () => {
-    if (!hero) return 0;
-    const { atk, def, hp, spd, crit, critDmg } = effectiveStats;
-    const bonusAtk = equipBonuses.atk || 0;
-    const bonusDef = equipBonuses.def || 0;
-    const bonusHp = equipBonuses.hp || 0;
-    
-    const baseCP = (atk + bonusAtk) * 2 + (def + bonusDef) * 1.5 + (hp + bonusHp) * 0.5 + spd * 5;
-    const critMult = 1 + (crit / 100) * (critDmg / 100);
-    return Math.floor(baseCP * critMult);
-  };
-  const combatPower = calculateCP();
+  const combatPower = computeCP(effectiveStats, equipBonuses);
 
   return (
     <div className="profile-container">
