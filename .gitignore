@@ -7,3 +7,20 @@ Thumbs.db
 
 # Companion visuale brainstorming (superpowers)
 .superpowers/
+
+# Clawbot / openclaw scaffolding (file autogenerati in root dall'agente autonomo)
+.openclaw/
+.openclaw-cli-images/
+.sprite-tools/
+memory/
+AGENTS.md
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+TOOLS.md
+USER.md
+
+# Preview locali (non condivise — i mockup definitivi vivono altrove)
+*-preview.html
+*-preview.png
+*-preview-v*.png
